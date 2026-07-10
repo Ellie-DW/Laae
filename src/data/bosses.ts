@@ -3,7 +3,7 @@ import type { BossDefinition, BossResetCycle } from '../types'
 export const BOSS_TABS = [
   { id: 'grandis' as const, label: '그란디스', desc: '세렌부터 유피테르까지 그란디스 레이드 보스' },
   { id: 'belowSword' as const, label: '검밑솔', desc: '스우부터 검은 마법사까지 검밑솔 구간' },
-  { id: 'normal' as const, label: '일반 보스', desc: '자쿰부터 시그너스까지 기본 주간 보스' },
+  { id: 'normal' as const, label: '일반 보스', desc: '자쿰·루타비스·반레온 등 기본 주간 보스' },
 ]
 
 const M = 1_000_000
@@ -112,46 +112,35 @@ export const BOSSES: BossDefinition[] = [
   // 일반 보스
   { id: 'zakum', name: '자쿰', shortName: '자쿰', tab: 'normal', group: '일반', maxParty: 6,
     difficulties: [
-      { difficulty: 'NORMAL', meso: 5 * M },
       { difficulty: 'CHAOS', meso: 15 * M },
-    ] },
-  { id: 'ht', name: '혼테일', shortName: '혼테', tab: 'normal', group: '일반', maxParty: 6,
-    difficulties: [
-      { difficulty: 'NORMAL', meso: 8 * M },
-      { difficulty: 'CHAOS', meso: 25 * M },
-    ] },
-  { id: 'pinkbean', name: '핑크빈', shortName: '핑빈', tab: 'normal', group: '일반', maxParty: 6,
-    difficulties: [
-      { difficulty: 'NORMAL', meso: 10 * M },
-      { difficulty: 'CHAOS', meso: 1.32 * M },
     ] },
   { id: 'magnus', name: '매그너스', shortName: '매그', tab: 'normal', group: '일반', maxParty: 6,
     difficulties: [
-      { difficulty: 'NORMAL', meso: 1.16 * M },
       { difficulty: 'HARD', meso: 35 * M },
-    ] },
-  { id: 'hilla', name: '힐라', shortName: '힐라', tab: 'normal', group: '일반', maxParty: 6,
-    difficulties: [
-      { difficulty: 'NORMAL', meso: 15 * M },
-      { difficulty: 'HARD', meso: 1.28 * M },
     ] },
   { id: 'papulatus', name: '파풀라투스', shortName: '파풀', tab: 'normal', group: '일반', maxParty: 6,
     difficulties: [
-      { difficulty: 'NORMAL', meso: 1.2 * M },
       { difficulty: 'CHAOS', meso: 13.1 * M },
     ] },
-  { id: 'cygnus', name: '시그너스', shortName: '시그', tab: 'normal', group: '일반', maxParty: 6,
+  { id: 'pierre', name: '피에르', shortName: '피에', tab: 'normal', group: '루타비스', maxParty: 6,
     difficulties: [
-      { difficulty: 'NORMAL', meso: 1.36 * M },
-      { difficulty: 'HARD', meso: 60 * M },
+      { difficulty: 'CHAOS', meso: 8.17 * M },
+    ] },
+  { id: 'von-bon', name: '반반', shortName: '반반', tab: 'normal', group: '루타비스', maxParty: 6,
+    difficulties: [
+      { difficulty: 'CHAOS', meso: 8.15 * M },
+    ] },
+  { id: 'bloody-queen', name: '블러디퀸', shortName: '블퀸', tab: 'normal', group: '루타비스', maxParty: 6,
+    difficulties: [
+      { difficulty: 'CHAOS', meso: 8.14 * M },
+    ] },
+  { id: 'vellum', name: '벨룸', shortName: '벨룸', tab: 'normal', group: '루타비스', maxParty: 6,
+    difficulties: [
+      { difficulty: 'CHAOS', meso: 9.28 * M },
     ] },
   { id: 'von-leon', name: '반레온', shortName: '반레', tab: 'normal', group: '일반', maxParty: 6,
     difficulties: [
       { difficulty: 'HARD', meso: 1.07 * M },
-    ] },
-  { id: 'arkarium', name: '아카이럼', shortName: '아카', tab: 'normal', group: '일반', maxParty: 6,
-    difficulties: [
-      { difficulty: 'NORMAL', meso: 1.11 * M },
     ] },
 ]
 
