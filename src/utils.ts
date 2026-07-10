@@ -22,30 +22,24 @@ function addDaysYMD(ymd: string, days: number): string {
   return `${yy}-${mm}-${dd}`
 }
 
-function trimTrailingZeros(value: string): string {
-  return value.replace(/\.?0+$/, '')
-}
-
+/** 메소를 억·만·나머지 형식으로 표시 (예: 28억4150만1024) */
 export function formatMesoKorean(amount: number): string {
   if (amount === 0) return '0'
   const sign = amount < 0 ? '-' : ''
-  const eok = Math.abs(amount) / 100_000_000
+  let abs = Math.abs(Math.round(amount))
 
-  if (eok >= 10) {
-    const v = Math.round(eok * 10) / 10
-    return `${sign}${trimTrailingZeros(v.toFixed(1))}억`
-  }
-  if (eok >= 1) {
-    const v = Math.round(eok * 10) / 10
-    return `${sign}${trimTrailingZeros(v.toFixed(1))}억`
-  }
-  if (eok >= 0.01) {
-    const v = Math.round(eok * 100) / 100
-    return `${sign}${trimTrailingZeros(v.toFixed(2))}억`
-  }
+  const eok = Math.floor(abs / 100_000_000)
+  abs %= 100_000_000
+  const man = Math.floor(abs / 10_000)
+  const rest = abs % 10_000
 
-  const v = Math.round(eok * 1000) / 1000
-  return `${sign}${trimTrailingZeros(v.toFixed(3))}억`
+  const parts: string[] = []
+  if (eok > 0) parts.push(`${eok}억`)
+  if (man > 0) parts.push(`${man}만`)
+  if (rest > 0) parts.push(`${rest}`)
+
+  if (parts.length === 0) return '0'
+  return `${sign}${parts.join('')}`
 }
 
 export function formatMeso(amount: number): string {
