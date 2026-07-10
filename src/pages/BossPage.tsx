@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import type { Character, CharacterBossData, BossTab, BossSnapshot } from '../types'
-import type { BossStats } from '../lib/bossStats'
 import { calculatePlannedBossStats } from '../lib/bossStats'
 import { BOSS_TABS, getBossesByTab } from '../data/bosses'
 import { formatMesoKorean, getWeeklyPeriod, getMonthlyPeriod } from '../utils'
@@ -11,7 +10,6 @@ import SelectedBossSummary from '../components/boss/SelectedBossSummary'
 interface BossPageProps {
   selectedCharacter: Character | null
   bossData: CharacterBossData
-  bossStats: BossStats
   snapshots: BossSnapshot[]
   onUpdateBoss: (bossId: string, difficulty: string, updates: Partial<CharacterBossData['selections'][0]>) => void
   onSelectBossDifficulty: (bossId: string, difficulty: string | null) => void
@@ -21,7 +19,6 @@ interface BossPageProps {
 export default function BossPage({
   selectedCharacter,
   bossData,
-  bossStats,
   snapshots,
   onUpdateBoss,
   onSelectBossDifficulty,
@@ -86,7 +83,7 @@ export default function BossPage({
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <StatBox label="예상 주간 보스 수익" value={formatMesoKorean(plannedStats.weeklyBossMeso)} highlight />
         <StatBox label="예상 월간 보스 수익" value={formatMesoKorean(plannedStats.monthlyBossMeso)} gold />
-        <StatBox label="잡은 보스" value={`주 ${bossStats.weeklyCheckedBossCount} / 월 ${bossStats.monthlyCheckedBossCount}`} />
+        <StatBox label="예상 보스" value={`주 ${plannedStats.weeklyPlannedBossCount} / 월 ${plannedStats.monthlyPlannedBossCount}`} />
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
@@ -130,7 +127,7 @@ export default function BossPage({
         ))}
       </div>
 
-      <SelectedBossSummary checkedBosses={bossStats.checkedBosses} />
+      <SelectedBossSummary plannedBosses={plannedStats.plannedBosses} />
     </div>
   )
 }

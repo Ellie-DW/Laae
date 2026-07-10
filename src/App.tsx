@@ -149,7 +149,6 @@ function MainApp() {
           <BossPage
             selectedCharacter={selectedCharacter}
             bossData={bossData}
-            bossStats={bossStats}
             snapshots={ledger.snapshots}
             onUpdateBoss={updateBossSelection}
             onSelectBossDifficulty={selectBossDifficulty}

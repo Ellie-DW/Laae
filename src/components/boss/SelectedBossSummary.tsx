@@ -4,25 +4,25 @@ import { formatMesoKorean } from '../../utils'
 import ResetCycleBadge from './ResetCycleBadge'
 
 interface SelectedBossSummaryProps {
-  checkedBosses: BossSelection[]
+  plannedBosses: BossSelection[]
 }
 
-export default function SelectedBossSummary({ checkedBosses }: SelectedBossSummaryProps) {
+export default function SelectedBossSummary({ plannedBosses }: SelectedBossSummaryProps) {
   return (
     <div className="panel-light p-5">
       <div className="flex items-center justify-between mb-1">
-        <h2 className="font-semibold text-slate-100">잡은 보스</h2>
-        <span className="text-xs text-slate-500">{checkedBosses.length}개</span>
+        <h2 className="font-semibold text-slate-100">예상 보스</h2>
+        <span className="text-xs text-slate-500">{plannedBosses.length}개</span>
       </div>
-      <p className="text-xs text-slate-500 mb-4">✓ 체크한 보스만 수익에 반영돼요</p>
+      <p className="text-xs text-slate-500 mb-4">난이도를 선택한 보스 기준이에요. 잡음 체크는 대시보드에서 하세요.</p>
 
-      {checkedBosses.length === 0 ? (
+      {plannedBosses.length === 0 ? (
         <div className="text-center py-8 text-slate-500 text-sm">
-          아직 잡은 보스가 없어요
+          아직 선택한 보스가 없어요
         </div>
       ) : (
         <div className="space-y-2">
-          {checkedBosses.map((sel) => {
+          {plannedBosses.map((sel) => {
             const boss = BOSSES.find((b) => b.id === sel.bossId)
             const diff = boss?.difficulties.find((d) => d.difficulty === sel.difficulty)
             const myShare = diff ? Math.floor(diff.meso / sel.partySize) : 0
