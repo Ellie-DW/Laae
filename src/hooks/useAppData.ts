@@ -74,7 +74,7 @@ export function useAppData() {
         }
 
         if (!cancelled) {
-          setData(appData)
+          setData({ ...appData, currentPage: 'dashboard' })
         }
       } catch (err) {
         if (!cancelled) {

@@ -101,7 +101,7 @@ const EMPTY_DATA: AppData = {
   characters: [],
   selectedCharacterId: null,
   bossData: {},
-  currentPage: 'boss',
+  currentPage: 'dashboard',
 }
 
 function rowToCharacter(row: CharacterRow): Character {
@@ -125,7 +125,7 @@ function rowsToAppData(characters: CharacterRow[], prefs: PreferencesRow | null)
     characters: characters.map(rowToCharacter),
     selectedCharacterId: validSelectedId,
     bossData,
-    currentPage: (prefs?.current_page as Page) ?? 'boss',
+    currentPage: (prefs?.current_page as Page) ?? 'dashboard',
   }
 }
 
