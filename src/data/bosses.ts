@@ -3,7 +3,7 @@ import type { BossDefinition, BossResetCycle } from '../types'
 export const BOSS_TABS = [
   { id: 'grandis' as const, label: '그란디스', desc: '세렌부터 유피테르까지 그란디스 레이드 보스' },
   { id: 'belowSword' as const, label: '검밑솔', desc: '스우부터 검은 마법사까지 검밑솔 구간' },
-  { id: 'normal' as const, label: '일반 보스', desc: '자쿰·루타비스·반레온 등 기본 주간 보스' },
+  { id: 'normal' as const, label: '일반 보스', desc: '자쿰·루타비스 등 기본 주간 보스' },
 ]
 
 const M = 1_000_000
@@ -137,10 +137,6 @@ export const BOSSES: BossDefinition[] = [
   { id: 'vellum', name: '벨룸', shortName: '벨룸', tab: 'normal', group: '루타비스', maxParty: 6,
     difficulties: [
       { difficulty: 'CHAOS', meso: 9.28 * M },
-    ] },
-  { id: 'von-leon', name: '반레온', shortName: '반레', tab: 'normal', group: '일반', maxParty: 6,
-    difficulties: [
-      { difficulty: 'HARD', meso: 1.07 * M },
     ] },
 ]
 
