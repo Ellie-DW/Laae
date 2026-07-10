@@ -108,14 +108,14 @@ export default function MobileHeader({
       </header>
 
       {pickerOpen && (
-        <div className="lg:hidden fixed inset-0 z-50">
+        <div className="lg:hidden fixed inset-0 z-50 flex items-center justify-center p-4">
           <button
             type="button"
             aria-label="닫기"
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={closePicker}
           />
-          <div className="absolute inset-x-0 bottom-0 max-h-[75vh] flex flex-col bg-dark-surface border-t border-dark-border rounded-t-2xl shadow-2xl safe-bottom">
+          <div className="relative w-full max-w-sm max-h-[80vh] flex flex-col bg-dark-surface border border-dark-border rounded-2xl shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-dark-border/60 shrink-0">
               <div>
                 <h2 className="font-semibold text-slate-100">캐릭터 선택</h2>
@@ -129,7 +129,7 @@ export default function MobileHeader({
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 py-3">
+            <div className="flex-1 overflow-y-auto px-4 py-3 min-h-0">
               {characters.length === 0 ? (
                 <div className="text-center py-8">
                   <span className="text-3xl">🍁</span>
