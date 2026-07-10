@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import type { CharacterBossData, BossSelection, Page } from '../types'
+import type { CharacterBossData, BossSelection, Page, BossSnapshot, BossResetCycle } from '../types'
 import {
   calculateBossStats,
   calculateAccountStats,
@@ -26,6 +26,10 @@ import {
   DUPLICATE_CHARACTER_NAME_MESSAGE,
   normalizeCharacterName,
 } from '../lib/characters'
+
+export type BossSnapshotSync =
+  | { type: 'upsert'; snapshot: BossSnapshot }
+  | { type: 'delete'; characterId: string; cycle: BossResetCycle; periodStart: string }
 
 function loadLocalData(): AppData | null {
   try {
@@ -256,7 +260,7 @@ export function useAppData() {
   )
 
   const toggleWeeklyBossCleared = useCallback(
-    async (characterId: string) => {
+    async (characterId: string): Promise<BossSnapshotSync | null> => {
       const current = data.bossData[characterId] ?? createDefaultBossData()
       const week = getWeeklyPeriod()
       const clearing = !isWeeklyBossCleared(current)
@@ -270,10 +274,12 @@ export function useAppData() {
       }))
       persistBossData(characterId, updated)
 
-      if (user) {
+      if (!user) return null
+
+      try {
         if (clearing) {
           const stats = calculateBossStats(updated)
-          await saveBossSnapshot(user.id, {
+          const snapshot = await saveBossSnapshot(user.id, {
             characterId,
             cycle: 'weekly',
             periodStart: week.start,
@@ -281,16 +287,21 @@ export function useAppData() {
             bossData: updated,
             totalMeso: stats.weeklyBossMeso,
           })
-        } else {
-          await deleteBossSnapshot(characterId, 'weekly', week.start)
+          return { type: 'upsert', snapshot }
         }
+
+        await deleteBossSnapshot(characterId, 'weekly', week.start)
+        return { type: 'delete', characterId, cycle: 'weekly', periodStart: week.start }
+      } catch (err) {
+        setSyncError(getErrorMessage(err, '보스 기록 저장에 실패했습니다.'))
+        return null
       }
     },
     [data.bossData, persistBossData, user]
   )
 
   const toggleMonthlyBossCleared = useCallback(
-    async (characterId: string) => {
+    async (characterId: string): Promise<BossSnapshotSync | null> => {
       const current = data.bossData[characterId] ?? createDefaultBossData()
       const month = getMonthlyPeriod()
       const clearing = !isMonthlyBossCleared(current)
@@ -304,10 +315,12 @@ export function useAppData() {
       }))
       persistBossData(characterId, updated)
 
-      if (user) {
+      if (!user) return null
+
+      try {
         if (clearing) {
           const stats = calculateBossStats(updated)
-          await saveBossSnapshot(user.id, {
+          const snapshot = await saveBossSnapshot(user.id, {
             characterId,
             cycle: 'monthly',
             periodStart: month.start,
@@ -315,9 +328,14 @@ export function useAppData() {
             bossData: updated,
             totalMeso: stats.monthlyBossMeso,
           })
-        } else {
-          await deleteBossSnapshot(characterId, 'monthly', month.start)
+          return { type: 'upsert', snapshot }
         }
+
+        await deleteBossSnapshot(characterId, 'monthly', month.start)
+        return { type: 'delete', characterId, cycle: 'monthly', periodStart: month.start }
+      } catch (err) {
+        setSyncError(getErrorMessage(err, '보스 기록 저장에 실패했습니다.'))
+        return null
       }
     },
     [data.bossData, persistBossData, user]

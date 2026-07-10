@@ -73,14 +73,20 @@ function MainApp() {
     ? ledger.getCharacterSummary(selectedCharacter.id)
     : null
 
-  const handleToggleWeeklyBossCleared = async (characterId: string) => {
-    await toggleWeeklyBossCleared(characterId)
-    await ledger.reload()
+  const handleToggleWeeklyBossCleared = (characterId: string) => {
+    void toggleWeeklyBossCleared(characterId).then((result) => {
+      if (!result) return
+      if (result.type === 'upsert') ledger.upsertSnapshot(result.snapshot)
+      else ledger.removeSnapshot(result.characterId, result.cycle, result.periodStart)
+    })
   }
 
-  const handleToggleMonthlyBossCleared = async (characterId: string) => {
-    await toggleMonthlyBossCleared(characterId)
-    await ledger.reload()
+  const handleToggleMonthlyBossCleared = (characterId: string) => {
+    void toggleMonthlyBossCleared(characterId).then((result) => {
+      if (!result) return
+      if (result.type === 'upsert') ledger.upsertSnapshot(result.snapshot)
+      else ledger.removeSnapshot(result.characterId, result.cycle, result.periodStart)
+    })
   }
 
   const renderPage = () => {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import type { ExpenseCategory } from '../types'
+import type { ExpenseCategory, BossResetCycle, BossSnapshot } from '../types'
 import { useAuth } from '../contexts/AuthContext'
 import {
   fetchLedgerData,
@@ -262,6 +262,28 @@ export function useLedger(
     setGoals((prev) => prev.filter((g) => g.id !== id))
   }, [])
 
+  const upsertSnapshot = useCallback((snapshot: BossSnapshot) => {
+    setSnapshots((prev) => [
+      snapshot,
+      ...prev.filter(
+        (s) =>
+          !(
+            s.characterId === snapshot.characterId &&
+            s.cycle === snapshot.cycle &&
+            s.periodStart === snapshot.periodStart
+          )
+      ),
+    ])
+  }, [])
+
+  const removeSnapshot = useCallback((characterId: string, cycle: BossResetCycle, periodStart: string) => {
+    setSnapshots((prev) =>
+      prev.filter(
+        (s) => !(s.characterId === characterId && s.cycle === cycle && s.periodStart === periodStart)
+      )
+    )
+  }, [])
+
   return {
     expenses,
     hunts,
@@ -294,5 +316,7 @@ export function useLedger(
     saveGoal,
     removeGoal,
     reload,
+    upsertSnapshot,
+    removeSnapshot,
   }
 }
