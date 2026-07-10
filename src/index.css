@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark-bg text-slate-200 font-sans min-h-screen;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% -20%, rgba(34, 211, 238, 0.08), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 100%, rgba(139, 92, 246, 0.06), transparent),
+      linear-gradient(rgba(34, 211, 238, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34, 211, 238, 0.02) 1px, transparent 1px);
+    background-size: auto, auto, 40px 40px, 40px 40px;
+  }
+}
+
+@layer components {
+  .panel-light {
+    @apply bg-dark-panel/80 backdrop-blur-md border border-dark-border/80 rounded-xl shadow-panel;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 4px 24px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(34, 211, 238, 0.04);
+  }
+
+  .panel-glow {
+    @apply panel-light;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 4px 24px rgba(0, 0, 0, 0.4),
+      0 0 20px rgba(34, 211, 238, 0.08);
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-cyber-600 to-cyber-500 hover:from-cyber-500 hover:to-cyber-400
+           text-white font-semibold px-4 py-2 rounded-lg
+           transition-all duration-200 shadow-neon-sm hover:shadow-neon active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply bg-dark-panel/60 hover:bg-dark-panel text-slate-300 font-medium px-4 py-2 rounded-lg
+           transition-all duration-200 border border-dark-border hover:border-cyber-700/50;
+  }
+
+  .input-field {
+    @apply w-full bg-dark-surface/80 border border-dark-border rounded-lg px-3 py-2.5
+           text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyber-500/60
+           focus:ring-2 focus:ring-cyber-500/20 transition-colors;
+  }
+
+  .nav-active {
+    @apply bg-cyber-500/10 text-cyber-400 font-semibold border border-cyber-500/20 shadow-neon-sm;
+  }
+
+  .text-accent {
+    @apply text-cyber-400;
+  }
+
+  .text-meso {
+    @apply text-maple-400;
+  }
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.2);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.35);
+}
