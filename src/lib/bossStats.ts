@@ -84,15 +84,13 @@ function calcBossShare(sel: CharacterBossData['selections'][0]) {
   }
 }
 
-export function calculateBossStats(bossData: CharacterBossData): BossStats {
-  const clearedBosses = getClearedBosses(bossData)
-
+function sumBossMesoByCycle(selections: CharacterBossData['selections']) {
   let weeklyBossMeso = 0
   let monthlyBossMeso = 0
   const weeklyBossIds = new Set<string>()
   const monthlyBossIds = new Set<string>()
 
-  for (const sel of clearedBosses) {
+  for (const sel of selections) {
     const { meso, cycle } = calcBossShare(sel)
     if (cycle === 'monthly') {
       monthlyBossMeso += meso
@@ -103,17 +101,54 @@ export function calculateBossStats(bossData: CharacterBossData): BossStats {
     }
   }
 
-  const bossMeso = weeklyBossMeso + monthlyBossMeso
-
   return {
-    totalMeso: bossMeso,
-    bossMeso,
-    dropMeso: 0,
+    bossMeso: weeklyBossMeso + monthlyBossMeso,
     weeklyBossMeso,
     monthlyBossMeso,
-    checkedBossCount: clearedBosses.length > 0 ? weeklyBossIds.size + monthlyBossIds.size : 0,
-    weeklyCheckedBossCount: weeklyBossIds.size,
-    monthlyCheckedBossCount: monthlyBossIds.size,
+    weeklyBossIds,
+    monthlyBossIds,
+  }
+}
+
+export interface PlannedBossStats {
+  bossMeso: number
+  weeklyBossMeso: number
+  monthlyBossMeso: number
+  plannedBossCount: number
+  weeklyPlannedBossCount: number
+  monthlyPlannedBossCount: number
+  plannedBosses: CharacterBossData['selections']
+}
+
+/** 설정된 보스 기준 예상 수익 (잡음 체크 전) */
+export function calculatePlannedBossStats(bossData: CharacterBossData): PlannedBossStats {
+  const plannedBosses = bossData.selections.filter((s) => s.checked)
+  const totals = sumBossMesoByCycle(plannedBosses)
+
+  return {
+    bossMeso: totals.bossMeso,
+    weeklyBossMeso: totals.weeklyBossMeso,
+    monthlyBossMeso: totals.monthlyBossMeso,
+    plannedBossCount: plannedBosses.length > 0 ? totals.weeklyBossIds.size + totals.monthlyBossIds.size : 0,
+    weeklyPlannedBossCount: totals.weeklyBossIds.size,
+    monthlyPlannedBossCount: totals.monthlyBossIds.size,
+    plannedBosses,
+  }
+}
+
+export function calculateBossStats(bossData: CharacterBossData): BossStats {
+  const clearedBosses = getClearedBosses(bossData)
+  const totals = sumBossMesoByCycle(clearedBosses)
+
+  return {
+    totalMeso: totals.bossMeso,
+    bossMeso: totals.bossMeso,
+    dropMeso: 0,
+    weeklyBossMeso: totals.weeklyBossMeso,
+    monthlyBossMeso: totals.monthlyBossMeso,
+    checkedBossCount: clearedBosses.length > 0 ? totals.weeklyBossIds.size + totals.monthlyBossIds.size : 0,
+    weeklyCheckedBossCount: totals.weeklyBossIds.size,
+    monthlyCheckedBossCount: totals.monthlyBossIds.size,
     checkedDropCount: bossData.dropItems.filter((d) => d.checked).length,
     checkedBosses: clearedBosses,
     checkedDrops: bossData.dropItems.filter((d) => d.checked),
@@ -201,15 +236,8 @@ export function calculateAccountStats(
   }
 }
 
-/** 설정된 보스 기준 예상 수익 (잡음 체크 전) */
 export function calculatePlannedBossMeso(bossData: CharacterBossData): number {
-  const week = getWeeklyPeriod()
-  const month = getMonthlyPeriod()
-  return calculateBossStats({
-    ...bossData,
-    weeklyClearedPeriodStart: week.start,
-    monthlyClearedPeriodStart: month.start,
-  }).bossMeso
+  return calculatePlannedBossStats(bossData).bossMeso
 }
 
 export interface BossPerBossCumulative {

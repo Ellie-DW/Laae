@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { Character, CharacterBossData, BossTab, BossSnapshot } from '../types'
 import type { BossStats } from '../lib/bossStats'
+import { calculatePlannedBossStats } from '../lib/bossStats'
 import { BOSS_TABS, getBossesByTab } from '../data/bosses'
 import { formatMesoKorean, getWeeklyPeriod, getMonthlyPeriod } from '../utils'
 import BossCard from '../components/boss/BossCard'
@@ -31,6 +32,7 @@ export default function BossPage({
   const month = getMonthlyPeriod()
   const tabInfo = BOSS_TABS.find((t) => t.id === activeTab)!
   const bosses = getBossesByTab(activeTab)
+  const plannedStats = useMemo(() => calculatePlannedBossStats(bossData), [bossData])
 
   if (!selectedCharacter) {
     return (
@@ -71,18 +73,19 @@ export default function BossPage({
       <div className="panel-glow p-5 bg-gradient-to-r from-cyber-900/30 to-maple-900/20 border-cyber-700/30">
         <p className="text-sm text-slate-400">총 예상 보스 수익</p>
         <p className="text-3xl font-bold text-maple-400 mt-1 font-display tracking-wide">
-          {formatMesoKorean(bossStats.bossMeso)}
+          {formatMesoKorean(plannedStats.bossMeso)}
         </p>
         <div className="flex flex-wrap gap-4 mt-2 text-xs text-slate-500">
-          <span>주간 {formatMesoKorean(bossStats.weeklyBossMeso)}</span>
-          <span>월간 {formatMesoKorean(bossStats.monthlyBossMeso)}</span>
+          <span>주간 {formatMesoKorean(plannedStats.weeklyBossMeso)}</span>
+          <span>월간 {formatMesoKorean(plannedStats.monthlyBossMeso)}</span>
+          <span>선택 {plannedStats.plannedBossCount}개</span>
         </div>
-        <p className="text-[10px] text-slate-600 mt-2">드랍 기록은 드랍 메뉴에서 날짜별로 입력하세요.</p>
+        <p className="text-[10px] text-slate-600 mt-2">난이도를 선택하면 예상 수익에 바로 반영돼요. 잡음 체크는 대시보드에서 하세요.</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-        <StatBox label="주간 보스 수익" value={formatMesoKorean(bossStats.weeklyBossMeso)} highlight />
-        <StatBox label="월간 보스 수익" value={formatMesoKorean(bossStats.monthlyBossMeso)} gold />
+        <StatBox label="예상 주간 보스 수익" value={formatMesoKorean(plannedStats.weeklyBossMeso)} highlight />
+        <StatBox label="예상 월간 보스 수익" value={formatMesoKorean(plannedStats.monthlyBossMeso)} gold />
         <StatBox label="잡은 보스" value={`주 ${bossStats.weeklyCheckedBossCount} / 월 ${bossStats.monthlyCheckedBossCount}`} />
       </div>
 

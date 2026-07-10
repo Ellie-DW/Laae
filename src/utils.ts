@@ -1,4 +1,26 @@
 const STORAGE_KEY = 'maple-diary-data'
+const KOREA_TZ = 'Asia/Seoul'
+
+/** 한국(KST) 기준 YYYY-MM-DD */
+export function getKoreaYMD(date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: KOREA_TZ }).format(date)
+}
+
+/** 한국(KST) 기준 요일 (0=일, 4=목) */
+function getKoreaDayOfWeek(date = new Date()): number {
+  const weekday = new Intl.DateTimeFormat('en-US', { timeZone: KOREA_TZ, weekday: 'short' }).format(date)
+  const map: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }
+  return map[weekday] ?? 0
+}
+
+function addDaysYMD(ymd: string, days: number): string {
+  const [y, m, d] = ymd.split('-').map(Number)
+  const utc = new Date(Date.UTC(y, m - 1, d + days))
+  const yy = utc.getUTCFullYear()
+  const mm = String(utc.getUTCMonth() + 1).padStart(2, '0')
+  const dd = String(utc.getUTCDate()).padStart(2, '0')
+  return `${yy}-${mm}-${dd}`
+}
 
 function trimTrailingZeros(value: string): string {
   return value.replace(/\.?0+$/, '')
@@ -60,11 +82,7 @@ export function generateId(): string {
 }
 
 export function getToday(): string {
-  const now = new Date()
-  const y = now.getFullYear()
-  const m = String(now.getMonth() + 1).padStart(2, '0')
-  const d = String(now.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
+  return getKoreaYMD(new Date())
 }
 
 export function formatDateShort(dateStr: string): string {
@@ -72,37 +90,27 @@ export function formatDateShort(dateStr: string): string {
   return d.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '-').replace('.', '')
 }
 
+/** 한국(KST) 기준 주간 기간 — 목요일 00:00 ~ 수요일 23:59 */
 export function getWeeklyPeriod(date = new Date()): { start: string; end: string; label: string } {
-  const d = new Date(date)
-  const day = d.getDay()
+  const todayKorea = getKoreaYMD(date)
+  const day = getKoreaDayOfWeek(date)
   const diff = (day + 3) % 7
-  const start = new Date(d)
-  start.setDate(d.getDate() - diff)
-  const end = new Date(start)
-  end.setDate(start.getDate() + 6)
-
-  const fmt = (dt: Date) => dt.toISOString().split('T')[0]
-  const startStr = fmt(start)
-  const endStr = fmt(end)
+  const startStr = addDaysYMD(todayKorea, -diff)
+  const endStr = addDaysYMD(startStr, 6)
   return { start: startStr, end: endStr, label: `${startStr} ~ ${endStr}` }
 }
 
 export function getMonthlyPeriod(date = new Date()): { start: string; end: string; label: string } {
-  const year = date.getFullYear()
-  const month = date.getMonth()
-  const start = new Date(year, month, 1)
-  const end = new Date(year, month + 1, 0)
-
-  const fmt = (dt: Date) => {
-    const y = dt.getFullYear()
-    const m = String(dt.getMonth() + 1).padStart(2, '0')
-    const d = String(dt.getDate()).padStart(2, '0')
-    return `${y}-${m}-${d}`
-  }
-
-  const startStr = fmt(start)
-  const endStr = fmt(end)
+  const ymd = getKoreaYMD(date)
+  const [year, month] = ymd.split('-')
+  const lastDay = new Date(Date.UTC(Number(year), Number(month), 0)).getUTCDate()
+  const startStr = `${year}-${month}-01`
+  const endStr = `${year}-${month}-${String(lastDay).padStart(2, '0')}`
   return { start: startStr, end: endStr, label: `${startStr} ~ ${endStr}` }
+}
+
+export function getCurrentMonth(date = new Date()): string {
+  return getKoreaYMD(date).slice(0, 7)
 }
 
 export const DIFFICULTY_COLORS: Record<string, string> = {

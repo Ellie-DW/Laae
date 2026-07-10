@@ -56,11 +56,9 @@ function inDateRange(date: string, start?: string, end?: string) {
 function monthPrefix(date: string) {
   return date.slice(0, 7)
 }
+import { getCurrentMonth } from '../utils'
 
-export function getCurrentMonth() {
-  return new Date().toISOString().slice(0, 7)
-}
-
+export { getCurrentMonth }
 export function enrichLedgerWithBoss(
   summary: Omit<LedgerSummary, 'bossIncome' | 'recordedIncome' | 'netProfit'> & Partial<Pick<LedgerSummary, 'bossIncome'>>,
   bossIncome: number
