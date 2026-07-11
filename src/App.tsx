@@ -8,7 +8,6 @@ import BossPage from './pages/BossPage'
 import HuntPage from './pages/HuntPage'
 import ExpensePage from './pages/ExpensePage'
 import GatherPage from './pages/GatherPage'
-import AnalyticsPage from './pages/AnalyticsPage'
 import GoalsPage from './pages/GoalsPage'
 import DiaryPage from './pages/DiaryPage'
 import DropPage from './pages/DropPage'
@@ -215,19 +214,6 @@ function MainApp() {
             gathers={ledger.gathers}
             onAdd={ledger.createGather}
             onRemove={ledger.removeGather}
-          />
-        )
-      case 'analytics':
-        return (
-          <AnalyticsPage
-            characters={characters}
-            selectedCharacter={selectedCharacter}
-            currentMonth={ledger.currentMonth}
-            accountSummary={ledger.accountSummary}
-            accountSummaryAll={ledger.accountSummaryAll}
-            dailyNet={ledger.dailyNet}
-            expenseByCategory={ledger.expenseByCategory}
-            characterSummaries={ledger.characterSummaries}
           />
         )
       case 'goals':

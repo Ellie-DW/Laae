@@ -8,6 +8,5 @@ export const NAV_ITEMS: { id: Page; label: string; icon: string }[] = [
   { id: 'boss', label: '보스', icon: '👹' },
   { id: 'drop', label: '드랍', icon: '💎' },
   { id: 'gather', label: '채집', icon: '🌿' },
-  { id: 'analytics', label: '분석', icon: '📈' },
   { id: 'goals', label: '목표', icon: '🎯' },
 ]

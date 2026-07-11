@@ -47,23 +47,11 @@ export default function GoalsPage({
   const today = getToday()
   const [title, setTitle] = useState('')
   const [targetInput, setTargetInput] = useState('')
-  const [filterCharacterId, setFilterCharacterId] = useState<string | null>(null)
-  const [scope, setScope] = useState<'account' | 'character'>('character')
   const [deadlinePreset, setDeadlinePreset] = useState<DeadlinePreset>('d30')
   const [endDate, setEndDate] = useState(() => deadlineFromDays(30))
   const [listFilter, setListFilter] = useState<'active' | 'ended' | 'all'>('active')
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
-
-  const activeCharacter = filterCharacterId
-    ? characters.find((c) => c.id === filterCharacterId) ?? null
-    : null
-
-  useEffect(() => {
-    if (filterCharacterId) {
-      setScope('character')
-    }
-  }, [filterCharacterId])
 
   useEffect(() => {
     if (deadlinePreset === 'custom') return
@@ -75,41 +63,33 @@ export default function GoalsPage({
     if (preset?.days) setEndDate(deadlineFromDays(preset.days))
   }, [deadlinePreset])
 
-  const formCharacterId = filterCharacterId ?? characters[0]?.id ?? null
-  const saveCharacterId = scope === 'account' ? null : formCharacterId
+  const accountGoals = useMemo(() => goals.filter((g) => g.characterId === null), [goals])
 
   const existingGoal = useMemo(
-    () => goals.find((g) => g.characterId === saveCharacterId) ?? null,
-    [goals, saveCharacterId]
+    () => accountGoals.find((g) => isGoalActive(g.startDate, g.endDate) || isGoalNotStarted(g.startDate)) ?? null,
+    [accountGoals]
   )
 
-  const scopedGoals = useMemo(() => {
-    return filterCharacterId
-      ? goals.filter((g) => g.characterId === null || g.characterId === filterCharacterId)
-      : goals
-  }, [goals, filterCharacterId])
-
   const visibleGoals = useMemo(() => {
-    const filtered = scopedGoals.filter((goal) => {
+    const filtered = accountGoals.filter((goal) => {
       if (listFilter === 'active') return isGoalActive(goal.startDate, goal.endDate) || isGoalNotStarted(goal.startDate)
       if (listFilter === 'ended') return isGoalEnded(goal.endDate)
       return true
     })
     return filtered.sort((a, b) => a.endDate.localeCompare(b.endDate))
-  }, [scopedGoals, listFilter])
+  }, [accountGoals, listFilter])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const targetMeso = parseMesoInput(targetInput)
     if (!title.trim() || targetMeso <= 0) return
-    if (scope === 'character' && !formCharacterId) return
     if (endDate < today) return
 
     setSaving(true)
     setFormError(null)
     try {
       await onSave({
-        characterId: saveCharacterId,
+        characterId: null,
         title: title.trim(),
         targetMeso,
         startDate: today,
@@ -137,30 +117,14 @@ export default function GoalsPage({
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-100">목표</h1>
-        <p className="text-sm text-slate-500 mt-1">마감일(D-day) 기준 순수익 목표</p>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <ScopeButton active={filterCharacterId === null} onClick={() => setFilterCharacterId(null)}>
-          전체 캐릭터
-        </ScopeButton>
-        {characters.map((char) => (
-          <ScopeButton
-            key={char.id}
-            active={filterCharacterId === char.id}
-            onClick={() => setFilterCharacterId(char.id)}
-          >
-            {char.name}
-          </ScopeButton>
-        ))}
+        <p className="text-sm text-slate-500 mt-1">계정 전체 · 마감일(D-day) 기준 순수익 목표</p>
       </div>
 
       <form onSubmit={handleSubmit} className="panel-light p-5 space-y-4">
         <div>
           <h2 className="font-semibold text-slate-100">새 목표</h2>
           <p className="text-xs text-slate-500 mt-1">
-            {formatGoalPeriod(today, endDate)} · {formatGoalDeadline(endDate)} ·{' '}
-            {activeCharacter ? activeCharacter.name : scope === 'account' ? '계정 전체' : '캐릭터'}
+            {formatGoalPeriod(today, endDate)} · {formatGoalDeadline(endDate)} · 계정 전체
           </p>
         </div>
 
@@ -219,39 +183,9 @@ export default function GoalsPage({
           )}
         </div>
 
-        <div>
-          <label className="text-xs text-slate-500 mb-2 block">범위</label>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setScope('account')}
-              disabled={!!filterCharacterId}
-              className={`flex-1 py-2 rounded-lg text-sm border transition-colors disabled:opacity-40 ${
-                scope === 'account'
-                  ? 'bg-cyber-500/20 border-cyber-500/40 text-cyber-300'
-                  : 'border-dark-border text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              계정 전체
-            </button>
-            <button
-              type="button"
-              onClick={() => setScope('character')}
-              className={`flex-1 py-2 rounded-lg text-sm border transition-colors ${
-                scope === 'character'
-                  ? 'bg-cyber-500/20 border-cyber-500/40 text-cyber-300'
-                  : 'border-dark-border text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {activeCharacter?.name ??
-                (formCharacterId ? characters.find((c) => c.id === formCharacterId)?.name : '캐릭터')}
-            </button>
-          </div>
-        </div>
-
         {existingGoal && (
           <p className="text-xs text-amber-400/90 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
-            같은 범위 목표가 있어요. 저장하면 「{existingGoal.title}」을 덮어씁니다.
+            진행 중인 계정 목표가 있어요. 저장하면 「{existingGoal.title}」을 덮어씁니다.
           </p>
         )}
 
@@ -274,7 +208,7 @@ export default function GoalsPage({
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
             <h2 className="font-semibold text-slate-100">목표 현황 ({visibleGoals.length})</h2>
-            <p className="text-xs text-slate-500 mt-0.5">오늘({today}) 기준</p>
+            <p className="text-xs text-slate-500 mt-0.5">계정 전체 · 오늘({today}) 기준</p>
           </div>
           <div className="flex gap-1">
             {(['active', 'ended', 'all'] as const).map((id) => (
@@ -300,49 +234,18 @@ export default function GoalsPage({
           </p>
         ) : (
           <div className="space-y-4">
-            {visibleGoals.map((goal) => {
-              const progress = getGoalProgress(goal)
-              const charName = goal.characterId
-                ? characters.find((c) => c.id === goal.characterId)?.name
-                : '계정 전체'
-
-              return (
-                <GoalProgressCard
-                  key={goal.id}
-                  goal={goal}
-                  progress={progress}
-                  scopeLabel={charName ?? '계정 전체'}
-                  onRemove={() => onRemove(goal.id)}
-                />
-              )
-            })}
+            {visibleGoals.map((goal) => (
+              <GoalProgressCard
+                key={goal.id}
+                goal={goal}
+                progress={getGoalProgress(goal)}
+                scopeLabel="계정 전체"
+                onRemove={() => onRemove(goal.id)}
+              />
+            ))}
           </div>
         )}
       </div>
     </div>
-  )
-}
-
-function ScopeButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-3 py-1.5 rounded-lg text-xs border transition-colors ${
-        active
-          ? 'bg-cyber-500/20 border-cyber-500/40 text-cyber-300'
-          : 'border-dark-border text-slate-500 hover:text-slate-300'
-      }`}
-    >
-      {children}
-    </button>
   )
 }

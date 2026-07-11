@@ -119,8 +119,8 @@ export default function DashboardPage({
 
   const activeGoals = goals.filter(
     (g) =>
-      (isGoalActive(g.startDate, g.endDate) || isGoalNotStarted(g.startDate)) &&
-      (!g.characterId || g.characterId === selectedCharacter?.id)
+      g.characterId === null &&
+      (isGoalActive(g.startDate, g.endDate) || isGoalNotStarted(g.startDate))
   )
   const expenseTotal = expenseByCategory.reduce((s, c) => s + c.amount, 0)
 
@@ -474,15 +474,12 @@ export default function DashboardPage({
           <div className="space-y-3">
             {activeGoals.slice(0, 3).map((goal) => {
               const progress = getGoalProgress(goal)
-              const scopeLabel = goal.characterId
-                ? characters.find((c) => c.id === goal.characterId)?.name ?? '캐릭터'
-                : '계정 전체'
               return (
                 <GoalProgressCard
                   key={goal.id}
                   goal={goal}
                   progress={progress}
-                  scopeLabel={scopeLabel}
+                  scopeLabel="계정 전체"
                   compact
                 />
               )

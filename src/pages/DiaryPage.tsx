@@ -128,22 +128,17 @@ export default function DiaryPage({
   )
 
   const primaryGoal = useMemo(() => {
-    const monthGoals = goals.filter((g) => goalOverlapsMonth(g.startDate, g.endDate, monthKey))
-    const scoped = filterCharacterId
-      ? monthGoals.filter((g) => g.characterId === null || g.characterId === filterCharacterId)
-      : monthGoals
-    if (scoped.length === 0) return null
+    const monthGoals = goals.filter(
+      (g) => g.characterId === null && goalOverlapsMonth(g.startDate, g.endDate, monthKey)
+    )
+    if (monthGoals.length === 0) return null
 
     const today = getToday()
-    const active = scoped.filter((g) => isGoalActive(g.startDate, g.endDate, today) || isGoalNotStarted(g.startDate, today))
-    const pool = active.length > 0 ? active : scoped
-
-    return (
-      pool.find((g) => g.characterId === filterCharacterId) ??
-      pool.find((g) => !g.characterId) ??
-      pool[0]
+    const active = monthGoals.filter(
+      (g) => isGoalActive(g.startDate, g.endDate, today) || isGoalNotStarted(g.startDate, today)
     )
-  }, [goals, monthKey, filterCharacterId])
+    return active[0] ?? monthGoals[0]
+  }, [goals, monthKey])
 
   const primaryGoalProgress = primaryGoal ? getGoalProgress(primaryGoal) : null
 
