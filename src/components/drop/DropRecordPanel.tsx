@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import type { Character, DropRecord } from '../../types'
 import { formatMesoKorean } from '../../utils'
 import DropAcquisitionSummary from './DropAcquisitionSummary'
-import DropAcquisitionHistory from './DropAcquisitionHistory'
 import DropChecklistSection, { type DropAddItem } from './DropChecklistSection'
 import DropSaleSection, { type DropSaleItem } from './DropSaleSection'
 import DropItemIcon from './DropItemIcon'
@@ -102,8 +101,6 @@ export default function DropRecordPanel({
         <p className="text-2xl font-bold text-maple-400 mt-1">{formatMesoKorean(total)}</p>
         <p className="text-xs text-slate-500 mt-1">{saleRecords.length}건 판매 기록</p>
       </div>
-
-      <DropAcquisitionHistory drops={visibleDrops} characterId={filterCharacterId ?? undefined} />
 
       <DropAcquisitionSummary drops={visibleDrops} characterId={filterCharacterId ?? undefined} />
 
