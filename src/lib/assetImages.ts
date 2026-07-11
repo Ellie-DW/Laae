@@ -27,6 +27,8 @@ export const NAV_ICON_SRC: Record<Page, string> = {
   goals: navGoals,
 }
 
+import { normalizeDropItemName } from '../data/dropItems'
+
 const bossModules = import.meta.glob<string>('../assets/images/bosses/*.png', {
   eager: true,
   import: 'default',
@@ -80,6 +82,7 @@ export function getBossIconSrc(bossId: string): string | undefined {
 }
 
 export function getDropIconSrc(itemName: string): string | undefined {
-  const file = DROP_ICON_ALIASES[itemName] ?? itemName
+  const normalized = normalizeDropItemName(itemName)
+  const file = DROP_ICON_ALIASES[normalized] ?? normalized
   return dropModules[assetPath('drops', file)]
 }

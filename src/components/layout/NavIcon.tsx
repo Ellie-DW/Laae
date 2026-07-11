@@ -18,7 +18,7 @@ export default function NavIcon({ page, size = 'md', active = false }: NavIconPr
       src={NAV_ICON_SRC[page]}
       alt=""
       draggable={false}
-      className={`${SIZE_CLASS[size]} object-contain transition-all ${
+      className={`${SIZE_CLASS[size]} object-contain transition-all image-pixelated ${
         active ? 'drop-shadow-[0_0_6px_rgba(34,211,238,0.55)] scale-105' : 'opacity-85'
       }`}
     />

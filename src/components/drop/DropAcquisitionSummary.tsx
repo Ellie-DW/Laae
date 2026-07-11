@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { DropRecord } from '../../types'
 import { PREDEFINED_DROP_ITEMS, getAcquisitionCounts } from '../../data/dropItems'
+import DropItemIcon from './DropItemIcon'
 
 interface DropAcquisitionSummaryProps {
   drops: DropRecord[]
@@ -52,8 +53,11 @@ export default function DropAcquisitionSummary({ drops, characterId }: DropAcqui
                       : 'bg-dark-surface/40 border-dark-border text-slate-500'
                   }`}
                 >
-                  <p className="truncate text-xs">{item.name}</p>
-                  <p className={`text-lg font-bold mt-0.5 ${item.count > 0 ? 'text-maple-400' : 'text-slate-600'}`}>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <DropItemIcon name={item.name} size="xs" />
+                    <p className="truncate text-xs flex-1">{item.name}</p>
+                  </div>
+                  <p className={`text-lg font-bold mt-1 ${item.count > 0 ? 'text-maple-400' : 'text-slate-600'}`}>
                     {item.count}
                   </p>
                 </div>

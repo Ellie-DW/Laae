@@ -3,6 +3,7 @@ import type { DropRecord, HuntRecord } from '../../types'
 import { getDropItemStats, getDropStatsSummary } from '../../data/dropItems'
 import { getHeldSolErdaFragments } from '../../lib/huntStats'
 import { formatMesoKorean } from '../../utils'
+import DropItemIcon from './DropItemIcon'
 
 interface DropDashboardSectionProps {
   drops: DropRecord[]
@@ -126,8 +127,9 @@ export default function DropDashboardSection({
                     {heldItems.map((item) => (
                       <span
                         key={item.id}
-                        className="text-xs px-2.5 py-1 rounded-full bg-maple-500/10 border border-maple-500/30 text-maple-200"
+                        className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-maple-500/10 border border-maple-500/30 text-maple-200"
                       >
+                        <DropItemIcon name={item.name} size="xs" />
                         {item.name} <strong className="text-maple-400">{item.held}</strong>
                       </span>
                     ))}
@@ -154,9 +156,12 @@ export default function DropDashboardSection({
                     {acquiredItems.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center justify-between text-xs px-2 py-1.5 rounded bg-dark-surface/50"
+                        className="flex items-center justify-between text-xs px-2 py-1.5 rounded bg-dark-surface/50 gap-2"
                       >
-                        <span className="text-slate-300 truncate mr-2">{item.name}</span>
+                        <span className="flex items-center gap-1.5 text-slate-300 min-w-0 flex-1">
+                          <DropItemIcon name={item.name} size="xs" />
+                          <span className="truncate">{item.name}</span>
+                        </span>
                         <span className="text-slate-500 shrink-0">
                           <span className="text-maple-400 font-semibold">{item.totalAcquired}</span>회
                           {item.sold > 0 && (
@@ -178,9 +183,12 @@ export default function DropDashboardSection({
           <p className="text-xs text-slate-500 font-medium mb-2">최근 판매</p>
           <div className="space-y-1.5">
             {recentSales.map((sale) => (
-              <div key={sale.id} className="flex items-center justify-between text-xs">
-                <span className="text-slate-400 truncate mr-2">
-                  {sale.itemName} · {sale.recordDate}
+              <div key={sale.id} className="flex items-center justify-between text-xs gap-2">
+                <span className="flex items-center gap-1.5 text-slate-400 min-w-0 flex-1">
+                  <DropItemIcon name={sale.itemName} size="xs" />
+                  <span className="truncate">
+                    {sale.itemName} · {sale.recordDate}
+                  </span>
                 </span>
                 <span className="text-maple-400 font-semibold shrink-0">+{formatMesoKorean(sale.meso)}</span>
               </div>

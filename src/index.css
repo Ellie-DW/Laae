@@ -73,6 +73,13 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+@layer utilities {
+  .image-pixelated {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 6px;
 }

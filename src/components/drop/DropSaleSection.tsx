@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { DropRecord } from '../../types'
 import { PREDEFINED_DROP_ITEMS, getAcquisitionCounts, getDropItemGroups } from '../../data/dropItems'
 import { getToday, parseMesoInput } from '../../utils'
+import DropItemIcon from './DropItemIcon'
 
 export interface DropSaleItem {
   itemName: string
@@ -108,6 +109,9 @@ export default function DropSaleSection({ drops, onSell }: DropSaleSectionProps)
                             : 'bg-dark-surface/50 border-dark-border text-slate-400 hover:border-maple-500/20 hover:text-slate-300'
                       }`}
                     >
+                      <DropItemIcon name={item.name} size="sm" />
+                      <span className="text-sm flex-1 min-w-0">{item.name}</span>
+                      <span className="text-xs text-slate-500 shrink-0">{stock}개</span>
                       <span
                         className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 text-xs ${
                           isSelected
@@ -117,7 +121,6 @@ export default function DropSaleSection({ drops, onSell }: DropSaleSectionProps)
                       >
                         {isSelected ? '✓' : ''}
                       </span>
-                      <span className="text-sm flex-1 min-w-0">{item.name}</span>
                     </button>
                   )
                 })}

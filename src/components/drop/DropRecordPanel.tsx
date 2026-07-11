@@ -5,6 +5,7 @@ import DropAcquisitionSummary from './DropAcquisitionSummary'
 import DropAcquisitionHistory from './DropAcquisitionHistory'
 import DropChecklistSection, { type DropAddItem } from './DropChecklistSection'
 import DropSaleSection, { type DropSaleItem } from './DropSaleSection'
+import DropItemIcon from './DropItemIcon'
 
 interface DropRecordPanelProps {
   characters: Character[]
@@ -124,6 +125,7 @@ export default function DropRecordPanel({
           <div className="space-y-2">
             {saleRecords.map((d) => (
               <div key={d.id} className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50 border border-dark-border">
+                <DropItemIcon name={d.itemName} size="sm" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-medium text-slate-200">{d.itemName}</p>

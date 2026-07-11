@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { PREDEFINED_DROP_ITEMS, getDropItemGroups } from '../../data/dropItems'
-import { getDropIconSrc } from '../../lib/assetImages'
 import { getToday } from '../../utils'
+import DropItemIcon from './DropItemIcon'
 
 export interface DropAddItem {
   itemName: string
@@ -14,7 +14,7 @@ interface DropChecklistSectionProps {
 
 export default function DropChecklistSection({ onAdd }: DropChecklistSectionProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [recordDate, setRecordDate] = useState(getToday())
+  const [recordDate, setRecordDate] = useState(getToday)
   const [adding, setAdding] = useState(false)
 
   const groups = useMemo(
@@ -68,7 +68,6 @@ export default function DropChecklistSection({ onAdd }: DropChecklistSectionProp
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {items.map((item) => {
                 const isSelected = selected.has(item.id)
-                const iconSrc = getDropIconSrc(item.name)
                 return (
                   <button
                     key={item.id}
@@ -80,36 +79,17 @@ export default function DropChecklistSection({ onAdd }: DropChecklistSectionProp
                         : 'bg-dark-surface/50 border-dark-border text-slate-400 hover:border-maple-500/20 hover:text-slate-300'
                     }`}
                   >
-                    {iconSrc ? (
-                      <img
-                        src={iconSrc}
-                        alt=""
-                        className="w-8 h-8 object-contain shrink-0"
-                        draggable={false}
-                      />
-                    ) : (
-                      <span
-                        className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 text-xs ${
-                          isSelected
-                            ? 'bg-cyber-500 border-cyber-400 text-white'
-                            : 'border-slate-600'
-                        }`}
-                      >
-                        {isSelected ? '✓' : ''}
-                      </span>
-                    )}
+                    <DropItemIcon name={item.name} size="sm" />
                     <span className="text-sm flex-1 min-w-0">{item.name}</span>
-                    {iconSrc && (
-                      <span
-                        className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 text-xs ${
-                          isSelected
-                            ? 'bg-cyber-500 border-cyber-400 text-white'
-                            : 'border-slate-600'
-                        }`}
-                      >
-                        {isSelected ? '✓' : ''}
-                      </span>
-                    )}
+                    <span
+                      className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 text-xs ${
+                        isSelected
+                          ? 'bg-cyber-500 border-cyber-400 text-white'
+                          : 'border-slate-600'
+                      }`}
+                    >
+                      {isSelected ? '✓' : ''}
+                    </span>
                   </button>
                 )
               })}
@@ -134,7 +114,7 @@ export default function DropChecklistSection({ onAdd }: DropChecklistSectionProp
           disabled={selected.size === 0 || adding}
           className="btn-primary text-sm w-full py-2 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {adding ? '추가 중...' : `선택 항목 추가하기 (${selected.size})`}
+          {adding ? '기록 중...' : `선택 항목 획득 기록 (${selected.size})`}
         </button>
       </div>
     </div>
