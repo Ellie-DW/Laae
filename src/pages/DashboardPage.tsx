@@ -15,7 +15,6 @@ import {
 import { createDefaultBossData } from '../lib/appDataApi'
 import { formatMesoKorean, getToday } from '../utils'
 import { isGoalActive, isGoalNotStarted } from '../lib/goalHelpers'
-import { formatHuntIncomeSub } from '../lib/huntStats'
 import DropDashboardSection from '../components/drop/DropDashboardSection'
 import CumulativeDashboardSection from '../components/dashboard/CumulativeDashboardSection'
 import GoalProgressCard from '../components/goals/GoalProgressCard'
@@ -138,7 +137,7 @@ export default function DashboardPage({
           label="이번 달 수익"
           value={ledgerSummary.recordedIncome}
           tone="income"
-          sub={`${formatHuntIncomeSub(ledgerSummary.huntMesoIncome, ledgerSummary.solErdaSaleIncome)} · 채집 ${formatMesoKorean(ledgerSummary.gatherIncome)} · 드랍 ${formatMesoKorean(ledgerSummary.dropIncome)} · 보스 ${formatMesoKorean(ledgerSummary.bossIncome)}`}
+          breakdown={ledgerIncomeBreakdown(ledgerSummary)}
         />
         <MoneyCard
           label="이번 달 지출"
@@ -163,7 +162,7 @@ export default function DashboardPage({
             label="이번 주 수익"
             value={weekSummary.recordedIncome}
             tone="income"
-            sub={`${formatHuntIncomeSub(weekSummary.huntMesoIncome, weekSummary.solErdaSaleIncome)} · 채집 ${formatMesoKorean(weekSummary.gatherIncome)} · 드랍 ${formatMesoKorean(weekSummary.dropIncome)} · 보스 ${formatMesoKorean(weekSummary.bossIncome)}`}
+            breakdown={ledgerIncomeBreakdown(weekSummary)}
           />
           <MoneyCard
             label="이번 주 지출"
@@ -395,7 +394,7 @@ export default function DashboardPage({
               label="수익"
               value={selectedLedgerSummary.recordedIncome}
               tone="income"
-              sub={`${formatHuntIncomeSub(selectedLedgerSummary.huntMesoIncome, selectedLedgerSummary.solErdaSaleIncome)} · 채집 ${formatMesoKorean(selectedLedgerSummary.gatherIncome)} · 드랍 ${formatMesoKorean(selectedLedgerSummary.dropIncome)} · 보스 ${formatMesoKorean(selectedLedgerSummary.bossIncome)}`}
+              breakdown={ledgerIncomeBreakdown(selectedLedgerSummary)}
               compact
             />
             <MoneyCard
@@ -619,6 +618,19 @@ function BossCycleCheck({
   )
 }
 
+function ledgerIncomeBreakdown(summary: LedgerSummary): string[] {
+  const items = [`사냥 ${formatMesoKorean(summary.huntMesoIncome)}`]
+  if (summary.solErdaSaleIncome > 0) {
+    items.push(`솔에르다 ${formatMesoKorean(summary.solErdaSaleIncome)}`)
+  }
+  items.push(
+    `채집 ${formatMesoKorean(summary.gatherIncome)}`,
+    `드랍 ${formatMesoKorean(summary.dropIncome)}`,
+    `보스 ${formatMesoKorean(summary.bossIncome)}`
+  )
+  return items
+}
+
 function DashCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="panel-light p-4 hover:border-cyber-700/30 transition-colors">
@@ -634,12 +646,14 @@ function MoneyCard({
   value,
   tone,
   sub,
+  breakdown,
   compact,
 }: {
   label: string
   value: number
   tone: 'income' | 'expense' | 'net'
   sub?: string
+  breakdown?: string[]
   compact?: boolean
 }) {
   const color =
@@ -658,7 +672,15 @@ function MoneyCard({
       <p className={`${compact ? 'text-2xl' : 'text-3xl'} font-bold mt-1 font-display tracking-wide ${color}`}>
         {tone === 'expense' ? `-${formatMesoKorean(value)}` : formatMesoKorean(value)}
       </p>
-      {sub && <p className="text-xs text-slate-500 mt-2 truncate">{sub}</p>}
+      {breakdown ? (
+        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-slate-500">
+          {breakdown.map((line) => (
+            <span key={line}>{line}</span>
+          ))}
+        </div>
+      ) : sub ? (
+        <p className="text-xs text-slate-500 mt-2">{sub}</p>
+      ) : null}
     </div>
   )
 }
