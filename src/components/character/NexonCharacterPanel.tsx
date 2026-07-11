@@ -50,7 +50,7 @@ export default function NexonCharacterPanel({
         <div className={`${isSidebar ? 'py-8' : ''} text-center`}>
           <div
             className={`mx-auto rounded-xl bg-dark-bg/80 border border-dashed border-dark-border flex items-center justify-center ${
-              isSidebar ? 'w-full h-40' : 'w-16 h-16'
+              isSidebar ? 'w-full h-80' : 'w-16 h-16'
             }`}
           >
             <span className="text-3xl opacity-40">🍁</span>
@@ -76,11 +76,11 @@ export default function NexonCharacterPanel({
     <div className={shellClass}>
       {isSidebar ? (
         <div className="text-center">
-          <div className="relative mx-auto w-full max-w-[220px]">
+          <div className="relative mx-auto w-full">
             <img
               src={profile.character_image}
               alt=""
-              className="w-full h-52 object-contain object-bottom drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)]"
+              className="w-full h-[26rem] object-contain object-bottom drop-shadow-[0_12px_32px_rgba(0,0,0,0.5)]"
             />
           </div>
           <p className="text-lg font-bold text-slate-100 mt-2 truncate">{profile.character_name}</p>
