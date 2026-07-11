@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import type { BossSelection } from '../../types'
 import { BOSSES, getBossResetCycle } from '../../data/bosses'
 import { formatMesoKorean } from '../../utils'
@@ -8,7 +9,17 @@ interface SelectedBossSummaryProps {
   plannedBosses: BossSelection[]
 }
 
+function getPlannedBossShare(sel: BossSelection): number {
+  const boss = BOSSES.find((b) => b.id === sel.bossId)
+  const diff = boss?.difficulties.find((d) => d.difficulty === sel.difficulty)
+  return diff ? Math.floor(diff.meso / sel.partySize) : 0
+}
+
 export default function SelectedBossSummary({ plannedBosses }: SelectedBossSummaryProps) {
+  const sortedBosses = useMemo(
+    () => [...plannedBosses].sort((a, b) => getPlannedBossShare(b) - getPlannedBossShare(a)),
+    [plannedBosses]
+  )
   return (
     <div className="panel-light p-5">
       <div className="flex items-center justify-between mb-1">
@@ -23,10 +34,9 @@ export default function SelectedBossSummary({ plannedBosses }: SelectedBossSumma
         </div>
       ) : (
         <div className="space-y-2">
-          {plannedBosses.map((sel) => {
+          {sortedBosses.map((sel) => {
             const boss = BOSSES.find((b) => b.id === sel.bossId)
-            const diff = boss?.difficulties.find((d) => d.difficulty === sel.difficulty)
-            const myShare = diff ? Math.floor(diff.meso / sel.partySize) : 0
+            const myShare = getPlannedBossShare(sel)
             const bossIconSrc = boss ? getBossIconSrc(boss.id) : undefined
 
             return (
