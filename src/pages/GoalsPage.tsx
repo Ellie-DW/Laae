@@ -53,6 +53,7 @@ export default function GoalsPage({
   const [endDate, setEndDate] = useState(() => deadlineFromDays(30))
   const [listFilter, setListFilter] = useState<'active' | 'ended' | 'all'>('active')
   const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
 
   const activeCharacter = filterCharacterId
     ? characters.find((c) => c.id === filterCharacterId) ?? null
@@ -105,6 +106,7 @@ export default function GoalsPage({
     if (endDate < today) return
 
     setSaving(true)
+    setFormError(null)
     try {
       await onSave({
         characterId: saveCharacterId,
@@ -115,6 +117,8 @@ export default function GoalsPage({
       })
       setTitle('')
       setTargetInput('')
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : '목표 저장에 실패했습니다')
     } finally {
       setSaving(false)
     }
@@ -248,6 +252,12 @@ export default function GoalsPage({
         {existingGoal && (
           <p className="text-xs text-amber-400/90 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
             같은 범위 목표가 있어요. 저장하면 「{existingGoal.title}」을 덮어씁니다.
+          </p>
+        )}
+
+        {formError && (
+          <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+            {formError}
           </p>
         )}
 

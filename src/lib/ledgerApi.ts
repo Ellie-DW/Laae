@@ -298,7 +298,10 @@ export async function upsertGoal(
     target_meso: data.targetMeso,
     start_date: data.startDate,
     end_date: data.endDate,
+    period_month: data.startDate.slice(0, 7),
   }
+
+  if (existing.error) throw existing.error
 
   if (existing.data?.id) {
     const { data: row, error } = await supabase

@@ -312,12 +312,17 @@ export function useLedger(
       endDate: string
     }) => {
       if (!user) return
-      const row = await upsertGoal(user.id, data)
-      setGoals((prev) => {
-        const filtered = prev.filter((g) => !(g.characterId === data.characterId))
-        return [row, ...filtered]
-      })
-      setError(null)
+      try {
+        const row = await upsertGoal(user.id, data)
+        setGoals((prev) => {
+          const filtered = prev.filter((g) => !(g.characterId === data.characterId))
+          return [row, ...filtered]
+        })
+        setError(null)
+      } catch (e) {
+        setError(e instanceof Error ? e.message : '목표 저장에 실패했습니다')
+        throw e
+      }
     },
     [user]
   )
