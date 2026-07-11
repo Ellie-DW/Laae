@@ -77,6 +77,15 @@ export default function Sidebar({
       <div className="p-4 flex-1 overflow-y-auto">
         <p className="text-xs font-medium text-slate-500 mb-3 px-1 uppercase tracking-wider">My Character</p>
 
+        {selectedCharacter && (
+          <NexonCharacterPanel
+            character={selectedCharacter}
+            onSync={onSyncNexonProfile}
+            onClear={onClearNexonLink}
+            variant="sidebar"
+          />
+        )}
+
         {characters.length === 0 ? (
           <div className="text-center py-8 px-2">
             <span className="text-3xl">🍁</span>
@@ -120,26 +129,16 @@ export default function Sidebar({
             + 캐릭터 추가
           </button>
         )}
-      </div>
 
-      {selectedCharacter && (
-        <div className="p-4 border-t border-dark-border/40 bg-dark-panel/40">
-          <p className="text-xs text-slate-500">선택된 캐릭터</p>
-          <p className="font-semibold text-cyber-300">{selectedCharacter.name}</p>
-          <NexonCharacterPanel
-            character={selectedCharacter}
-            onSync={onSyncNexonProfile}
-            onClear={onClearNexonLink}
-            compact
-          />
+        {selectedCharacter && (
           <button
             onClick={() => handleRemove(selectedCharacter)}
-            className="mt-2 text-xs text-slate-500 hover:text-red-400 transition-colors"
+            className="w-full mt-3 text-xs text-slate-500 hover:text-red-400 transition-colors py-1"
           >
-            캐릭터 삭제
+            선택 캐릭터 삭제
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {user && (
         <div className="p-4 border-t border-dark-border/40 space-y-4">

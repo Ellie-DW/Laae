@@ -142,6 +142,14 @@ export default function MobileHeader({
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-3 min-h-0">
+              {selectedCharacter && (
+                <NexonCharacterPanel
+                  character={selectedCharacter}
+                  onSync={onSyncNexonProfile}
+                  onClear={onClearNexonLink}
+                  variant="sidebar"
+                />
+              )}
               {characters.length === 0 ? (
                 <div className="text-center py-8">
                   <span className="text-3xl">🍁</span>
@@ -155,13 +163,6 @@ export default function MobileHeader({
                   onRemoveCharacter={handleRemove}
                   onReorderCharacters={onReorderCharacters}
                   variant="mobile"
-                />
-              )}
-              {selectedCharacter && (
-                <NexonCharacterPanel
-                  character={selectedCharacter}
-                  onSync={onSyncNexonProfile}
-                  onClear={onClearNexonLink}
                 />
               )}
             </div>
