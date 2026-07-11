@@ -472,7 +472,7 @@ export default function DashboardPage({
             </button>
           </div>
           <div className="space-y-3">
-            {activeGoals.slice(0, 3).map((goal) => {
+            {activeGoals.slice(0, 3).map((goal, index) => {
               const progress = getGoalProgress(goal)
               return (
                 <GoalProgressCard
@@ -481,6 +481,7 @@ export default function DashboardPage({
                   progress={progress}
                   scopeLabel="계정 전체"
                   compact
+                  highlighted={index === 0}
                 />
               )
             })}

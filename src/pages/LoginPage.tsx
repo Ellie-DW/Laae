@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { SITE_LOGO_SRC } from '../lib/assetImages'
+import StarBorder from '../components/animations/StarBorder'
 
 export default function LoginPage() {
   const { signInWithGoogle } = useAuth()
@@ -21,7 +22,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="panel-glow p-8 text-center">
+        <StarBorder as="div" color="#22d3ee" speed="7s" thickness={1} className="w-full">
+          <div className="panel-glow p-8 text-center rounded-[18px] bg-dark-panel/95">
           <img
             src={SITE_LOGO_SRC}
             alt=""
@@ -51,7 +53,8 @@ export default function LoginPage() {
           <p className="mt-6 text-xs text-slate-600">
             로그인하면 캐릭터 데이터가 계정에 안전하게 저장됩니다
           </p>
-        </div>
+          </div>
+        </StarBorder>
       </div>
     </div>
   )

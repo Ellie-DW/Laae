@@ -2,12 +2,14 @@ import type { Goal } from '../../types'
 import type { GoalProgress } from '../../lib/ledgerAnalytics'
 import { formatGoalPace, formatGoalDeadline, formatGoalPeriod, goalBarClass, goalPercentTone } from '../../lib/goalHelpers'
 import { formatMesoKorean } from '../../utils'
+import StarBorder from '../animations/StarBorder'
 
 interface GoalProgressCardProps {
   goal: Goal
   progress: GoalProgress
   scopeLabel: string
   compact?: boolean
+  highlighted?: boolean
   onRemove?: () => void
 }
 
@@ -16,14 +18,15 @@ export default function GoalProgressCard({
   progress,
   scopeLabel,
   compact = false,
+  highlighted = false,
   onRemove,
 }: GoalProgressCardProps) {
   const pace = formatGoalPace(progress, goal.startDate, goal.endDate)
   const deadline = formatGoalDeadline(goal.endDate)
 
   if (compact) {
-    return (
-      <div>
+    const body = (
+      <div className={highlighted ? 'p-3 rounded-[18px] bg-dark-panel/90' : undefined}>
         <div className="flex justify-between items-start gap-2 text-sm mb-1">
           <div className="min-w-0">
             <span className="text-slate-300">{goal.title}</span>
@@ -42,10 +45,18 @@ export default function GoalProgressCard({
         <p className="text-xs text-slate-500 truncate">{pace}</p>
       </div>
     )
+
+    if (!highlighted) return body
+
+    return (
+      <StarBorder as="div" color="#f59e0b" speed="8s" thickness={1} className="w-full">
+        {body}
+      </StarBorder>
+    )
   }
 
-  return (
-    <div className="p-4 rounded-lg bg-dark-surface/50 border border-dark-border">
+  const body = (
+    <div className={`p-4 rounded-lg bg-dark-surface/50 border border-dark-border ${highlighted ? 'rounded-[18px] bg-dark-panel/90' : ''}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-medium text-slate-200">{goal.title}</p>
@@ -99,5 +110,13 @@ export default function GoalProgressCard({
         <span>지출 -{formatMesoKorean(progress.summary.expenseTotal)}</span>
       </div>
     </div>
+  )
+
+  if (!highlighted) return body
+
+  return (
+    <StarBorder as="div" color="#f59e0b" speed="8s" thickness={1} className="w-full">
+      {body}
+    </StarBorder>
   )
 }

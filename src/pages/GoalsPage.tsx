@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Character, Goal } from '../types'
 import type { GoalProgress } from '../lib/ledgerAnalytics'
 import GoalProgressCard from '../components/goals/GoalProgressCard'
+import StarBorder from '../components/animations/StarBorder'
 import {
   deadlineFromDays,
   formatGoalDeadline,
@@ -195,13 +196,15 @@ export default function GoalsPage({
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={saving || endDate < today}
-          className="btn-primary text-sm w-full py-2"
-        >
-          {saving ? '저장 중...' : existingGoal ? '목표 수정' : '목표 설정'}
-        </button>
+        <StarBorder color="#22d3ee" speed="6s" thickness={1} className="w-full">
+          <button
+            type="submit"
+            disabled={saving || endDate < today}
+            className="btn-primary text-sm w-full py-2 rounded-[18px]"
+          >
+            {saving ? '저장 중...' : existingGoal ? '목표 수정' : '목표 설정'}
+          </button>
+        </StarBorder>
       </form>
 
       <div className="panel-light p-5">
@@ -234,12 +237,13 @@ export default function GoalsPage({
           </p>
         ) : (
           <div className="space-y-4">
-            {visibleGoals.map((goal) => (
+            {visibleGoals.map((goal, index) => (
               <GoalProgressCard
                 key={goal.id}
                 goal={goal}
                 progress={getGoalProgress(goal)}
                 scopeLabel="계정 전체"
+                highlighted={listFilter === 'active' && index === 0}
                 onRemove={() => onRemove(goal.id)}
               />
             ))}

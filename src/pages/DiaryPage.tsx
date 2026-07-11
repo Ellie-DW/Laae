@@ -23,6 +23,7 @@ import {
 } from '../lib/monthCalendar'
 import MonthCalendar from '../components/ledger/MonthCalendar'
 import { SolErdaMonthSummary } from '../components/diary/SolErdaMonthSummary'
+import StarBorder from '../components/animations/StarBorder'
 import { formatMesoKorean } from '../utils'
 
 interface DiaryPageProps {
@@ -272,11 +273,16 @@ export default function DiaryPage({
           </div>
           <SolErdaMonthSummary summary={solErdaMonth} />
           {primaryGoal && primaryGoalProgress && (
-            <button
+            <StarBorder
+              as="button"
               type="button"
               onClick={onGoGoals}
-              className="w-full mt-3 p-3 rounded-lg border border-cyber-500/20 bg-cyber-500/5 text-left hover:bg-cyber-500/10 transition-colors"
+              color="#f59e0b"
+              speed="8s"
+              thickness={1}
+              className="w-full mt-3 text-left"
             >
+              <div className="p-3 rounded-[18px] border border-cyber-500/20 bg-dark-panel/90 hover:bg-cyber-500/10 transition-colors">
               <div className="flex items-center justify-between gap-2 mb-1.5">
                 <span className="text-xs text-slate-400">🎯 {primaryGoal.title}</span>
                 <span className={`text-xs font-semibold ${goalPercentTone(primaryGoalProgress.percent)}`}>
@@ -292,7 +298,8 @@ export default function DiaryPage({
               <p className="text-xs text-slate-500">
                 {formatGoalPace(primaryGoalProgress, primaryGoal.startDate, primaryGoal.endDate)}
               </p>
-            </button>
+              </div>
+            </StarBorder>
           )}
           {Object.keys(monthSummary.incomeByType).length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4 pt-3 border-t border-dark-border/60">
