@@ -6,6 +6,7 @@ import {
   normalizeCharacterName,
 } from '../../lib/characters'
 import { isGlobalCharacterNameTaken } from '../../lib/appDataApi'
+import { SITE_LOGO_SRC } from '../../lib/assetImages'
 import CharacterList from './CharacterList'
 
 interface SidebarProps {
@@ -59,7 +60,7 @@ export default function Sidebar({
     <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-dark-border/60 bg-dark-surface/60 backdrop-blur-md h-screen sticky top-0">
       <div className="p-5 border-b border-dark-border/40">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">🍁</span>
+          <img src={SITE_LOGO_SRC} alt="" className="w-8 h-8 object-contain" draggable={false} />
           <div>
             <h1 className="font-display font-bold text-slate-100 tracking-wide">Maple Diary</h1>
             <p className="text-xs text-slate-500">메이플 가계부</p>

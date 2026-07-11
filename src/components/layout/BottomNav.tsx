@@ -1,5 +1,6 @@
 import type { Page } from '../../types'
 import { NAV_ITEMS } from './nav'
+import NavIcon from './NavIcon'
 
 interface BottomNavProps {
   currentPage: Page
@@ -20,9 +21,7 @@ export default function BottomNav({ currentPage, onNavigate }: BottomNavProps) {
                 : 'text-slate-500'
             }`}
           >
-            <span className={`text-lg ${currentPage === item.id ? 'drop-shadow-[0_0_6px_rgba(34,211,238,0.5)]' : ''}`}>
-              {item.icon}
-            </span>
+            <NavIcon page={item.id} active={currentPage === item.id} />
             <span>{item.label}</span>
           </button>
         ))}

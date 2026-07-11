@@ -6,6 +6,7 @@ import {
   normalizeCharacterName,
 } from '../../lib/characters'
 import { isGlobalCharacterNameTaken } from '../../lib/appDataApi'
+import { SITE_LOGO_SRC } from '../../lib/assetImages'
 import CharacterList from './CharacterList'
 
 interface MobileHeaderProps {
@@ -73,7 +74,7 @@ export default function MobileHeader({
       <header className="lg:hidden sticky top-0 z-40 bg-dark-surface/80 backdrop-blur-lg border-b border-dark-border/60 px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-xl shrink-0">🍁</span>
+            <img src={SITE_LOGO_SRC} alt="" className="w-7 h-7 object-contain shrink-0" draggable={false} />
             <span className="font-display font-bold text-slate-100 tracking-wide truncate">Maple Diary</span>
           </div>
 

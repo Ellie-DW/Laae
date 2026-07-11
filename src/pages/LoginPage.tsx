@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { SITE_LOGO_SRC } from '../lib/assetImages'
 
 export default function LoginPage() {
   const { signInWithGoogle } = useAuth()
@@ -21,7 +22,12 @@ export default function LoginPage() {
     <div className="min-h-screen bg-dark-bg flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="panel-glow p-8 text-center">
-          <span className="text-5xl block mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.3)]">🍁</span>
+          <img
+            src={SITE_LOGO_SRC}
+            alt=""
+            className="w-16 h-16 mx-auto mb-4 object-contain drop-shadow-[0_0_20px_rgba(34,211,238,0.3)]"
+            draggable={false}
+          />
           <h1 className="font-display text-2xl font-bold text-slate-100 tracking-wide">
             Maple Diary
           </h1>

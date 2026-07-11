@@ -3,6 +3,7 @@ import Sidebar from './components/layout/Sidebar'
 import BottomNav from './components/layout/BottomNav'
 import MobileHeader from './components/layout/MobileHeader'
 import { NAV_ITEMS } from './components/layout/nav'
+import NavIcon from './components/layout/NavIcon'
 import DashboardPage from './pages/DashboardPage'
 import BossPage from './pages/BossPage'
 import HuntPage from './pages/HuntPage'
@@ -263,7 +264,8 @@ function MainApp() {
                   : 'text-slate-400 hover:text-slate-200 hover:bg-dark-panel/50'
               }`}
             >
-              {item.icon} {item.label}
+              <NavIcon page={item.id} size="sm" active={currentPage === item.id} />
+              {item.label}
             </button>
           ))}
         </div>
