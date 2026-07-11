@@ -22,7 +22,10 @@ import {
   reorderCharacters as persistCharacterOrder,
   migrateLocalDataToSupabase,
   isGlobalCharacterNameTaken,
+  saveNexonCharacterLink,
+  clearNexonCharacterLink,
 } from '../lib/appDataApi'
+import { fetchNexonCharacterByName } from '../lib/mapleApi'
 import { saveBossSnapshot, deleteBossSnapshot } from '../lib/ledgerApi'
 import {
   DUPLICATE_CHARACTER_NAME_MESSAGE,
@@ -128,6 +131,28 @@ export function useAppData() {
     [user]
   )
 
+  const syncNexonProfile = useCallback(
+    async (characterId: string, characterName?: string) => {
+      if (!user) return
+
+      const name = characterName ?? data.characters.find((c) => c.id === characterId)?.name
+      if (!name) return
+
+      try {
+        const { ocid, profile } = await fetchNexonCharacterByName(name)
+        const updated = await saveNexonCharacterLink(characterId, { ocid, profile })
+        setData((prev) => ({
+          ...prev,
+          characters: prev.characters.map((c) => (c.id === characterId ? updated : c)),
+        }))
+        setSyncError(null)
+      } catch (err) {
+        setSyncError(err instanceof Error ? err.message : '메이플 API 연동에 실패했습니다.')
+      }
+    },
+    [user, data.characters]
+  )
+
   const addCharacter = useCallback(
     async (name: string) => {
       if (!user) return
@@ -150,11 +175,12 @@ export function useAppData() {
         }))
         await savePreferences(user.id, char.id, data.currentPage)
         setSyncError(null)
+        await syncNexonProfile(char.id, char.name)
       } catch (err) {
         setSyncError(err instanceof Error ? err.message : '캐릭터 추가에 실패했습니다.')
       }
     },
-    [user, data.currentPage]
+    [user, data.currentPage, syncNexonProfile]
   )
 
   const removeCharacter = useCallback(
@@ -176,6 +202,24 @@ export function useAppData() {
       }
     },
     [user, data]
+  )
+
+  const clearNexonLink = useCallback(
+    async (characterId: string) => {
+      if (!user) return
+
+      try {
+        const updated = await clearNexonCharacterLink(characterId)
+        setData((prev) => ({
+          ...prev,
+          characters: prev.characters.map((c) => (c.id === characterId ? updated : c)),
+        }))
+        setSyncError(null)
+      } catch (err) {
+        setSyncError(err instanceof Error ? err.message : '메이플 API 연동 해제에 실패했습니다.')
+      }
+    },
+    [user]
   )
 
   const reorderCharactersList = useCallback(
@@ -402,5 +446,7 @@ export function useAppData() {
     resetTabSelections,
     toggleWeeklyBossCleared,
     toggleMonthlyBossCleared,
+    syncNexonProfile,
+    clearNexonLink,
   }
 }

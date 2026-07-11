@@ -9,6 +9,7 @@ import { isGlobalCharacterNameTaken } from '../../lib/appDataApi'
 import { SITE_LOGO_SRC } from '../../lib/assetImages'
 import CharacterList from './CharacterList'
 import ThemeSwitcher from './ThemeSwitcher'
+import NexonCharacterPanel from '../character/NexonCharacterPanel'
 
 interface SidebarProps {
   characters: Character[]
@@ -17,6 +18,8 @@ interface SidebarProps {
   onAddCharacter: (name: string) => void
   onRemoveCharacter: (id: string) => void
   onReorderCharacters: (orderedIds: string[]) => void
+  onSyncNexonProfile: (characterId: string) => Promise<void>
+  onClearNexonLink: (characterId: string) => Promise<void>
 }
 
 export default function Sidebar({
@@ -26,6 +29,8 @@ export default function Sidebar({
   onAddCharacter,
   onRemoveCharacter,
   onReorderCharacters,
+  onSyncNexonProfile,
+  onClearNexonLink,
 }: SidebarProps) {
   const { user, signOut } = useAuth()
   const [showAdd, setShowAdd] = useState(false)
@@ -121,6 +126,12 @@ export default function Sidebar({
         <div className="p-4 border-t border-dark-border/40 bg-dark-panel/40">
           <p className="text-xs text-slate-500">선택된 캐릭터</p>
           <p className="font-semibold text-cyber-300">{selectedCharacter.name}</p>
+          <NexonCharacterPanel
+            character={selectedCharacter}
+            onSync={onSyncNexonProfile}
+            onClear={onClearNexonLink}
+            compact
+          />
           <button
             onClick={() => handleRemove(selectedCharacter)}
             className="mt-2 text-xs text-slate-500 hover:text-red-400 transition-colors"

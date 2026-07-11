@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 import { getWeeklyPeriod, getMonthlyPeriod } from '../utils'
-import type { Character, CharacterBossData, Page, BossSelection } from '../types'
+import type { Character, CharacterBossData, Page, BossSelection, NexonCharacterProfile } from '../types'
 import { BOSSES } from '../data/bosses'
 import { createDefaultDropItems, mergeDropItems } from '../data/dropItems'
 import {
@@ -31,6 +31,9 @@ interface CharacterRow {
   boss_data: CharacterBossData
   sort_order: number
   created_at: string
+  nexon_ocid?: string | null
+  nexon_profile?: NexonCharacterProfile | null
+  nexon_synced_at?: string | null
 }
 
 interface PreferencesRow {
@@ -111,6 +114,9 @@ function rowToCharacter(row: CharacterRow): Character {
     name: row.name,
     sortOrder: row.sort_order ?? 0,
     createdAt: row.created_at,
+    nexonOcid: row.nexon_ocid ?? null,
+    nexonProfile: row.nexon_profile ?? null,
+    nexonSyncedAt: row.nexon_synced_at ?? null,
   }
 }
 
@@ -135,7 +141,7 @@ export async function fetchUserAppData(userId: string): Promise<AppData> {
   const [charsResult, prefsResult] = await Promise.all([
     supabase
       .from('characters')
-      .select('id, user_id, name, boss_data, sort_order, created_at')
+      .select('id, user_id, name, boss_data, sort_order, created_at, nexon_ocid, nexon_profile, nexon_synced_at')
       .eq('user_id', userId)
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true }),
@@ -196,7 +202,7 @@ export async function createCharacter(
   const { data, error } = await supabase
     .from('characters')
     .insert({ user_id: userId, name: trimmed, boss_data: bossData, sort_order: nextSortOrder })
-    .select('id, name, sort_order, created_at')
+    .select('id, name, sort_order, created_at, nexon_ocid, nexon_profile, nexon_synced_at')
     .single()
 
   if (error) {
@@ -204,12 +210,43 @@ export async function createCharacter(
     throw error
   }
 
-  return {
-    id: data.id,
-    name: data.name,
-    sortOrder: data.sort_order ?? nextSortOrder,
-    createdAt: data.created_at,
-  }
+  return rowToCharacter(data as CharacterRow)
+}
+
+export async function saveNexonCharacterLink(
+  characterId: string,
+  data: { ocid: string; profile: NexonCharacterProfile }
+): Promise<Character> {
+  const syncedAt = new Date().toISOString()
+  const { data: row, error } = await supabase
+    .from('characters')
+    .update({
+      nexon_ocid: data.ocid,
+      nexon_profile: data.profile,
+      nexon_synced_at: syncedAt,
+    })
+    .eq('id', characterId)
+    .select('id, name, sort_order, created_at, nexon_ocid, nexon_profile, nexon_synced_at')
+    .single()
+
+  if (error) throw error
+  return rowToCharacter(row as CharacterRow)
+}
+
+export async function clearNexonCharacterLink(characterId: string): Promise<Character> {
+  const { data: row, error } = await supabase
+    .from('characters')
+    .update({
+      nexon_ocid: null,
+      nexon_profile: null,
+      nexon_synced_at: null,
+    })
+    .eq('id', characterId)
+    .select('id, name, sort_order, created_at, nexon_ocid, nexon_profile, nexon_synced_at')
+    .single()
+
+  if (error) throw error
+  return rowToCharacter(row as CharacterRow)
 }
 
 export async function saveBossData(characterId: string, bossData: CharacterBossData) {

@@ -9,6 +9,7 @@ import { isGlobalCharacterNameTaken } from '../../lib/appDataApi'
 import { SITE_LOGO_SRC } from '../../lib/assetImages'
 import CharacterList from './CharacterList'
 import ThemeSwitcher from './ThemeSwitcher'
+import NexonCharacterPanel from '../character/NexonCharacterPanel'
 
 interface MobileHeaderProps {
   characters: Character[]
@@ -17,6 +18,8 @@ interface MobileHeaderProps {
   onAddCharacter: (name: string) => void
   onRemoveCharacter: (id: string) => void
   onReorderCharacters: (orderedIds: string[]) => void
+  onSyncNexonProfile: (characterId: string) => Promise<void>
+  onClearNexonLink: (characterId: string) => Promise<void>
 }
 
 export default function MobileHeader({
@@ -26,6 +29,8 @@ export default function MobileHeader({
   onAddCharacter,
   onRemoveCharacter,
   onReorderCharacters,
+  onSyncNexonProfile,
+  onClearNexonLink,
 }: MobileHeaderProps) {
   const { user, signOut } = useAuth()
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -150,6 +155,13 @@ export default function MobileHeader({
                   onRemoveCharacter={handleRemove}
                   onReorderCharacters={onReorderCharacters}
                   variant="mobile"
+                />
+              )}
+              {selectedCharacter && (
+                <NexonCharacterPanel
+                  character={selectedCharacter}
+                  onSync={onSyncNexonProfile}
+                  onClear={onClearNexonLink}
                 />
               )}
             </div>

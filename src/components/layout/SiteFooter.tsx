@@ -59,6 +59,9 @@ export default function SiteFooter({ compact = false }: SiteFooterProps) {
             <p className="text-[11px] text-slate-600 leading-relaxed max-w-sm">
               {SITE_NAME}는 넥슨이 운영하는 공식 서비스가 아닙니다.
             </p>
+            <p className="text-[10px] text-slate-700">
+              Data based on NEXON Open API
+            </p>
             {compact && <span className="text-xs text-slate-600 sm:hidden">© {year} {SITE_NAME}</span>}
           </div>
         </div>

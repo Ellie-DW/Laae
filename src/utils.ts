@@ -79,6 +79,11 @@ export function getToday(): string {
   return getKoreaYMD(new Date())
 }
 
+/** Nexon Open API 조회용 — 전일(KST) 기준 YYYY-MM-DD */
+export function getYesterdayKoreaYMD(): string {
+  return addDaysYMD(getKoreaYMD(new Date()), -1)
+}
+
 export function formatDateShort(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00')
   return d.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '-').replace('.', '')

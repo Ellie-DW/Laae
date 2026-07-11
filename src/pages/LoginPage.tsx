@@ -59,7 +59,7 @@ export default function LoginPage() {
             )}
 
             <p className="mt-6 text-xs text-slate-600 leading-relaxed">
-              로그인하면 캐릭터 데이터가 계정에 안전하게 저장됩니다.
+              로그인하면 입력한 기록이 계정에 저장되며, 로그아웃 후에도 보관됩니다.
               <br />
               계속하면{' '}
               <a href={LEGAL_PATHS.terms} className="text-slate-500 hover:text-cyber-400 underline underline-offset-2">

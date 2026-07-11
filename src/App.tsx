@@ -53,6 +53,8 @@ function MainApp() {
     reorderCharacters,
     selectCharacter,
     setPage,
+    syncNexonProfile,
+    clearNexonLink,
     updateBossSelection,
     selectBossDifficulty,
     resetTabSelections,
@@ -246,6 +248,8 @@ function MainApp() {
         onAddCharacter={addCharacter}
         onRemoveCharacter={removeCharacter}
         onReorderCharacters={reorderCharacters}
+        onSyncNexonProfile={syncNexonProfile}
+        onClearNexonLink={clearNexonLink}
       />
 
       <div className="flex-1 flex flex-col min-h-screen pb-16 lg:pb-0">
@@ -256,6 +260,8 @@ function MainApp() {
           onAddCharacter={addCharacter}
           onRemoveCharacter={removeCharacter}
           onReorderCharacters={reorderCharacters}
+          onSyncNexonProfile={syncNexonProfile}
+          onClearNexonLink={clearNexonLink}
         />
 
         <div className="hidden lg:flex border-b border-dark-border/60 bg-dark-surface/50 backdrop-blur-md px-6 py-2 gap-1">
