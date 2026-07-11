@@ -1,5 +1,5 @@
-import type { CharacterBossData, BossSnapshot } from '../types'
-import { BOSSES, getBossResetCycle } from '../data/bosses'
+import type { CharacterBossData, BossSnapshot, BossRunnerPreset } from '../types'
+import { BOSSES, BOSS_RUNNER_PRESETS, getBossResetCycle } from '../data/bosses'
 import { getWeeklyPeriod, getMonthlyPeriod, getToday, getCurrentMonth, enumerateWeeklyPeriodsOverlappingMonth } from '../utils'
 
 export const INTENSE_POWER_WEEKLY_NAME = '강렬한 힘의 결정(주간)'
@@ -50,6 +50,30 @@ export function canSelectWeeklyBoss(bossData: CharacterBossData, bossId: string)
   if (alreadySelected) return true
 
   return getPlannedBossCycles(bossData).weeklyCount < MAX_WEEKLY_BOSSES
+}
+
+/** 돌이 프리셋으로 주간 보스 루트 일괄 선택 (주간 12개 제한 적용) */
+export function applyBossRunnerPreset(bossData: CharacterBossData, preset: BossRunnerPreset): CharacterBossData {
+  const targets = BOSS_RUNNER_PRESETS[preset]
+  let selections = bossData.selections.map((s) => ({ ...s, checked: false }))
+
+  for (const { bossId, difficulty } of targets) {
+    const boss = BOSSES.find((b) => b.id === bossId)
+    if (!boss) continue
+
+    const draft: CharacterBossData = { ...bossData, selections }
+    const alreadySelected = selections.some((s) => s.bossId === bossId && s.checked)
+
+    if (!alreadySelected && getBossResetCycle(boss) === 'weekly' && !canSelectWeeklyBoss(draft, bossId)) {
+      continue
+    }
+
+    selections = selections.map((s) =>
+      s.bossId === bossId ? { ...s, checked: s.difficulty === difficulty } : s
+    )
+  }
+
+  return { ...bossData, selections }
 }
 
 export function isWeeklyBossCleared(bossData: CharacterBossData): boolean {

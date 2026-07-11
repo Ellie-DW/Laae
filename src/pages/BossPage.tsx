@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { Character, CharacterBossData, BossTab } from '../types'
+import type { Character, CharacterBossData, BossTab, BossRunnerPreset } from '../types'
 import { calculatePlannedBossStats, calculateMonthlyExpectedBossStats, MAX_WEEKLY_BOSSES } from '../lib/bossStats'
 import { BOSS_TABS, getBossesByTab } from '../data/bosses'
 import { formatMesoKorean, getWeeklyPeriod, getMonthlyPeriod, getCurrentMonth, getToday } from '../utils'
@@ -12,6 +12,7 @@ interface BossPageProps {
   onUpdateBoss: (bossId: string, difficulty: string, updates: Partial<CharacterBossData['selections'][0]>) => void
   onSelectBossDifficulty: (bossId: string, difficulty: string | null) => void
   onResetTab: (tab: string) => void
+  onSelectBossRunnerPreset: (preset: BossRunnerPreset) => void
 }
 
 export default function BossPage({
@@ -20,6 +21,7 @@ export default function BossPage({
   onUpdateBoss,
   onSelectBossDifficulty,
   onResetTab,
+  onSelectBossRunnerPreset,
 }: BossPageProps) {
   const [activeTab, setActiveTab] = useState<BossTab>('grandis')
   const week = getWeeklyPeriod()
@@ -117,6 +119,30 @@ export default function BossPage({
             {tab.label}
           </button>
         ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => {
+            setActiveTab('normal')
+            onSelectBossRunnerPreset('belowSword')
+          }}
+          className="px-4 py-2 rounded-lg text-sm font-medium bg-maple-600/20 text-maple-300 border border-maple-500/40 hover:bg-maple-600/30 hover:border-maple-400/50 transition-colors"
+        >
+          검밑솔 돌이
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab('grandis')
+            onSelectBossRunnerPreset('transcendent')
+          }}
+          className="px-4 py-2 rounded-lg text-sm font-medium bg-cyber-600/20 text-cyber-300 border border-cyber-500/40 hover:bg-cyber-600/30 hover:border-cyber-400/50 transition-colors"
+        >
+          이적자 돌이
+        </button>
+        <p className="w-full text-[10px] text-slate-500">
+          각 루트에 맞는 보스·난이도가 일괄 선택돼요. 기존 선택은 초기화돼요.
+        </p>
       </div>
 
       <div className="flex items-center justify-between">

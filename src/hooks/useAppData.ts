@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import type { CharacterBossData, BossSelection, Page, BossSnapshot, BossResetCycle } from '../types'
+import type { CharacterBossData, BossSelection, Page, BossSnapshot, BossResetCycle, BossRunnerPreset } from '../types'
 import {
   calculateBossStats,
   calculateAccountStats,
   isWeeklyBossCleared,
   isMonthlyBossCleared,
   canSelectWeeklyBoss,
+  applyBossRunnerPreset,
 } from '../lib/bossStats'
 import { BOSSES, getBossResetCycle } from '../data/bosses'
 import { STORAGE_KEY, getToday, getWeeklyPeriod, getMonthlyPeriod, getErrorMessage } from '../utils'
@@ -334,6 +335,24 @@ export function useAppData() {
     [data.selectedCharacterId, persistBossData]
   )
 
+  const selectBossRunnerPreset = useCallback(
+    (preset: BossRunnerPreset) => {
+      if (!data.selectedCharacterId) return
+      const charId = data.selectedCharacterId
+
+      setData((prev) => {
+        const current = prev.bossData[charId] ?? createDefaultBossData()
+        const updated = applyBossRunnerPreset(current, preset)
+        persistBossData(charId, updated)
+        return {
+          ...prev,
+          bossData: { ...prev.bossData, [charId]: updated },
+        }
+      })
+    },
+    [data.selectedCharacterId, persistBossData]
+  )
+
   const toggleWeeklyBossCleared = useCallback(
     async (characterId: string): Promise<BossSnapshotSync | null> => {
       const current = data.bossData[characterId] ?? createDefaultBossData()
@@ -444,6 +463,7 @@ export function useAppData() {
     updateBossSelection,
     selectBossDifficulty,
     resetTabSelections,
+    selectBossRunnerPreset,
     toggleWeeklyBossCleared,
     toggleMonthlyBossCleared,
     syncNexonProfile,

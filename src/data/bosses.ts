@@ -1,4 +1,4 @@
-import type { BossDefinition, BossResetCycle } from '../types'
+import type { BossDefinition, BossResetCycle, BossRunnerPreset } from '../types'
 
 export const BOSS_TABS = [
   { id: 'grandis' as const, label: '그란디스', desc: '세렌부터 유피테르까지 그란디스 레이드 보스' },
@@ -156,3 +156,38 @@ export const RESET_CYCLE_INFO = {
   weekly: { label: '주간', desc: '매주 목요일 초기화' },
   monthly: { label: '월간', desc: '매월 1일 초기화' },
 } as const
+
+/** 검밑솔 돌이 / 이적자 돌이 주간 보스 루트 */
+export const BOSS_RUNNER_PRESETS: Record<
+  BossRunnerPreset,
+  Array<{ bossId: string; difficulty: BossDefinition['difficulties'][number]['difficulty'] }>
+> = {
+  belowSword: [
+    { bossId: 'magnus', difficulty: 'HARD' },
+    { bossId: 'papulatus', difficulty: 'CHAOS' },
+    { bossId: 'bloody-queen', difficulty: 'CHAOS' },
+    { bossId: 'vellum', difficulty: 'CHAOS' },
+    { bossId: 'suu', difficulty: 'HARD' },
+    { bossId: 'damien', difficulty: 'HARD' },
+    { bossId: 'g-slime', difficulty: 'CHAOS' },
+    { bossId: 'lucid', difficulty: 'HARD' },
+    { bossId: 'will', difficulty: 'HARD' },
+    { bossId: 'gloom', difficulty: 'CHAOS' },
+    { bossId: 'true-hilla', difficulty: 'HARD' },
+    { bossId: 'darknell', difficulty: 'HARD' },
+  ],
+  transcendent: [
+    { bossId: 'papulatus', difficulty: 'CHAOS' },
+    { bossId: 'suu', difficulty: 'HARD' },
+    { bossId: 'damien', difficulty: 'HARD' },
+    { bossId: 'g-slime', difficulty: 'CHAOS' },
+    { bossId: 'lucid', difficulty: 'HARD' },
+    { bossId: 'will', difficulty: 'HARD' },
+    { bossId: 'gloom', difficulty: 'CHAOS' },
+    { bossId: 'true-hilla', difficulty: 'HARD' },
+    { bossId: 'darknell', difficulty: 'HARD' },
+    { bossId: 'seren', difficulty: 'HARD' },
+    { bossId: 'kalos', difficulty: 'EASY' },
+    { bossId: 'first-adversary', difficulty: 'EASY' },
+  ],
+}

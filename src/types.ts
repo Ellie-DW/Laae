@@ -2,6 +2,9 @@ export type Page = 'dashboard' | 'diary' | 'hunt' | 'expense' | 'boss' | 'drop' 
 
 export type BossTab = 'grandis' | 'belowSword' | 'normal'
 
+/** 검밑솔 돌이 / 이적자 돌이 주간 루트 프리셋 */
+export type BossRunnerPreset = 'belowSword' | 'transcendent'
+
 export type BossResetCycle = 'weekly' | 'monthly'
 
 export type BossDifficulty = 'EASY' | 'NORMAL' | 'HARD' | 'EXTREME' | 'CHAOS'

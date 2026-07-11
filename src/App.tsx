@@ -58,6 +58,7 @@ function MainApp() {
     updateBossSelection,
     selectBossDifficulty,
     resetTabSelections,
+    selectBossRunnerPreset,
     toggleWeeklyBossCleared,
     toggleMonthlyBossCleared,
   } = useAppData()
@@ -178,6 +179,7 @@ function MainApp() {
             onUpdateBoss={updateBossSelection}
             onSelectBossDifficulty={selectBossDifficulty}
             onResetTab={resetTabSelections}
+            onSelectBossRunnerPreset={selectBossRunnerPreset}
           />
         )
       case 'drop':
