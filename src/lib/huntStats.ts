@@ -15,6 +15,28 @@ export function isSolErdaSpend(hunt: HuntRecord) {
   return hunt.solErdaFragments < 0 && hunt.meso === 0
 }
 
+export const SOL_ERDA_PURCHASE_MEMO_PREFIX = '솔 에르다 조각'
+
+export function buildSolErdaPurchaseMemo(quantity: number, huntId: string) {
+  return `${SOL_ERDA_PURCHASE_MEMO_PREFIX} ${quantity.toLocaleString()}개 구매 · hunt:${huntId}`
+}
+
+export function parseSolErdaPurchaseMemo(memo: string | null) {
+  if (!memo?.startsWith(SOL_ERDA_PURCHASE_MEMO_PREFIX)) return null
+  const quantityMatch = memo.match(/([\d,]+)개 구매/)
+  const huntMatch = memo.match(/hunt:([a-f0-9-]+)/i)
+  if (!quantityMatch || !huntMatch) return null
+  return {
+    quantity: parseInt(quantityMatch[1].replace(/,/g, ''), 10),
+    huntId: huntMatch[1],
+    displayMemo: memo.replace(/\s· hunt:[a-f0-9-]+/i, ''),
+  }
+}
+
+export function isSolErdaPurchaseExpense(memo: string | null) {
+  return parseSolErdaPurchaseMemo(memo) !== null
+}
+
 export interface HuntCumulativeStats {
   huntMesoTotal: number
   saleMesoTotal: number

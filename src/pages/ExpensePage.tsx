@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react'
 import type { Character, Expense, ExpenseCategory, HuntRecord } from '../types'
 import { EXPENSE_CATEGORY_LABEL } from '../lib/ledgerApi'
 import { computeExpenseByCategory } from '../lib/ledgerAnalytics'
-import { getHeldSolErdaFragments, isSolErdaSpend } from '../lib/huntStats'
+import { getHeldSolErdaFragments, isSolErdaSpend, isSolErdaPurchaseExpense, parseSolErdaPurchaseMemo } from '../lib/huntStats'
 import { formatMesoKorean, getCurrentMonth } from '../utils'
 import MesoRecordForm from '../components/ledger/MesoRecordForm'
-import SolErdaSpendSection from '../components/hunt/SolErdaSpendSection'
+import SolErdaFragmentSection from '../components/hunt/SolErdaFragmentSection'
 
 interface ExpensePageProps {
   characters: Character[]
@@ -14,6 +14,8 @@ interface ExpensePageProps {
   onAdd: (data: { characterId: string; category: ExpenseCategory; amount: number; memo?: string; recordDate: string }) => Promise<void>
   onRemove: (id: string) => Promise<void>
   onSpendSolErda: (data: { characterId: string; quantity: number; recordDate: string }) => Promise<void>
+  onPurchaseSolErda: (data: { characterId: string; quantity: number; amount: number; recordDate: string }) => Promise<void>
+  onRemoveSolErdaPurchase: (expenseId: string, memo: string | null) => Promise<void>
   onRemoveHunt: (id: string) => Promise<void>
 }
 
@@ -24,6 +26,8 @@ export default function ExpensePage({
   onAdd,
   onRemove,
   onSpendSolErda,
+  onPurchaseSolErda,
+  onRemoveSolErdaPurchase,
   onRemoveHunt,
 }: ExpensePageProps) {
   const [filterCharacterId, setFilterCharacterId] = useState<string | null>(null)
@@ -192,12 +196,13 @@ export default function ExpensePage({
         </div>
       </MesoRecordForm>
 
-      <SolErdaSpendSection
+      <SolErdaFragmentSection
         hunts={hunts}
         characters={characters}
         recordCharacterId={addCharacterId}
         onRecordCharacterChange={setFormCharacterId}
         showCharacterSelect={!filterCharacterId}
+        onPurchase={onPurchaseSolErda}
         onSpend={onSpendSolErda}
       />
 
@@ -255,10 +260,23 @@ export default function ExpensePage({
                     )}
                     <span className="text-xs text-slate-500">{e.recordDate}</span>
                   </div>
-                  {e.memo && <p className="text-sm text-slate-400 mt-1 truncate">{e.memo}</p>}
+                  {e.memo && (
+                    <p className="text-sm text-slate-400 mt-1 truncate">
+                      {parseSolErdaPurchaseMemo(e.memo)?.displayMemo ?? e.memo}
+                    </p>
+                  )}
                 </div>
                 <span className="text-sm font-semibold text-red-400 shrink-0">-{formatMesoKorean(e.amount)}</span>
-                <button onClick={() => onRemove(e.id)} className="text-slate-600 hover:text-red-400 text-xs">✕</button>
+                <button
+                  onClick={() =>
+                    isSolErdaPurchaseExpense(e.memo)
+                      ? onRemoveSolErdaPurchase(e.id, e.memo)
+                      : onRemove(e.id)
+                  }
+                  className="text-slate-600 hover:text-red-400 text-xs"
+                >
+                  ✕
+                </button>
               </div>
             ))}
           </div>

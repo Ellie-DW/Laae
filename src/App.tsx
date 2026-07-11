@@ -185,6 +185,8 @@ function MainApp() {
             onAdd={ledger.createExpense}
             onRemove={ledger.removeExpense}
             onSpendSolErda={ledger.spendSolErda}
+            onPurchaseSolErda={ledger.purchaseSolErda}
+            onRemoveSolErdaPurchase={ledger.removeSolErdaPurchase}
             onRemoveHunt={ledger.removeHunt}
           />
         )

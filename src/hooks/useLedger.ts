@@ -24,7 +24,7 @@ import {
   enrichLedgerWithBoss,
   getCurrentMonth,
 } from '../lib/ledgerAnalytics'
-import { getHeldSolErdaFragments } from '../lib/huntStats'
+import { getHeldSolErdaFragments, buildSolErdaPurchaseMemo, parseSolErdaPurchaseMemo } from '../lib/huntStats'
 import { getWeeklyPeriod, getErrorMessage } from '../utils'
 
 export function useLedger(
@@ -218,6 +218,44 @@ export function useLedger(
     [user, hunts]
   )
 
+  const purchaseSolErda = useCallback(
+    async (data: {
+      characterId: string
+      quantity: number
+      amount: number
+      recordDate: string
+    }) => {
+      if (!user || data.quantity <= 0 || data.amount <= 0) return
+      const hunt = await addHuntRecord(user.id, {
+        characterId: data.characterId,
+        meso: 0,
+        solErdaFragments: data.quantity,
+        recordDate: data.recordDate,
+      })
+      const expense = await addExpense(user.id, {
+        characterId: data.characterId,
+        category: 'purchase',
+        amount: data.amount,
+        memo: buildSolErdaPurchaseMemo(data.quantity, hunt.id),
+        recordDate: data.recordDate,
+      })
+      setHunts((prev) => [hunt, ...prev])
+      setExpenses((prev) => [expense, ...prev])
+      setError(null)
+    },
+    [user]
+  )
+
+  const removeSolErdaPurchase = useCallback(async (expenseId: string, memo: string | null) => {
+    const parsed = parseSolErdaPurchaseMemo(memo)
+    if (parsed?.huntId) {
+      await deleteHuntRecord(parsed.huntId)
+      setHunts((prev) => prev.filter((h) => h.id !== parsed.huntId))
+    }
+    await deleteExpense(expenseId)
+    setExpenses((prev) => prev.filter((e) => e.id !== expenseId))
+  }, [])
+
   const removeHunt = useCallback(async (id: string) => {
     await deleteHuntRecord(id)
     setHunts((prev) => prev.filter((h) => h.id !== id))
@@ -329,6 +367,8 @@ export function useLedger(
     createHunt,
     sellSolErda,
     spendSolErda,
+    purchaseSolErda,
+    removeSolErdaPurchase,
     removeHunt,
     createGather,
     removeGather,
