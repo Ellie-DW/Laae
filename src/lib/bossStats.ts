@@ -2,6 +2,9 @@ import type { CharacterBossData, BossSnapshot } from '../types'
 import { BOSSES, getBossResetCycle } from '../data/bosses'
 import { getWeeklyPeriod, getMonthlyPeriod, getToday, getCurrentMonth, enumerateWeeklyPeriodsOverlappingMonth } from '../utils'
 
+export const INTENSE_POWER_WEEKLY_NAME = '강렬한 힘의 결정(주간)'
+export const INTENSE_POWER_MONTHLY_NAME = '강렬한 힘의 결정(월간)'
+
 export interface BossStats {
   totalMeso: number
   bossMeso: number
@@ -361,6 +364,8 @@ export interface BossCumulativeStats {
   weeklyMeso: number
   monthlyMeso: number
   totalMeso: number
+  weeklyCrystals: number
+  monthlyCrystals: number
   weeklyPeriods: number
   monthlyPeriods: number
   clearedKinds: number
@@ -392,17 +397,22 @@ export function getBossCumulativeStats(
   const charSnapshots = snapshots.filter((s) => s.characterId === characterId)
   let weeklyMeso = 0
   let monthlyMeso = 0
+  let weeklyCrystals = 0
+  let monthlyCrystals = 0
   let weeklyPeriods = 0
   let monthlyPeriods = 0
   const bossMap = new Map<string, { clearCount: number; totalMeso: number }>()
 
   for (const s of charSnapshots) {
+    const clearCount = getClearedBosses(s.bossData).length
     if (s.cycle === 'weekly') {
       weeklyMeso += s.totalMeso
       weeklyPeriods += 1
+      weeklyCrystals += clearCount
     } else {
       monthlyMeso += s.totalMeso
       monthlyPeriods += 1
+      monthlyCrystals += clearCount
     }
     accumulateBossClears(s.bossData, bossMap)
   }
@@ -417,12 +427,14 @@ export function getBossCumulativeStats(
       const stats = calculateBossStats(currentBossData)
       weeklyMeso += stats.weeklyBossMeso
       weeklyPeriods += 1
+      weeklyCrystals += getClearedBosses(currentBossData).filter((sel) => selectionCycle(sel) === 'weekly').length
       accumulateBossClears(currentBossData, bossMap, 'weekly')
     }
     if (isMonthlyBossCleared(currentBossData) && !hasMonthSnap) {
       const stats = calculateBossStats(currentBossData)
       monthlyMeso += stats.monthlyBossMeso
       monthlyPeriods += 1
+      monthlyCrystals += getClearedBosses(currentBossData).filter((sel) => selectionCycle(sel) === 'monthly').length
       accumulateBossClears(currentBossData, bossMap, 'monthly')
     }
   }
@@ -446,6 +458,8 @@ export function getBossCumulativeStats(
     weeklyMeso,
     monthlyMeso,
     totalMeso: weeklyMeso + monthlyMeso,
+    weeklyCrystals,
+    monthlyCrystals,
     weeklyPeriods,
     monthlyPeriods,
     clearedKinds,
@@ -462,6 +476,8 @@ export function getAccountBossCumulativeStats(
 ) {
   let weeklyMeso = 0
   let monthlyMeso = 0
+  let weeklyCrystals = 0
+  let monthlyCrystals = 0
 
   for (const character of characters) {
     const stats = getBossCumulativeStats(
@@ -471,11 +487,15 @@ export function getAccountBossCumulativeStats(
     )
     weeklyMeso += stats.weeklyMeso
     monthlyMeso += stats.monthlyMeso
+    weeklyCrystals += stats.weeklyCrystals
+    monthlyCrystals += stats.monthlyCrystals
   }
 
   return {
     weeklyMeso,
     monthlyMeso,
     totalMeso: weeklyMeso + monthlyMeso,
+    weeklyCrystals,
+    monthlyCrystals,
   }
 }

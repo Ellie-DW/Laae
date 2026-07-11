@@ -26,12 +26,7 @@ export const PREDEFINED_DROP_ITEMS: PredefinedDropItem[] = [
   { id: 'premium-accessory-coupon', name: '프리미엄 악세서리 주문서 선택권', group: '주문서' },
   { id: 'premium-pet-coupon', name: '프리미엄 펫장비 주문서 선택권', group: '주문서' },
   { id: 'magical-scroll-coupon', name: '매지컬 무기 주문서 교환권', group: '주문서' },
-  { id: 'intense-power-weekly', name: '강렬한 힘의 결정(주간)', group: '결정' },
-  { id: 'intense-power-monthly', name: '강렬한 힘의 결정(월간)', group: '결정' },
 ]
-
-export const INTENSE_POWER_WEEKLY_NAME = '강렬한 힘의 결정(주간)'
-export const INTENSE_POWER_MONTHLY_NAME = '강렬한 힘의 결정(월간)'
 
 const DROP_NAME_ALIASES: Record<string, string> = {
   '저주받은 마도서 상자': '저주받은 마도서 선택 상자',
@@ -117,17 +112,6 @@ export function getDropItemStats(drops: { characterId: string; itemName: string;
       saleIncome: sales.reduce((s, d) => s + d.meso, 0),
     }
   })
-}
-
-export function getIntensePowerCrystalCounts(
-  drops: { characterId: string; itemName: string; meso: number }[],
-  characterId?: string
-) {
-  const stats = getDropItemStats(drops, characterId)
-  return {
-    weekly: stats.find((s) => s.id === 'intense-power-weekly')?.totalAcquired ?? 0,
-    monthly: stats.find((s) => s.id === 'intense-power-monthly')?.totalAcquired ?? 0,
-  }
 }
 
 export function getDropStatsSummary(stats: DropItemStats[]) {

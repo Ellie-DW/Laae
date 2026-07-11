@@ -1,11 +1,10 @@
 import { useMemo } from 'react'
-import type { BossSnapshot, CharacterBossData, DropRecord } from '../../types'
-import { getBossCumulativeStats } from '../../lib/bossStats'
+import type { BossSnapshot, CharacterBossData } from '../../types'
 import {
-  getIntensePowerCrystalCounts,
+  getBossCumulativeStats,
   INTENSE_POWER_MONTHLY_NAME,
   INTENSE_POWER_WEEKLY_NAME,
-} from '../../data/dropItems'
+} from '../../lib/bossStats'
 import { formatMesoKorean } from '../../utils'
 import DropItemIcon from '../drop/DropItemIcon'
 
@@ -13,33 +12,28 @@ interface BossCumulativeSummaryProps {
   snapshots: BossSnapshot[]
   characterId: string
   bossData: CharacterBossData
-  drops: DropRecord[]
 }
 
-export default function BossCumulativeSummary({ snapshots, characterId, bossData, drops }: BossCumulativeSummaryProps) {
+export default function BossCumulativeSummary({ snapshots, characterId, bossData }: BossCumulativeSummaryProps) {
   const stats = useMemo(
     () => getBossCumulativeStats(snapshots, characterId, bossData),
     [snapshots, characterId, bossData]
-  )
-  const crystalCounts = useMemo(
-    () => getIntensePowerCrystalCounts(drops, characterId),
-    [drops, characterId]
   )
 
   const items = [
     {
       id: 'weekly',
       label: '주간 누적',
-      value: `${crystalCounts.weekly.toLocaleString()}개`,
-      active: crystalCounts.weekly > 0,
+      value: `${stats.weeklyCrystals.toLocaleString()}개`,
+      active: stats.weeklyCrystals > 0,
       tone: 'cyber' as const,
       icon: <DropItemIcon name={INTENSE_POWER_WEEKLY_NAME} size="xs" />,
     },
     {
       id: 'monthly',
       label: '월간 누적',
-      value: `${crystalCounts.monthly.toLocaleString()}개`,
-      active: crystalCounts.monthly > 0,
+      value: `${stats.monthlyCrystals.toLocaleString()}개`,
+      active: stats.monthlyCrystals > 0,
       tone: 'maple' as const,
       icon: <DropItemIcon name={INTENSE_POWER_MONTHLY_NAME} size="xs" />,
     },

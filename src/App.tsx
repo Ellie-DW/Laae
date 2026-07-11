@@ -169,7 +169,6 @@ function MainApp() {
             selectedCharacter={selectedCharacter}
             bossData={bossData}
             snapshots={ledger.snapshots}
-            drops={ledger.drops}
             onUpdateBoss={updateBossSelection}
             onSelectBossDifficulty={selectBossDifficulty}
             onResetTab={resetTabSelections}

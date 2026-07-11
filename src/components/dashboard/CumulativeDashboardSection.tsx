@@ -1,11 +1,11 @@
 import { useMemo, type ReactNode } from 'react'
 import type { Character, HuntRecord, GatherRecord, DropRecord, Expense, BossSnapshot, CharacterBossData } from '../../types'
-import { getDropItemStats, getDropStatsSummary, getIntensePowerCrystalCounts, PREDEFINED_DROP_ITEMS, INTENSE_POWER_WEEKLY_NAME, INTENSE_POWER_MONTHLY_NAME } from '../../data/dropItems'
+import { getDropItemStats, getDropStatsSummary, PREDEFINED_DROP_ITEMS } from '../../data/dropItems'
 import DropItemIcon from '../drop/DropItemIcon'
 import SolErdaIcon from '../hunt/SolErdaIcon'
 import MesoIcon from '../hunt/MesoIcon'
 import { getHuntCumulativeStats } from '../../lib/huntStats'
-import { getAccountBossCumulativeStats } from '../../lib/bossStats'
+import { getAccountBossCumulativeStats, INTENSE_POWER_MONTHLY_NAME, INTENSE_POWER_WEEKLY_NAME } from '../../lib/bossStats'
 import { createDefaultBossData } from '../../lib/appDataApi'
 import { formatMesoKorean } from '../../utils'
 
@@ -54,7 +54,6 @@ export default function CumulativeDashboardSection({
     () => getAccountBossCumulativeStats(snapshots, characters, bossDataMap, createDefaultBossData()),
     [snapshots, characters, bossDataMap]
   )
-  const crystalCounts = useMemo(() => getIntensePowerCrystalCounts(drops), [drops])
   const gatherTotal = useMemo(() => gathers.reduce((s, g) => s + g.meso, 0), [gathers])
   const expenseTotal = useMemo(() => expenses.reduce((s, e) => s + e.amount, 0), [expenses])
 
@@ -74,8 +73,8 @@ export default function CumulativeDashboardSection({
   ]
 
   const bossItems: StatCard[] = [
-    { label: '주간 누적', value: `${crystalCounts.weekly.toLocaleString()}개`, active: crystalCounts.weekly > 0, tone: 'cyber', icon: <DropItemIcon name={INTENSE_POWER_WEEKLY_NAME} size="xs" /> },
-    { label: '월간 누적', value: `${crystalCounts.monthly.toLocaleString()}개`, active: crystalCounts.monthly > 0, tone: 'maple', icon: <DropItemIcon name={INTENSE_POWER_MONTHLY_NAME} size="xs" /> },
+    { label: '주간 누적', value: `${bossStats.weeklyCrystals.toLocaleString()}개`, active: bossStats.weeklyCrystals > 0, tone: 'cyber', icon: <DropItemIcon name={INTENSE_POWER_WEEKLY_NAME} size="xs" /> },
+    { label: '월간 누적', value: `${bossStats.monthlyCrystals.toLocaleString()}개`, active: bossStats.monthlyCrystals > 0, tone: 'maple', icon: <DropItemIcon name={INTENSE_POWER_MONTHLY_NAME} size="xs" /> },
     { label: '총 누적 수익', value: formatMesoKorean(bossStats.totalMeso), active: bossStats.totalMeso > 0, tone: 'maple' },
   ]
 
