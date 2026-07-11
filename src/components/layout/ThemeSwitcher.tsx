@@ -20,6 +20,8 @@ export default function ThemeSwitcher({ compact = false }: ThemeSwitcherProps) {
             <button
               key={option.id}
               type="button"
+              data-theme-tab
+              data-active={active}
               onClick={() => setTheme(option.id)}
               title={option.description}
               className={`rounded-lg border text-xs transition-all ${
