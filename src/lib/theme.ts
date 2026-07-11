@@ -3,7 +3,7 @@ export type ThemeMode = 'cyber' | 'dark' | 'light'
 export const THEME_STORAGE_KEY = 'maple-diary-theme'
 
 export const THEME_OPTIONS: { id: ThemeMode; label: string; description: string }[] = [
-  { id: 'cyber', label: '기본', description: '사이버 그리드 · 네온' },
+  { id: 'cyber', label: '네온', description: '사이버 그리드 · 네온' },
   { id: 'dark', label: '다크', description: '심플 다크' },
   { id: 'light', label: '화이트', description: '밝은 배경' },
 ]
