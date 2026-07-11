@@ -130,6 +130,7 @@ function MainApp() {
             onGoBoss={() => setPage('boss')}
             onOpenDiary={() => setPage('diary')}
             onGoDrop={() => setPage('drop')}
+            onGoGoals={() => setPage('goals')}
             diaryHunts={ledger.hunts}
             diaryGathers={ledger.gathers}
             diaryExpenses={ledger.expenses}
@@ -157,6 +158,10 @@ function MainApp() {
             onSaveNote={ledger.saveDiaryNote}
             onRemoveNote={ledger.removeDiaryNote}
             onNavigateToSource={handleDiaryNavigate}
+            goals={ledger.goals}
+            currentMonth={ledger.currentMonth}
+            getGoalProgress={ledger.getGoalProgress}
+            onGoGoals={() => setPage('goals')}
           />
         )
       case 'boss':
@@ -230,7 +235,6 @@ function MainApp() {
         return (
           <GoalsPage
             characters={characters}
-            selectedCharacter={selectedCharacter}
             goals={ledger.goals}
             currentMonth={ledger.currentMonth}
             getGoalProgress={ledger.getGoalProgress}

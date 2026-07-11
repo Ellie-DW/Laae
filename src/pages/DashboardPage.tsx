@@ -17,6 +17,7 @@ import { formatMesoKorean, getToday } from '../utils'
 import { formatHuntIncomeSub } from '../lib/huntStats'
 import DropDashboardSection from '../components/drop/DropDashboardSection'
 import CumulativeDashboardSection from '../components/dashboard/CumulativeDashboardSection'
+import GoalProgressCard from '../components/goals/GoalProgressCard'
 
 interface DashboardPageProps {
   characters: Character[]
@@ -39,6 +40,7 @@ interface DashboardPageProps {
   onGoBoss: () => void
   onOpenDiary: () => void
   onGoDrop: () => void
+  onGoGoals: () => void
   diaryHunts: HuntRecord[]
   diaryGathers: GatherRecord[]
   diaryExpenses: Expense[]
@@ -67,6 +69,7 @@ export default function DashboardPage({
   onGoBoss,
   onOpenDiary,
   onGoDrop,
+  onGoGoals,
   diaryHunts,
   diaryGathers,
   diaryExpenses,
@@ -453,23 +456,32 @@ export default function DashboardPage({
 
       {monthGoals.length > 0 && (
         <div className="panel-light p-5">
-          <h2 className="font-semibold text-slate-100 mb-4">목표 진행</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-semibold text-slate-100">목표 진행</h2>
+              <p className="text-xs text-slate-500 mt-0.5">{currentMonth}</p>
+            </div>
+            <button
+              onClick={onGoGoals}
+              className="text-xs text-cyber-400 hover:text-cyber-300 border border-cyber-700/40 px-3 py-1.5 rounded-lg hover:bg-cyber-500/10 transition-colors"
+            >
+              목표 관리 →
+            </button>
+          </div>
           <div className="space-y-3">
             {monthGoals.slice(0, 3).map((goal) => {
               const progress = getGoalProgress(goal)
+              const scopeLabel = goal.characterId
+                ? characters.find((c) => c.id === goal.characterId)?.name ?? '캐릭터'
+                : '계정 전체'
               return (
-                <div key={goal.id}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-slate-300">{goal.title}</span>
-                    <span className="text-cyber-400">{progress.percent}%</span>
-                  </div>
-                  <div className="h-1.5 bg-dark-border rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-cyber-600 to-maple-500 rounded-full"
-                      style={{ width: `${progress.percent}%` }}
-                    />
-                  </div>
-                </div>
+                <GoalProgressCard
+                  key={goal.id}
+                  goal={goal}
+                  progress={progress}
+                  scopeLabel={scopeLabel}
+                  compact
+                />
               )
             })}
           </div>

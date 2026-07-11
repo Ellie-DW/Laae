@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { Character, HuntRecord, GatherRecord, Expense, DropRecord, BossSnapshot, CharacterBossData, DiaryNote } from '../types'
+import type { Character, Goal, HuntRecord, GatherRecord, Expense, DropRecord, BossSnapshot, CharacterBossData, DiaryNote } from '../types'
 import {
   buildDiaryDays,
   filterDiaryDaysByType,
@@ -13,7 +13,8 @@ import {
   type DiaryEntryType,
 } from '../lib/diaryEntries'
 import { summarizeSolErdaMonth } from '../lib/huntStats'
-import { computeExpenseByCategory } from '../lib/ledgerAnalytics'
+import { computeExpenseByCategory, type GoalProgress } from '../lib/ledgerAnalytics'
+import { formatGoalPace, goalPercentTone } from '../lib/goalHelpers'
 import {
   buildMonthCalendar,
   getCurrentYearMonth,
@@ -41,6 +42,10 @@ interface DiaryPageProps {
   onSaveNote: (id: string, data: { characterId?: string | null; memo: string }) => Promise<void>
   onRemoveNote: (id: string) => Promise<void>
   onNavigateToSource: (entry: DiaryEntry) => void
+  goals: Goal[]
+  currentMonth: string
+  getGoalProgress: (goal: Goal) => GoalProgress
+  onGoGoals: () => void
 }
 
 type ViewMode = 'list' | 'calendar'
@@ -83,6 +88,10 @@ export default function DiaryPage({
   onSaveNote,
   onRemoveNote,
   onNavigateToSource,
+  goals,
+  currentMonth,
+  getGoalProgress,
+  onGoGoals,
 }: DiaryPageProps) {
   const [filterCharacterId, setFilterCharacterId] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<TypeFilter>('all')
@@ -118,6 +127,22 @@ export default function DiaryPage({
     () => summarizeDiaryMonth(days, yearMonth.year, yearMonth.month),
     [days, yearMonth]
   )
+
+  const primaryGoal = useMemo(() => {
+    if (monthKey !== currentMonth) return null
+    const monthGoals = goals.filter((g) => g.periodMonth === currentMonth)
+    const scoped = filterCharacterId
+      ? monthGoals.filter((g) => g.characterId === null || g.characterId === filterCharacterId)
+      : monthGoals
+    if (scoped.length === 0) return null
+    return (
+      scoped.find((g) => g.characterId === filterCharacterId) ??
+      scoped.find((g) => !g.characterId) ??
+      scoped[0]
+    )
+  }, [goals, currentMonth, monthKey, filterCharacterId])
+
+  const primaryGoalProgress = primaryGoal ? getGoalProgress(primaryGoal) : null
 
   const solErdaMonth = useMemo(
     () => summarizeSolErdaMonth(hunts, expenses, monthKey, charFilter),
@@ -248,6 +273,27 @@ export default function DiaryPage({
             <SummaryChip label="순수익" value={formatMesoKorean(monthSummary.net)} tone={monthSummary.net >= 0 ? 'income' : 'expense'} />
           </div>
           <SolErdaMonthSummary summary={solErdaMonth} />
+          {primaryGoal && primaryGoalProgress && (
+            <button
+              type="button"
+              onClick={onGoGoals}
+              className="w-full mt-3 p-3 rounded-lg border border-cyber-500/20 bg-cyber-500/5 text-left hover:bg-cyber-500/10 transition-colors"
+            >
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="text-xs text-slate-400">🎯 {primaryGoal.title}</span>
+                <span className={`text-xs font-semibold ${goalPercentTone(primaryGoalProgress.percent)}`}>
+                  {primaryGoalProgress.percent}%
+                </span>
+              </div>
+              <div className="h-1 bg-dark-border rounded-full overflow-hidden mb-1.5">
+                <div
+                  className={`h-full rounded-full ${primaryGoalProgress.percent >= 100 ? 'bg-emerald-500' : primaryGoalProgress.percent < 0 ? 'bg-red-500' : 'bg-cyber-500'}`}
+                  style={{ width: `${primaryGoalProgress.barPercent}%` }}
+                />
+              </div>
+              <p className="text-xs text-slate-500">{formatGoalPace(primaryGoalProgress)}</p>
+            </button>
+          )}
           {Object.keys(monthSummary.incomeByType).length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4 pt-3 border-t border-dark-border/60">
               {monthSummary.huntMesoIncome > 0 && (

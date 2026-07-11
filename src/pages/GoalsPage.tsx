@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Character, Goal } from '../types'
 import type { GoalProgress } from '../lib/ledgerAnalytics'
-import { formatMesoKorean, parseMesoInput } from '../utils'
+import GoalProgressCard from '../components/goals/GoalProgressCard'
+import { parseMesoInput } from '../utils'
 
 interface GoalsPageProps {
   characters: Character[]
-  selectedCharacter: Character | null
   goals: Goal[]
   currentMonth: string
   getGoalProgress: (goal: Goal) => GoalProgress
@@ -15,7 +15,6 @@ interface GoalsPageProps {
 
 export default function GoalsPage({
   characters,
-  selectedCharacter,
   goals,
   currentMonth,
   getGoalProgress,
@@ -24,21 +23,37 @@ export default function GoalsPage({
 }: GoalsPageProps) {
   const [title, setTitle] = useState('')
   const [targetInput, setTargetInput] = useState('')
+  const [filterCharacterId, setFilterCharacterId] = useState<string | null>(null)
   const [scope, setScope] = useState<'account' | 'character'>('character')
   const [saving, setSaving] = useState(false)
 
+  const activeCharacter = filterCharacterId
+    ? characters.find((c) => c.id === filterCharacterId) ?? null
+    : null
+
+  useEffect(() => {
+    if (filterCharacterId) {
+      setScope('character')
+    }
+  }, [filterCharacterId])
+
   const monthGoals = goals.filter((g) => g.periodMonth === currentMonth)
+  const visibleGoals = filterCharacterId
+    ? monthGoals.filter((g) => g.characterId === null || g.characterId === filterCharacterId)
+    : monthGoals
+
+  const formCharacterId = filterCharacterId ?? characters[0]?.id ?? null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const targetMeso = parseMesoInput(targetInput)
     if (!title.trim() || targetMeso <= 0) return
-    if (scope === 'character' && !selectedCharacter) return
+    if (scope === 'character' && !formCharacterId) return
 
     setSaving(true)
     try {
       await onSave({
-        characterId: scope === 'account' ? null : selectedCharacter!.id,
+        characterId: scope === 'account' ? null : formCharacterId,
         title: title.trim(),
         targetMeso,
         periodMonth: currentMonth,
@@ -50,11 +65,39 @@ export default function GoalsPage({
     }
   }
 
+  if (characters.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <span className="text-5xl mb-4">🎯</span>
+        <h2 className="text-lg font-semibold text-slate-300">캐릭터를 먼저 추가해주세요</h2>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-100">목표</h1>
-        <p className="text-sm text-slate-500 mt-1">{currentMonth} 순수익 목표 (사냥·채집·보스−지출)</p>
+        <p className="text-sm text-slate-500 mt-1">
+          {activeCharacter
+            ? `${activeCharacter.name} · ${currentMonth} 순수익 목표`
+            : `${currentMonth} 순수익 목표 (사냥·채집·보스−지출)`}
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <ScopeButton active={filterCharacterId === null} onClick={() => setFilterCharacterId(null)}>
+          전체 캐릭터
+        </ScopeButton>
+        {characters.map((char) => (
+          <ScopeButton
+            key={char.id}
+            active={filterCharacterId === char.id}
+            onClick={() => setFilterCharacterId(char.id)}
+          >
+            {char.name}
+          </ScopeButton>
+        ))}
       </div>
 
       <form onSubmit={handleSubmit} className="panel-light p-5 space-y-4">
@@ -88,7 +131,8 @@ export default function GoalsPage({
             <button
               type="button"
               onClick={() => setScope('account')}
-              className={`flex-1 py-2 rounded-lg text-sm border transition-colors ${
+              disabled={!!filterCharacterId}
+              className={`flex-1 py-2 rounded-lg text-sm border transition-colors disabled:opacity-40 ${
                 scope === 'account'
                   ? 'bg-cyber-500/20 border-cyber-500/40 text-cyber-300'
                   : 'border-dark-border text-slate-400 hover:text-slate-200'
@@ -99,16 +143,20 @@ export default function GoalsPage({
             <button
               type="button"
               onClick={() => setScope('character')}
-              disabled={!selectedCharacter}
-              className={`flex-1 py-2 rounded-lg text-sm border transition-colors disabled:opacity-40 ${
+              className={`flex-1 py-2 rounded-lg text-sm border transition-colors ${
                 scope === 'character'
                   ? 'bg-cyber-500/20 border-cyber-500/40 text-cyber-300'
                   : 'border-dark-border text-slate-400 hover:text-slate-200'
               }`}
             >
-              {selectedCharacter ? selectedCharacter.name : '캐릭터 선택 필요'}
+              {activeCharacter?.name ?? formCharacterId
+                ? characters.find((c) => c.id === formCharacterId)?.name ?? '캐릭터'
+                : '캐릭터'}
             </button>
           </div>
+          {filterCharacterId && (
+            <p className="text-xs text-slate-600 mt-1.5">캐릭터 필터 중에는 해당 캐릭터 목표만 설정할 수 있어요</p>
+          )}
         </div>
 
         <button type="submit" disabled={saving} className="btn-primary text-sm w-full py-2">
@@ -117,70 +165,59 @@ export default function GoalsPage({
       </form>
 
       <div className="panel-light p-5">
-        <h2 className="font-semibold text-slate-100 mb-4">이번 달 목표 ({monthGoals.length})</h2>
+        <h2 className="font-semibold text-slate-100 mb-4">
+          이번 달 목표 ({visibleGoals.length})
+        </h2>
 
-        {monthGoals.length === 0 ? (
-          <p className="text-sm text-slate-500 text-center py-8">설정된 목표가 없어요</p>
+        {visibleGoals.length === 0 ? (
+          <p className="text-sm text-slate-500 text-center py-8">
+            {filterCharacterId ? '이 캐릭터에 설정된 목표가 없어요' : '설정된 목표가 없어요'}
+          </p>
         ) : (
           <div className="space-y-4">
-            {monthGoals.map((goal) => {
+            {visibleGoals.map((goal) => {
               const progress = getGoalProgress(goal)
               const charName = goal.characterId
                 ? characters.find((c) => c.id === goal.characterId)?.name
                 : '계정 전체'
 
               return (
-                <div key={goal.id} className="p-4 rounded-lg bg-dark-surface/50 border border-dark-border">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-medium text-slate-200">{goal.title}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{charName}</p>
-                    </div>
-                    <button
-                      onClick={() => onRemove(goal.id)}
-                      className="text-slate-600 hover:text-red-400 text-xs shrink-0"
-                    >
-                      ✕
-                    </button>
-                  </div>
-
-                  <div className="mt-3 flex items-end justify-between gap-2">
-                    <div>
-                      <p className="text-lg font-bold text-maple-400">{formatMesoKorean(progress.current)}</p>
-                      <p className="text-xs text-slate-500">/ {formatMesoKorean(goal.targetMeso)}</p>
-                    </div>
-                    <span className={`text-sm font-semibold ${progress.percent >= 100 ? 'text-emerald-400' : 'text-cyber-400'}`}>
-                      {progress.percent}%
-                    </span>
-                  </div>
-
-                  <div className="mt-2 h-2 bg-dark-border rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        progress.percent >= 100
-                          ? 'bg-gradient-to-r from-emerald-600 to-emerald-400'
-                          : 'bg-gradient-to-r from-cyber-600 to-maple-500'
-                      }`}
-                      style={{ width: `${progress.percent}%` }}
-                    />
-                  </div>
-
-                  <div className="flex flex-wrap gap-3 mt-3 text-xs text-slate-500">
-                    <span>사냥 +{formatMesoKorean(progress.summary.huntMesoIncome)}</span>
-                    {progress.summary.solErdaSaleIncome > 0 && (
-                      <span>솔에르다 +{formatMesoKorean(progress.summary.solErdaSaleIncome)}</span>
-                    )}
-                    <span>채집 +{formatMesoKorean(progress.summary.gatherIncome)}</span>
-                    <span>드랍 +{formatMesoKorean(progress.summary.dropIncome)}</span>
-                    <span className="text-maple-400">보스 +{formatMesoKorean(progress.summary.bossIncome)}</span>
-                    <span>지출 -{formatMesoKorean(progress.summary.expenseTotal)}</span>
-                  </div>
-                </div>
+                <GoalProgressCard
+                  key={goal.id}
+                  goal={goal}
+                  progress={progress}
+                  scopeLabel={charName ?? '계정 전체'}
+                  onRemove={() => onRemove(goal.id)}
+                />
               )
             })}
           </div>
         )}
       </div>
     </div>
+  )
+}
+
+function ScopeButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-3 py-1.5 rounded-lg text-xs border transition-colors ${
+        active
+          ? 'bg-cyber-500/20 border-cyber-500/40 text-cyber-300'
+          : 'border-dark-border text-slate-500 hover:text-slate-300'
+      }`}
+    >
+      {children}
+    </button>
   )
 }

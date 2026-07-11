@@ -1,6 +1,7 @@
 import type { Expense, HuntRecord, GatherRecord, DropRecord, Goal, ExpenseCategory } from '../types'
 import { EXPENSE_CATEGORY_LABEL } from './ledgerApi'
 import { splitHuntIncome } from './huntStats'
+import { getToday } from '../utils'
 
 export interface LedgerSummary {
   huntIncome: number
@@ -210,9 +211,26 @@ export function computeCharacterSummaries(
 }
 
 export interface GoalProgress {
-  current: number
+  netProfit: number
+  /** 표시용 달성률 (음수·100% 초과 가능) */
   percent: number
+  /** 진행 바 너비 (0~100) */
+  barPercent: number
+  /** 목표까지 남은 금액 (초과 시 음수) */
+  remaining: number
+  daysLeft: number
+  /** 남은 일수로 나눈 하루 필요 순수익 */
+  dailyNeeded: number | null
   summary: LedgerSummary
+}
+
+export function getDaysLeftInMonth(periodMonth: string, today = getToday()): number {
+  const [y, m] = periodMonth.split('-').map(Number)
+  const daysInMonth = new Date(y, m, 0).getDate()
+  if (today.slice(0, 7) < periodMonth) return daysInMonth
+  if (today.slice(0, 7) > periodMonth) return 0
+  const todayDay = parseInt(today.slice(8, 10), 10)
+  return Math.max(0, daysInMonth - todayDay + 1)
 }
 
 export function computeGoalProgress(
@@ -234,8 +252,13 @@ export function computeGoalProgress(
     bossIncome
   )
 
-  const current = Math.max(0, summary.netProfit)
-  const percent = goal.targetMeso > 0 ? Math.min(100, Math.round((current / goal.targetMeso) * 100)) : 0
+  const netProfit = summary.netProfit
+  const percent =
+    goal.targetMeso > 0 ? Math.round((netProfit / goal.targetMeso) * 100) : netProfit >= 0 ? 100 : 0
+  const barPercent = Math.min(100, Math.max(0, percent))
+  const remaining = goal.targetMeso - netProfit
+  const daysLeft = getDaysLeftInMonth(month)
+  const dailyNeeded = remaining > 0 && daysLeft > 0 ? remaining / daysLeft : null
 
-  return { current, percent, summary } satisfies GoalProgress
+  return { netProfit, percent, barPercent, remaining, daysLeft, dailyNeeded, summary } satisfies GoalProgress
 }
