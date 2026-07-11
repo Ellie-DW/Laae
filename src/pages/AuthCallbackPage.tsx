@@ -19,7 +19,7 @@ export default function AuthCallbackPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-dark-bg flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <div className="panel-light p-8 text-center max-w-md">
           <p className="text-red-400 text-sm mb-4">로그인 처리 중 오류가 발생했습니다.</p>
           <p className="text-slate-500 text-xs mb-6">{error}</p>
@@ -30,7 +30,7 @@ export default function AuthCallbackPage() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
         <div className="w-8 h-8 border-2 border-cyber-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
         <p className="text-slate-400 text-sm">로그인 처리 중...</p>

@@ -20,10 +20,11 @@ import { getDiaryEntryTargetPage, type DiaryEntry } from './lib/diaryEntries'
 import { computeExpenseByCategory } from './lib/ledgerAnalytics'
 import { useAuth } from './contexts/AuthContext'
 import { getWeeklyPeriod } from './utils'
+import GridScanBackground from './components/backgrounds/GridScanBackground'
 
 function LoadingScreen({ message = '로딩 중...' }: { message?: string }) {
   return (
-    <div className="min-h-screen bg-dark-bg flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
         <div className="w-8 h-8 border-2 border-cyber-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
         <p className="text-slate-400 text-sm">{message}</p>
@@ -233,7 +234,7 @@ function MainApp() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg flex">
+    <div className="min-h-screen flex">
       <Sidebar
         characters={characters}
         selectedCharacter={selectedCharacter}
@@ -288,12 +289,21 @@ function MainApp() {
 export default function App() {
   const { user, loading } = useAuth()
 
-  if (window.location.pathname === '/auth/callback') {
-    return <AuthCallbackPage />
-  }
+  const content = (() => {
+    if (window.location.pathname === '/auth/callback') {
+      return <AuthCallbackPage />
+    }
 
-  if (loading) return <LoadingScreen />
-  if (!user) return <LoginPage />
+    if (loading) return <LoadingScreen />
+    if (!user) return <LoginPage />
 
-  return <MainApp />
+    return <MainApp />
+  })()
+
+  return (
+    <>
+      <GridScanBackground />
+      <div className="relative z-0 min-h-screen">{content}</div>
+    </>
+  )
 }
