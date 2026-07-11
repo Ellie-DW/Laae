@@ -112,11 +112,11 @@ export const BOSSES: BossDefinition[] = [
   // 일반 보스
   { id: 'zakum', name: '자쿰', shortName: '자쿰', tab: 'normal', group: '일반', maxParty: 6,
     difficulties: [
-      { difficulty: 'CHAOS', meso: 15 * M },
+      { difficulty: 'CHAOS', meso: 808 * 10_000 },
     ] },
   { id: 'magnus', name: '매그너스', shortName: '매그', tab: 'normal', group: '일반', maxParty: 6,
     difficulties: [
-      { difficulty: 'HARD', meso: 35 * M },
+      { difficulty: 'HARD', meso: 856 * 10_000 },
     ] },
   { id: 'papulatus', name: '파풀라투스', shortName: '파풀', tab: 'normal', group: '일반', maxParty: 6,
     difficulties: [
