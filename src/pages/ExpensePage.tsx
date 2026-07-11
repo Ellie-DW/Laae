@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import type { Character, Expense, ExpenseCategory, HuntRecord } from '../types'
 import { EXPENSE_CATEGORY_LABEL } from '../lib/ledgerApi'
-import { computeExpenseByCategory } from '../lib/ledgerAnalytics'
+import { computeExpenseByCategory, computeExpenseTotal } from '../lib/ledgerAnalytics'
 import { getHeldSolErdaFragments, isSolErdaSpend, isSolErdaPurchaseExpense, parseSolErdaPurchaseMemo } from '../lib/huntStats'
-import { formatMesoKorean, getCurrentMonth } from '../utils'
+import { formatMesoKorean, getCurrentMonth, getWeeklyPeriod } from '../utils'
 import MesoRecordForm from '../components/ledger/MesoRecordForm'
 import SolErdaFragmentSection from '../components/hunt/SolErdaFragmentSection'
 
@@ -35,6 +35,23 @@ export default function ExpensePage({
   const [formCharacterId, setFormCharacterId] = useState<string>('')
 
   const currentMonth = getCurrentMonth()
+  const weekPeriod = getWeeklyPeriod()
+  const expenseFilter = { characterId: filterCharacterId ?? undefined }
+
+  const weekExpense = useMemo(
+    () => computeExpenseTotal(expenses, { ...expenseFilter, startDate: weekPeriod.start, endDate: weekPeriod.end }),
+    [expenses, filterCharacterId, weekPeriod.start, weekPeriod.end]
+  )
+
+  const monthExpense = useMemo(
+    () => computeExpenseTotal(expenses, { ...expenseFilter, month: currentMonth }),
+    [expenses, filterCharacterId, currentMonth]
+  )
+
+  const allTimeExpense = useMemo(
+    () => computeExpenseTotal(expenses, expenseFilter),
+    [expenses, filterCharacterId]
+  )
 
   const charNameById = useMemo(
     () => Object.fromEntries(characters.map((c) => [c.id, c.name])),
@@ -54,7 +71,6 @@ export default function ExpensePage({
     )
   }, [expenses, filterCharacterId])
 
-  const total = visibleExpenses.reduce((s, e) => s + e.amount, 0)
   const showCharacter = filterCharacterId === null
 
   const categoryBreakdown = useMemo(
@@ -66,7 +82,7 @@ export default function ExpensePage({
     [expenses, filterCharacterId, currentMonth]
   )
 
-  const monthTotal = categoryBreakdown.reduce((s, c) => s + c.amount, 0)
+  const monthTotal = monthExpense.total
 
   const addCharacterId = formCharacterId || filterCharacterId || characters[0]?.id || ''
 
@@ -120,18 +136,36 @@ export default function ExpensePage({
         ))}
       </div>
 
-      <div className="panel-glow p-5 border-red-500/10">
-        <p className="text-sm text-slate-400">
-          {filterCharacterId ? '총 지출' : '전체 총 지출'}
-        </p>
-        <p className="text-2xl font-bold text-red-400 mt-1">{formatMesoKorean(total)}</p>
-        <p className="text-xs text-slate-500 mt-1">{visibleExpenses.length}건</p>
+      <div className="panel-glow p-5 border-red-500/10 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <ExpenseSummaryChip
+            label="이번 주 지출"
+            sub={weekPeriod.label}
+            amount={weekExpense.total}
+            count={weekExpense.count}
+          />
+          <ExpenseSummaryChip
+            label="이번 달 지출"
+            sub={currentMonth}
+            amount={monthExpense.total}
+            count={monthExpense.count}
+            highlight
+          />
+          <ExpenseSummaryChip
+            label={filterCharacterId ? '누적 지출' : '누적 총 지출'}
+            sub="전 기간"
+            amount={allTimeExpense.total}
+            count={allTimeExpense.count}
+          />
+        </div>
         {heldSolErda > 0 && (
-          <p className="text-xs text-violet-400 mt-2">전체 보유 솔 에르다 {heldSolErda.toLocaleString()}개</p>
+          <p className="text-xs text-violet-400 pt-1 border-t border-dark-border/60">
+            전체 보유 솔 에르다 {heldSolErda.toLocaleString()}개
+          </p>
         )}
       </div>
 
-      {categoryBreakdown.length > 0 && (
+      {categoryBreakdown.some((c) => c.amount > 0) && (
         <div className="panel-light p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -282,6 +316,37 @@ export default function ExpensePage({
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function ExpenseSummaryChip({
+  label,
+  sub,
+  amount,
+  count,
+  highlight = false,
+}: {
+  label: string
+  sub: string
+  amount: number
+  count: number
+  highlight?: boolean
+}) {
+  return (
+    <div
+      className={`px-4 py-3 rounded-lg border ${
+        highlight
+          ? 'bg-red-500/10 border-red-500/25'
+          : 'bg-dark-surface/50 border-dark-border'
+      }`}
+    >
+      <p className="text-xs text-slate-500">{label}</p>
+      <p className="text-[10px] text-slate-600 mt-0.5">{sub}</p>
+      <p className={`text-xl font-bold mt-1 ${highlight ? 'text-red-400' : 'text-red-400/90'}`}>
+        {formatMesoKorean(amount)}
+      </p>
+      <p className="text-xs text-slate-500 mt-0.5">{count}건</p>
     </div>
   )
 }

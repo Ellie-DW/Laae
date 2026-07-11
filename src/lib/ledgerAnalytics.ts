@@ -170,6 +170,24 @@ export function computeExpenseByCategory(
   }))
 }
 
+export function computeExpenseTotal(
+  expenses: Expense[],
+  filter?: { characterId?: string; month?: string; startDate?: string; endDate?: string }
+) {
+  const filtered = expenses.filter((e) => {
+    if (filter?.characterId && e.characterId !== filter.characterId) return false
+    if (filter?.month && monthPrefix(e.recordDate) !== filter.month) return false
+    if (filter?.startDate && e.recordDate < filter.startDate) return false
+    if (filter?.endDate && e.recordDate > filter.endDate) return false
+    return true
+  })
+
+  return {
+    total: filtered.reduce((s, e) => s + e.amount, 0),
+    count: filtered.length,
+  }
+}
+
 export function computeCharacterSummaries(
   characterIds: { id: string; name: string }[],
   hunts: HuntRecord[],

@@ -60,6 +60,8 @@ export default function CumulativeDashboardSection({
     bossStats.totalMeso +
     gatherTotal
 
+  const netProfit = totalIncome - expenseTotal
+
   const huntItems: StatCard[] = [
     { label: '사냥 수익', value: formatMesoKorean(huntStats.huntMesoTotal), active: huntStats.huntMesoTotal > 0, tone: 'cyber' },
     { label: '솔 에르다 조각 판매 수익', value: formatMesoKorean(huntStats.saleMesoTotal), active: huntStats.saleMesoTotal > 0, tone: 'violet' },
@@ -83,14 +85,15 @@ export default function CumulativeDashboardSection({
 
   return (
     <div className="panel-glow p-5 border-cyber-500/20">
-      <div className="flex items-start justify-between gap-4 mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
         <div>
           <h2 className="font-semibold text-slate-100">총 누적 현황</h2>
           <p className="text-xs text-slate-500 mt-0.5">모든 캐릭터 · 그동안 기록 전체</p>
         </div>
-        <div className="text-right shrink-0">
-          <p className="text-[10px] text-slate-500">총 누적 수익</p>
-          <p className="text-sm font-bold text-cyber-400">{formatMesoKorean(totalIncome)}</p>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 shrink-0 sm:min-w-[280px]">
+          <HeaderStat label="누적 수익" value={formatMesoKorean(totalIncome)} tone="income" />
+          <HeaderStat label="누적 지출" value={formatMesoKorean(expenseTotal)} tone="expense" />
+          <HeaderStat label="누적 순수익" value={formatMesoKorean(netProfit)} tone="net" positive={netProfit >= 0} />
         </div>
       </div>
 
@@ -166,6 +169,34 @@ export default function CumulativeDashboardSection({
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function HeaderStat({
+  label,
+  value,
+  tone,
+  positive = true,
+}: {
+  label: string
+  value: string
+  tone: 'income' | 'expense' | 'net'
+  positive?: boolean
+}) {
+  const valueClass =
+    tone === 'income'
+      ? 'text-cyber-400'
+      : tone === 'expense'
+        ? 'text-red-400'
+        : positive
+          ? 'text-emerald-400'
+          : 'text-red-400'
+
+  return (
+    <div className="px-2.5 py-2 rounded-lg bg-dark-surface/50 border border-dark-border text-right">
+      <p className="text-[10px] text-slate-500">{label}</p>
+      <p className={`text-xs sm:text-sm font-bold mt-0.5 ${valueClass}`}>{value}</p>
     </div>
   )
 }
