@@ -179,7 +179,7 @@ function MainApp() {
       case 'expense':
         return (
           <ExpensePage
-            selectedCharacter={selectedCharacter}
+            characters={characters}
             expenses={ledger.expenses}
             onAdd={ledger.createExpense}
             onRemove={ledger.removeExpense}
