@@ -1,6 +1,6 @@
 import type { CalendarCell } from '../../lib/monthCalendar'
 import type { SolErdaMonthStats } from '../../lib/huntStats'
-import { hasSolErdaActivity, SolErdaMonthSummary } from '../diary/SolErdaMonthSummary'
+import { SolErdaMonthSummary } from '../diary/SolErdaMonthSummary'
 import { getWeekdayLabels } from '../../lib/monthCalendar'
 import { formatMeso, formatMesoKorean } from '../../utils'
 
@@ -130,9 +130,9 @@ export default function MonthCalendar({
             </span>
           </div>
         </div>
-        {solErdaSummary && hasSolErdaActivity(solErdaSummary) && (
+        {solErdaSummary && (
           <div className="pt-3 border-t border-dark-border/60">
-            <p className="text-xs text-slate-500 mb-2">솔 에르다 조각</p>
+            <p className="text-xs text-slate-500 mb-2">솔 에르다 조각 · 이번 달</p>
             <SolErdaMonthSummary summary={solErdaSummary} compact />
           </div>
         )}
