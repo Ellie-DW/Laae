@@ -23,10 +23,18 @@ function selectionCycle(sel: CharacterBossData['selections'][0]) {
 
 export function getPlannedBossCycles(bossData: CharacterBossData) {
   const planned = bossData.selections.filter((s) => s.checked)
+  const weeklyBossIds = new Set<string>()
+  const monthlyBossIds = new Set<string>()
+  for (const sel of planned) {
+    if (selectionCycle(sel) === 'monthly') monthlyBossIds.add(sel.bossId)
+    else weeklyBossIds.add(sel.bossId)
+  }
   return {
-    hasWeekly: planned.some((s) => selectionCycle(s) === 'weekly'),
-    hasMonthly: planned.some((s) => selectionCycle(s) === 'monthly'),
-    count: planned.length,
+    hasWeekly: weeklyBossIds.size > 0,
+    hasMonthly: monthlyBossIds.size > 0,
+    weeklyCount: weeklyBossIds.size,
+    monthlyCount: monthlyBossIds.size,
+    count: weeklyBossIds.size + monthlyBossIds.size,
   }
 }
 

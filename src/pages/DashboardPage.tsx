@@ -258,7 +258,7 @@ export default function DashboardPage({
               ? Math.round((char.totalMeso / accountStats.totalMeso) * 100)
               : 0
             const charBossData = bossDataMap[character.id] ?? createDefaultBossData()
-            const { hasWeekly, hasMonthly, count: plannedCount } = getPlannedBossCycles(charBossData)
+            const { hasWeekly, hasMonthly, weeklyCount, monthlyCount, count: plannedCount } = getPlannedBossCycles(charBossData)
             const weekCleared = isWeeklyBossCleared(charBossData)
             const monthCleared = isMonthlyBossCleared(charBossData)
             const clearStatus = getBossClearStatus(charBossData)
@@ -335,8 +335,10 @@ export default function DashboardPage({
                       )}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
-                    <span>보스 {plannedCount}개</span>
+                  <div className="flex items-center flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-slate-500">
+                    {weeklyCount > 0 && <span className="text-cyber-400/80">주간보스 {weeklyCount}</span>}
+                    {monthlyCount > 0 && <span className="text-maple-400/80">월간보스 {monthlyCount}</span>}
+                    {plannedCount === 0 && <span>보스 미설정</span>}
                     {showMonthlyExpected && !hasIncome && monthlyExpected.weeksInMonth > 0 && (
                       <span>주 {monthlyExpected.weeksInMonth}회</span>
                     )}
