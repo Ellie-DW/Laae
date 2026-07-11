@@ -13,7 +13,7 @@ function getKoreaDayOfWeek(date = new Date()): number {
   return map[weekday] ?? 0
 }
 
-function addDaysYMD(ymd: string, days: number): string {
+export function addDaysYMD(ymd: string, days: number): string {
   const [y, m, d] = ymd.split('-').map(Number)
   const utc = new Date(Date.UTC(y, m - 1, d + days))
   const yy = utc.getUTCFullYear()
@@ -105,6 +105,26 @@ export function getMonthlyPeriod(date = new Date()): { start: string; end: strin
 
 export function getCurrentMonth(date = new Date()): string {
   return getKoreaYMD(date).slice(0, 7)
+}
+
+/** 달력 월과 하루라도 겹치는 목~수 주간 목록 */
+export function enumerateWeeklyPeriodsOverlappingMonth(monthStart: string, monthEnd: string) {
+  const result: { start: string; end: string }[] = []
+  const seen = new Set<string>()
+
+  let week = getWeeklyPeriod(new Date(`${monthStart}T12:00:00`))
+  while (week.start <= monthEnd) {
+    if (!seen.has(week.start) && week.end >= monthStart) {
+      seen.add(week.start)
+      result.push({ start: week.start, end: week.end })
+    }
+    const nextCursor = addDaysYMD(week.end, 1)
+    if (nextCursor > monthEnd && week.start > monthEnd) break
+    week = getWeeklyPeriod(new Date(`${nextCursor}T12:00:00`))
+    if (week.start > monthEnd) break
+  }
+
+  return result
 }
 
 export const DIFFICULTY_COLORS: Record<string, string> = {

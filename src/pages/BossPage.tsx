@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import type { Character, CharacterBossData, BossTab, BossSnapshot } from '../types'
-import { calculatePlannedBossStats } from '../lib/bossStats'
+import { calculatePlannedBossStats, calculateMonthlyExpectedBossStats } from '../lib/bossStats'
 import { BOSS_TABS, getBossesByTab } from '../data/bosses'
-import { formatMesoKorean, getWeeklyPeriod, getMonthlyPeriod } from '../utils'
+import { formatMesoKorean, getWeeklyPeriod, getMonthlyPeriod, getCurrentMonth, getToday } from '../utils'
 import BossCard from '../components/boss/BossCard'
 import BossCumulativeSummary from '../components/boss/BossCumulativeSummary'
 import SelectedBossSummary from '../components/boss/SelectedBossSummary'
@@ -30,6 +30,10 @@ export default function BossPage({
   const tabInfo = BOSS_TABS.find((t) => t.id === activeTab)!
   const bosses = getBossesByTab(activeTab)
   const plannedStats = useMemo(() => calculatePlannedBossStats(bossData), [bossData])
+  const monthlyExpected = useMemo(
+    () => calculateMonthlyExpectedBossStats(bossData, getCurrentMonth(), getToday()),
+    [bossData]
+  )
 
   if (!selectedCharacter) {
     return (
@@ -68,22 +72,43 @@ export default function BossPage({
       </div>
 
       <div className="panel-glow p-5 bg-gradient-to-r from-cyber-900/30 to-maple-900/20 border-cyber-700/30">
-        <p className="text-sm text-slate-400">총 예상 보스 수익</p>
+        <p className="text-sm text-slate-400">이번 주 예상 보스 수익</p>
         <p className="text-3xl font-bold text-maple-400 mt-1 font-display tracking-wide">
           {formatMesoKorean(plannedStats.bossMeso)}
         </p>
         <div className="flex flex-wrap gap-4 mt-2 text-xs text-slate-500">
           <span>주간 {formatMesoKorean(plannedStats.weeklyBossMeso)}</span>
-          <span>월간 {formatMesoKorean(plannedStats.monthlyBossMeso)}</span>
+          <span>월간 주기 {formatMesoKorean(plannedStats.monthlyBossMeso)}</span>
           <span>선택 {plannedStats.plannedBossCount}개</span>
         </div>
         <p className="text-[10px] text-slate-600 mt-2">난이도를 선택하면 예상 수익에 바로 반영돼요. 잡음 체크는 대시보드에서 하세요.</p>
       </div>
 
+      <div className="panel-light p-5 border-maple-500/20">
+        <p className="text-sm text-slate-400">{monthlyExpected.targetMonth} 월간 예상 보스 수익</p>
+        <p className="text-2xl font-bold text-maple-400 mt-1 font-display tracking-wide">
+          {formatMesoKorean(monthlyExpected.monthlyExpectedTotal)}
+        </p>
+        <div className="flex flex-wrap gap-4 mt-2 text-xs text-slate-500">
+          {monthlyExpected.weeklyPerWeek > 0 && (
+            <span>
+              주간 환산 {formatMesoKorean(monthlyExpected.weeklyInMonthTotal)}
+              {monthlyExpected.weeksInMonth > 0 && ` (${formatMesoKorean(monthlyExpected.weeklyPerWeek)} × ${monthlyExpected.weeksInMonth}주)`}
+            </span>
+          )}
+          {monthlyExpected.monthlyPerMonth > 0 && (
+            <span>+ 월간 주기 {formatMesoKorean(monthlyExpected.monthlyPerMonth)}</span>
+          )}
+        </div>
+        <p className="text-[10px] text-slate-600 mt-2">
+          달 경계 주는 잡은 달에만 포함돼요. 아직 안 잡은 주는 이번 달 예상에 남아요.
+        </p>
+      </div>
+
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-        <StatBox label="예상 주간 보스 수익" value={formatMesoKorean(plannedStats.weeklyBossMeso)} highlight />
-        <StatBox label="예상 월간 보스 수익" value={formatMesoKorean(plannedStats.monthlyBossMeso)} gold />
-        <StatBox label="예상 보스" value={`주 ${plannedStats.weeklyPlannedBossCount} / 월 ${plannedStats.monthlyPlannedBossCount}`} />
+        <StatBox label="예상 주간 보스 (1주)" value={formatMesoKorean(plannedStats.weeklyBossMeso)} highlight />
+        <StatBox label="월간 주기 보스 (1회)" value={formatMesoKorean(plannedStats.monthlyBossMeso)} gold />
+        <StatBox label={`${monthlyExpected.targetMonth} 월간 예상`} value={formatMesoKorean(monthlyExpected.monthlyExpectedTotal)} />
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1">

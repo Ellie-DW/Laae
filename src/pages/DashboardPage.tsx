@@ -5,14 +5,15 @@ import type { LedgerSummary, DailyNetEntry, CategoryBreakdown, GoalProgress } fr
 import { EXPENSE_CATEGORY_LABEL } from '../lib/ledgerApi'
 import { buildDiaryDays, getDiaryTypeMeta, getRecentDiaryEntries } from '../lib/diaryEntries'
 import {
-  calculatePlannedBossMeso,
+  calculateMonthlyExpectedBossStats,
+  calculateAccountMonthlyExpectedBossStats,
   getBossClearStatus,
   getPlannedBossCycles,
   isWeeklyBossCleared,
   isMonthlyBossCleared,
 } from '../lib/bossStats'
 import { createDefaultBossData } from '../lib/appDataApi'
-import { formatMesoKorean } from '../utils'
+import { formatMesoKorean, getToday } from '../utils'
 import { formatHuntIncomeSub } from '../lib/huntStats'
 import DropDashboardSection from '../components/drop/DropDashboardSection'
 import CumulativeDashboardSection from '../components/dashboard/CumulativeDashboardSection'
@@ -90,16 +91,13 @@ export default function DashboardPage({
     [accountStats.perCharacter]
   )
 
-  const totalExpectedBossMeso = useMemo(() => {
-    return characters.reduce((sum, character) => {
-      const char = charStatsById[character.id]
-      if (!char) return sum
-      const charBossData = bossDataMap[character.id] ?? createDefaultBossData()
-      const plannedCount = charBossData.selections.filter((s) => s.checked).length
-      if (plannedCount === 0) return sum
-      return sum + calculatePlannedBossMeso(charBossData)
-    }, 0)
-  }, [characters, charStatsById, bossDataMap])
+  const monthlyExpectedBoss = useMemo(
+    () => calculateAccountMonthlyExpectedBossStats(characters, bossDataMap, createDefaultBossData(), currentMonth, getToday()),
+    [characters, bossDataMap, currentMonth]
+  )
+
+  const hasExpectedBossIncome =
+    monthlyExpectedBoss.weeklyPerWeek > 0 || monthlyExpectedBoss.monthlyPerMonth > 0
 
   if (characters.length === 0) {
     return (
@@ -215,13 +213,36 @@ export default function DashboardPage({
             <h2 className="font-semibold text-slate-100 mb-1">캐릭터별 보스 수익</h2>
             <p className="text-xs text-slate-500">주간·월간 보스 각각 체크 · 주간은 목요일, 월간은 매월 1일 초기화</p>
           </div>
-          {totalExpectedBossMeso > 0 && (
-            <div className="text-right shrink-0">
-              <p className="text-xs text-slate-500">전체 예상 수익</p>
-              <p className="text-lg font-bold text-maple-400">{formatMesoKorean(totalExpectedBossMeso)}</p>
-              {accountStats.totalMeso > 0 && accountStats.totalMeso < totalExpectedBossMeso && (
-                <p className="text-[10px] text-emerald-400 mt-0.5">
-                  반영 {formatMesoKorean(accountStats.totalMeso)}
+          {hasExpectedBossIncome && (
+            <div className="text-right shrink-0 space-y-2">
+              {monthlyExpectedBoss.weeklyPerWeek > 0 && (
+                <div>
+                  <p className="text-xs text-slate-500">주간 예상 (1주)</p>
+                  <p className="text-base font-bold text-cyber-400">
+                    {formatMesoKorean(monthlyExpectedBoss.weeklyPerWeek)}
+                  </p>
+                </div>
+              )}
+              <div>
+                <p className="text-xs text-slate-500">{currentMonth} 월간 예상</p>
+                <p className="text-lg font-bold text-maple-400">
+                  {formatMesoKorean(monthlyExpectedBoss.monthlyExpectedTotal)}
+                </p>
+                {(monthlyExpectedBoss.weeklyInMonthTotal > 0 || monthlyExpectedBoss.monthlyPerMonth > 0) && (
+                  <p className="text-[10px] text-slate-600 mt-0.5">
+                    {monthlyExpectedBoss.weeklyInMonthTotal > 0 && (
+                      <span>주간 환산 {formatMesoKorean(monthlyExpectedBoss.weeklyInMonthTotal)}</span>
+                    )}
+                    {monthlyExpectedBoss.weeklyInMonthTotal > 0 && monthlyExpectedBoss.monthlyPerMonth > 0 && ' + '}
+                    {monthlyExpectedBoss.monthlyPerMonth > 0 && (
+                      <span>월간 주기 {formatMesoKorean(monthlyExpectedBoss.monthlyPerMonth)}</span>
+                    )}
+                  </p>
+                )}
+              </div>
+              {accountStats.totalMeso > 0 && accountStats.totalMeso < monthlyExpectedBoss.monthlyExpectedTotal && (
+                <p className="text-[10px] text-emerald-400">
+                  이번 주·달 반영 {formatMesoKorean(accountStats.totalMeso)}
                 </p>
               )}
             </div>
@@ -241,9 +262,13 @@ export default function DashboardPage({
             const weekCleared = isWeeklyBossCleared(charBossData)
             const monthCleared = isMonthlyBossCleared(charBossData)
             const clearStatus = getBossClearStatus(charBossData)
-            const plannedMeso = calculatePlannedBossMeso(charBossData)
+            const monthlyExpected = calculateMonthlyExpectedBossStats(charBossData, currentMonth, getToday())
             const hasIncome = char.totalMeso > 0
             const hasBossSetup = hasWeekly || hasMonthly
+            const showWeeklyExpected = plannedCount > 0 && monthlyExpected.weeklyPerWeek > 0
+            const showMonthlyExpected = plannedCount > 0 && (
+              monthlyExpected.monthlyExpectedTotal > 0 || monthlyExpected.monthlyPerMonth > 0
+            )
 
             return (
               <div
@@ -289,16 +314,32 @@ export default function DashboardPage({
                     <span className={`text-sm font-medium ${isSelected ? 'text-cyber-300' : 'text-slate-200'}`}>
                       {character.name}
                     </span>
-                    <span className={`text-sm font-semibold shrink-0 ${hasIncome || weekCleared || monthCleared ? 'text-maple-400' : 'text-slate-500'}`}>
-                      {hasIncome
-                        ? formatMesoKorean(char.totalMeso)
-                        : plannedCount > 0
-                          ? `예상 ${formatMesoKorean(plannedMeso)}`
-                          : '-'}
+                    <span className={`text-sm font-semibold shrink-0 text-right ${hasIncome || weekCleared || monthCleared ? 'text-maple-400' : 'text-slate-500'}`}>
+                      {hasIncome ? (
+                        formatMesoKorean(char.totalMeso)
+                      ) : showWeeklyExpected || showMonthlyExpected ? (
+                        <span className="flex flex-col items-end gap-0.5">
+                          {showWeeklyExpected && (
+                            <span className="text-cyber-400 text-xs">
+                              주 {formatMesoKorean(monthlyExpected.weeklyPerWeek)}
+                            </span>
+                          )}
+                          {showMonthlyExpected && (
+                            <span>
+                              월 {formatMesoKorean(monthlyExpected.monthlyExpectedTotal)}
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        '-'
+                      )}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
                     <span>보스 {plannedCount}개</span>
+                    {showMonthlyExpected && !hasIncome && monthlyExpected.weeksInMonth > 0 && (
+                      <span>주 {monthlyExpected.weeksInMonth}회</span>
+                    )}
                     <span className={clearStatus.tone === 'done' ? 'text-emerald-400' : clearStatus.tone === 'pending' ? 'text-amber-400' : ''}>
                       {clearStatus.label}
                     </span>

@@ -1,6 +1,6 @@
 import type { CharacterBossData, BossSnapshot } from '../types'
 import { BOSSES, getBossResetCycle } from '../data/bosses'
-import { getWeeklyPeriod, getMonthlyPeriod } from '../utils'
+import { getWeeklyPeriod, getMonthlyPeriod, getToday, getCurrentMonth, enumerateWeeklyPeriodsOverlappingMonth } from '../utils'
 
 export interface BossStats {
   totalMeso: number
@@ -238,6 +238,106 @@ export function calculateAccountStats(
 
 export function calculatePlannedBossMeso(bossData: CharacterBossData): number {
   return calculatePlannedBossStats(bossData).bossMeso
+}
+
+export interface MonthlyExpectedBossStats {
+  targetMonth: string
+  /** 주간 보스 1주 예상 */
+  weeklyPerWeek: number
+  /** 월간 주기 보스 1회 예상 */
+  monthlyPerMonth: number
+  weeksInMonth: number
+  /** 이번 달 주간 환산 (weeklyPerWeek × weeksInMonth) */
+  weeklyInMonthTotal: number
+  monthlyExpectedTotal: number
+}
+
+/** 경계 주는 잡은 달에 귀속, 미클리어는 아직 잡을 수 있는 달에 포함 */
+export function getWeeklyPeriodAttributionMonth(
+  weekStart: string,
+  weekEnd: string,
+  bossData: CharacterBossData,
+  asOf: string = getToday()
+): string | null {
+  const clearedThisWeek = bossData.weeklyClearedPeriodStart === weekStart
+  const clearDate = bossData.bossesClearedAt?.slice(0, 10) ?? null
+
+  if (clearedThisWeek && clearDate) {
+    return clearDate.slice(0, 7)
+  }
+  if (clearedThisWeek) {
+    return weekStart.slice(0, 7)
+  }
+
+  if (asOf > weekEnd) return null
+  if (asOf >= weekStart) return asOf.slice(0, 7)
+  return weekStart.slice(0, 7)
+}
+
+export function countWeeklyPeriodsForMonth(
+  bossData: CharacterBossData,
+  targetMonth: string,
+  asOf: string = getToday()
+): number {
+  if (!getPlannedBossCycles(bossData).hasWeekly) return 0
+
+  const { start: monthStart, end: monthEnd } = getMonthlyPeriod(new Date(`${targetMonth}-15T12:00:00`))
+  return enumerateWeeklyPeriodsOverlappingMonth(monthStart, monthEnd).filter(({ start, end }) =>
+    getWeeklyPeriodAttributionMonth(start, end, bossData, asOf) === targetMonth
+  ).length
+}
+
+export function calculateMonthlyExpectedBossStats(
+  bossData: CharacterBossData,
+  targetMonth: string = getCurrentMonth(),
+  asOf: string = getToday()
+): MonthlyExpectedBossStats {
+  const planned = calculatePlannedBossStats(bossData)
+  const weeksInMonth = countWeeklyPeriodsForMonth(bossData, targetMonth, asOf)
+  const weeklyInMonthTotal = planned.weeklyBossMeso * weeksInMonth
+
+  return {
+    targetMonth,
+    weeklyPerWeek: planned.weeklyBossMeso,
+    monthlyPerMonth: planned.monthlyBossMeso,
+    weeksInMonth,
+    weeklyInMonthTotal,
+    monthlyExpectedTotal: weeklyInMonthTotal + planned.monthlyBossMeso,
+  }
+}
+
+export function calculateAccountMonthlyExpectedBossStats(
+  characters: { id: string }[],
+  bossDataMap: Record<string, CharacterBossData>,
+  defaultBossData: CharacterBossData,
+  targetMonth: string = getCurrentMonth(),
+  asOf: string = getToday()
+): MonthlyExpectedBossStats {
+  let weeklyPerWeek = 0
+  let monthlyPerMonth = 0
+  let weeklyInMonthTotal = 0
+  let monthlyExpectedTotal = 0
+
+  for (const character of characters) {
+    const stats = calculateMonthlyExpectedBossStats(
+      bossDataMap[character.id] ?? defaultBossData,
+      targetMonth,
+      asOf
+    )
+    weeklyPerWeek += stats.weeklyPerWeek
+    monthlyPerMonth += stats.monthlyPerMonth
+    weeklyInMonthTotal += stats.weeklyInMonthTotal
+    monthlyExpectedTotal += stats.monthlyExpectedTotal
+  }
+
+  return {
+    targetMonth,
+    weeklyPerWeek,
+    monthlyPerMonth,
+    weeksInMonth: 0,
+    weeklyInMonthTotal,
+    monthlyExpectedTotal,
+  }
 }
 
 export interface BossPerBossCumulative {
