@@ -1,10 +1,10 @@
-import type { HuntRecord, GatherRecord, Expense, DropRecord, BossSnapshot, CharacterBossData } from '../types'
+import type { HuntRecord, GatherRecord, Expense, DropRecord, BossSnapshot, CharacterBossData, DiaryNote, Page } from '../types'
 import { EXPENSE_CATEGORY_LABEL } from './ledgerApi'
 import { calculateBossStats, isWeeklyBossCleared, isMonthlyBossCleared } from './bossStats'
 import { isSolErdaSale, isSolErdaSpend, parseSolErdaPurchaseMemo, isSolErdaPurchaseExpense } from './huntStats'
 import { getToday, formatMesoKorean, getWeeklyPeriod, getMonthlyPeriod } from '../utils'
 
-export type DiaryEntryType = 'hunt' | 'gather' | 'drop' | 'expense' | 'boss'
+export type DiaryEntryType = 'hunt' | 'gather' | 'drop' | 'expense' | 'boss' | 'note'
 
 export interface DiaryEntry {
   id: string
@@ -19,6 +19,12 @@ export interface DiaryEntry {
   memo?: string | null
   /** 메소 대신 조각 수량 등을 표시할 때 */
   amountLabel?: string
+  /** note 타입일 때 원본 메모 ID */
+  sourceId?: string
+  /** 솔 에르다 관련 항목 (필터·요약용) */
+  isSolErda?: boolean
+  /** 클릭 시 이동할 탭 (타입 기본값 대신) */
+  navigatePage?: Page
 }
 
 export interface DiaryDay {
@@ -37,6 +43,25 @@ const TYPE_META: Record<DiaryEntryType, { icon: string; label: string }> = {
   drop: { icon: '💎', label: '드랍' },
   expense: { icon: '💸', label: '지출' },
   boss: { icon: '👹', label: '보스' },
+  note: { icon: '📝', label: '메모' },
+}
+
+const ENTRY_TARGET_PAGE: Record<Exclude<DiaryEntryType, 'note'>, Page> = {
+  hunt: 'hunt',
+  gather: 'gather',
+  drop: 'drop',
+  expense: 'expense',
+  boss: 'boss',
+}
+
+export function getDiaryEntryTargetPage(entry: DiaryEntry): Page | null {
+  if (entry.type === 'note') return null
+  if (entry.navigatePage) return entry.navigatePage
+  return ENTRY_TARGET_PAGE[entry.type]
+}
+
+export function isSolErdaDiaryEntry(entry: DiaryEntry) {
+  return !!entry.isSolErda
 }
 
 export function getDiaryTypeMeta(type: DiaryEntryType) {
@@ -44,6 +69,9 @@ export function getDiaryTypeMeta(type: DiaryEntryType) {
 }
 
 export function formatDiaryEntryAmount(entry: DiaryEntry) {
+  if (entry.type === 'note') {
+    return { text: '메모', tone: 'neutral' as const }
+  }
   if (entry.amountLabel) {
     return { text: entry.amountLabel, tone: 'neutral' as const }
   }
@@ -148,6 +176,7 @@ export function buildDiaryDays(
     drops?: DropRecord[]
     snapshots?: BossSnapshot[]
     bossDataMap?: Record<string, CharacterBossData>
+    notes?: DiaryNote[]
     limitDays?: number
   }
 ): DiaryDay[] {
@@ -188,6 +217,8 @@ export function buildDiaryDays(
         : h.meso === 0 && h.solErdaFragments > 0
           ? `${h.solErdaFragments.toLocaleString()}개 획득`
           : undefined,
+      isSolErda: isSale || isSpend || h.solErdaFragments > 0,
+      navigatePage: isSpend ? 'expense' : 'hunt',
     })
   }
 
@@ -235,6 +266,7 @@ export function buildDiaryDays(
       title: purchase ? '솔 에르다 조각 구매' : EXPENSE_CATEGORY_LABEL[e.category],
       detail: purchase ? `${purchase.quantity.toLocaleString()}개 · ${formatMesoKorean(e.amount)}` : undefined,
       memo: purchase ? purchase.displayMemo : e.memo,
+      isSolErda: !!purchase,
     })
   }
 
@@ -263,6 +295,22 @@ export function buildDiaryDays(
         options.snapshots ?? []
       )
     )
+  }
+
+  for (const note of options?.notes ?? []) {
+    if (charId && note.characterId && note.characterId !== charId) continue
+    entries.push({
+      id: `note-${note.id}`,
+      type: 'note',
+      characterId: note.characterId ?? '',
+      characterName: note.characterId ? charName(characters, note.characterId) : '전체',
+      recordDate: note.recordDate,
+      createdAt: note.updatedAt || note.createdAt,
+      amount: 0,
+      title: '메모',
+      memo: note.memo,
+      sourceId: note.id,
+    })
   }
 
   const dayMap = new Map<string, DiaryEntry[]>()
@@ -306,11 +354,13 @@ export function getRecentDiaryEntries(days: DiaryDay[], maxEntries = 8): DiaryEn
   return result
 }
 
-export function filterDiaryDaysByType(days: DiaryDay[], type: DiaryEntryType | 'all'): DiaryDay[] {
+export function filterDiaryDaysByType(days: DiaryDay[], type: DiaryEntryType | 'all' | 'solErda'): DiaryDay[] {
   if (type === 'all') return days
   return days
     .map((day) => {
-      const entries = day.entries.filter((e) => e.type === type)
+      const entries = day.entries.filter((e) =>
+        type === 'solErda' ? isSolErdaDiaryEntry(e) : e.type === type
+      )
       if (entries.length === 0) return null
       const income = entries.filter((e) => e.amount > 0).reduce((s, e) => s + e.amount, 0)
       const expense = entries.filter((e) => e.amount < 0).reduce((s, e) => s + Math.abs(e.amount), 0)
@@ -324,6 +374,8 @@ export interface DiaryMonthSummary {
   expense: number
   net: number
   incomeByType: Partial<Record<DiaryEntryType, number>>
+  huntMesoIncome: number
+  solErdaSaleIncome: number
   entryCount: number
 }
 
@@ -336,6 +388,8 @@ export function summarizeDiaryMonth(days: DiaryDay[], year: number, month: numbe
     expense: 0,
     net: 0,
     incomeByType: {},
+    huntMesoIncome: 0,
+    solErdaSaleIncome: 0,
     entryCount: 0,
   }
 
@@ -347,6 +401,11 @@ export function summarizeDiaryMonth(days: DiaryDay[], year: number, month: numbe
     for (const entry of day.entries) {
       if (entry.amount <= 0) continue
       summary.incomeByType[entry.type] = (summary.incomeByType[entry.type] ?? 0) + entry.amount
+      if (entry.type === 'hunt' && entry.title === '솔 에르다 판매') {
+        summary.solErdaSaleIncome += entry.amount
+      } else if (entry.type === 'hunt') {
+        summary.huntMesoIncome += entry.amount
+      }
     }
   }
 

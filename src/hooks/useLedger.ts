@@ -14,6 +14,9 @@ import {
   sellDropRecords,
   upsertGoal,
   deleteGoal,
+  addDiaryNote,
+  updateDiaryNote,
+  deleteDiaryNote,
 } from '../lib/ledgerApi'
 import {
   computeLedgerSummary,
@@ -39,6 +42,7 @@ export function useLedger(
   const [drops, setDrops] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['drops']>([])
   const [goals, setGoals] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['goals']>([])
   const [snapshots, setSnapshots] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['snapshots']>([])
+  const [diaryNotes, setDiaryNotes] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['diaryNotes']>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -54,6 +58,7 @@ export function useLedger(
       setDrops(data.drops)
       setGoals(data.goals)
       setSnapshots(data.snapshots)
+      setDiaryNotes(data.diaryNotes)
     } catch (err) {
       setError(getErrorMessage(err, '기록을 불러오지 못했습니다.'))
     } finally {
@@ -69,6 +74,7 @@ export function useLedger(
       setDrops([])
       setGoals([])
       setSnapshots([])
+      setDiaryNotes([])
       setLoading(false)
       return
     }
@@ -343,6 +349,31 @@ export function useLedger(
     )
   }, [])
 
+  const createDiaryNote = useCallback(
+    async (data: { characterId?: string | null; recordDate: string; memo: string }) => {
+      if (!user || !data.memo.trim()) return
+      const row = await addDiaryNote(user.id, data)
+      setDiaryNotes((prev) => [row, ...prev])
+      setError(null)
+    },
+    [user]
+  )
+
+  const saveDiaryNote = useCallback(
+    async (id: string, data: { characterId?: string | null; memo: string }) => {
+      if (!data.memo.trim()) return
+      const row = await updateDiaryNote(id, data)
+      setDiaryNotes((prev) => prev.map((n) => (n.id === id ? row : n)))
+      setError(null)
+    },
+    []
+  )
+
+  const removeDiaryNote = useCallback(async (id: string) => {
+    await deleteDiaryNote(id)
+    setDiaryNotes((prev) => prev.filter((n) => n.id !== id))
+  }, [])
+
   return {
     expenses,
     hunts,
@@ -350,6 +381,7 @@ export function useLedger(
     drops,
     goals,
     snapshots,
+    diaryNotes,
     loading,
     error,
     currentMonth,
@@ -377,6 +409,9 @@ export function useLedger(
     removeDrop,
     saveGoal,
     removeGoal,
+    createDiaryNote,
+    saveDiaryNote,
+    removeDiaryNote,
     reload,
     upsertSnapshot,
     removeSnapshot,

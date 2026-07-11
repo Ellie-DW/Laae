@@ -10,6 +10,7 @@ import type {
   BossSnapshot,
   BossResetCycle,
   CharacterBossData,
+  DiaryNote,
 } from '../types'
 
 function mapExpense(row: Record<string, unknown>): Expense {
@@ -71,6 +72,17 @@ function mapGoal(row: Record<string, unknown>): Goal {
   }
 }
 
+function mapDiaryNote(row: Record<string, unknown>): DiaryNote {
+  return {
+    id: row.id as string,
+    characterId: (row.character_id as string) ?? null,
+    recordDate: row.record_date as string,
+    memo: row.memo as string,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
+  }
+}
+
 function mapSnapshot(row: Record<string, unknown>): BossSnapshot {
   return {
     id: row.id as string,
@@ -85,13 +97,14 @@ function mapSnapshot(row: Record<string, unknown>): BossSnapshot {
 }
 
 export async function fetchLedgerData(userId: string) {
-  const [expenses, hunts, gathers, drops, goals, snapshots] = await Promise.all([
+  const [expenses, hunts, gathers, drops, goals, snapshots, diaryNotes] = await Promise.all([
     supabase.from('expenses').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
     supabase.from('hunt_records').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
     supabase.from('gather_records').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
     supabase.from('drop_records').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
     supabase.from('goals').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('boss_snapshots').select('*').eq('user_id', userId).order('period_start', { ascending: false }),
+    supabase.from('diary_notes').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
   ])
 
   if (expenses.error) throw new Error(expenses.error.message)
@@ -100,6 +113,7 @@ export async function fetchLedgerData(userId: string) {
   if (drops.error) throw new Error(drops.error.message)
   if (goals.error) throw new Error(goals.error.message)
   if (snapshots.error) throw new Error(snapshots.error.message)
+  if (diaryNotes.error) throw new Error(diaryNotes.error.message)
 
   return {
     expenses: expenses.data.map(mapExpense),
@@ -108,6 +122,7 @@ export async function fetchLedgerData(userId: string) {
     drops: drops.data.map(mapDrop),
     goals: goals.data.map(mapGoal),
     snapshots: snapshots.data.map(mapSnapshot),
+    diaryNotes: diaryNotes.data.map(mapDiaryNote),
   }
 }
 
@@ -334,6 +349,47 @@ export async function deleteBossSnapshot(
     .eq('character_id', characterId)
     .eq('cycle', cycle)
     .eq('period_start', periodStart)
+  if (error) throw error
+}
+
+export async function addDiaryNote(
+  userId: string,
+  data: { characterId?: string | null; recordDate: string; memo: string }
+) {
+  const { data: row, error } = await supabase
+    .from('diary_notes')
+    .insert({
+      user_id: userId,
+      character_id: data.characterId ?? null,
+      record_date: data.recordDate,
+      memo: data.memo.trim(),
+    })
+    .select('*')
+    .single()
+  if (error) throw error
+  return mapDiaryNote(row)
+}
+
+export async function updateDiaryNote(
+  id: string,
+  data: { characterId?: string | null; memo: string }
+) {
+  const { data: row, error } = await supabase
+    .from('diary_notes')
+    .update({
+      character_id: data.characterId ?? null,
+      memo: data.memo.trim(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select('*')
+    .single()
+  if (error) throw error
+  return mapDiaryNote(row)
+}
+
+export async function deleteDiaryNote(id: string) {
+  const { error } = await supabase.from('diary_notes').delete().eq('id', id)
   if (error) throw error
 }
 

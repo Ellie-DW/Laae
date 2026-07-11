@@ -1,4 +1,4 @@
-import type { HuntRecord } from '../types'
+import type { HuntRecord, Expense } from '../types'
 import { formatMesoKorean } from '../utils'
 
 export function getHeldSolErdaFragments(hunts: HuntRecord[], characterId?: string) {
@@ -35,6 +35,76 @@ export function parseSolErdaPurchaseMemo(memo: string | null) {
 
 export function isSolErdaPurchaseExpense(memo: string | null) {
   return parseSolErdaPurchaseMemo(memo) !== null
+}
+
+export interface SolErdaMonthStats {
+  acquired: number
+  purchased: number
+  used: number
+  sold: number
+  saleMeso: number
+  purchaseMeso: number
+  held: number
+}
+
+export function summarizeSolErdaMonth(
+  hunts: HuntRecord[],
+  expenses: Expense[],
+  monthPrefix: string,
+  characterId?: string
+): SolErdaMonthStats {
+  const inMonth = (date: string) => date.startsWith(monthPrefix)
+  const matchChar = (id: string) => !characterId || id === characterId
+
+  const purchaseHuntIds = new Set<string>()
+  for (const e of expenses) {
+    const parsed = parseSolErdaPurchaseMemo(e.memo)
+    if (parsed?.huntId) purchaseHuntIds.add(parsed.huntId)
+  }
+
+  let acquired = 0
+  let purchased = 0
+  let used = 0
+  let sold = 0
+  let saleMeso = 0
+  let purchaseMeso = 0
+
+  for (const h of hunts) {
+    if (!matchChar(h.characterId)) continue
+    if (isSolErdaSale(h) && inMonth(h.recordDate)) {
+      sold += Math.abs(h.solErdaFragments)
+      saleMeso += h.meso
+    } else if (isSolErdaSpend(h) && inMonth(h.recordDate)) {
+      used += Math.abs(h.solErdaFragments)
+    } else if (
+      inMonth(h.recordDate) &&
+      h.solErdaFragments > 0 &&
+      !purchaseHuntIds.has(h.id)
+    ) {
+      acquired += h.solErdaFragments
+    }
+  }
+
+  for (const e of expenses) {
+    if (!matchChar(e.characterId) || !inMonth(e.recordDate)) continue
+    const parsed = parseSolErdaPurchaseMemo(e.memo)
+    if (parsed) {
+      purchased += parsed.quantity
+      purchaseMeso += e.amount
+    }
+  }
+
+  const heldHunts = hunts.filter((h) => matchChar(h.characterId))
+
+  return {
+    acquired,
+    purchased,
+    used,
+    sold,
+    saleMeso,
+    purchaseMeso,
+    held: getHeldSolErdaFragments(heldHunts),
+  }
 }
 
 export interface HuntCumulativeStats {

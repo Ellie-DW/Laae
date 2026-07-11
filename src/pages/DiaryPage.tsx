@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import type { Character, HuntRecord, GatherRecord, Expense, DropRecord, BossSnapshot, CharacterBossData } from '../types'
+import type { Character, HuntRecord, GatherRecord, Expense, DropRecord, BossSnapshot, CharacterBossData, DiaryNote } from '../types'
 import {
   buildDiaryDays,
   filterDiaryDaysByType,
   formatDiaryEntryAmount,
+  getDiaryEntryTargetPage,
   getDiaryTypeMeta,
   isSolErdaPurchaseExpense,
   summarizeDiaryMonth,
@@ -11,6 +12,7 @@ import {
   type DiaryEntry,
   type DiaryEntryType,
 } from '../lib/diaryEntries'
+import { summarizeSolErdaMonth } from '../lib/huntStats'
 import { computeExpenseByCategory } from '../lib/ledgerAnalytics'
 import {
   buildMonthCalendar,
@@ -28,24 +30,39 @@ interface DiaryPageProps {
   expenses: Expense[]
   drops: DropRecord[]
   snapshots: BossSnapshot[]
+  diaryNotes: DiaryNote[]
   onRemoveHunt: (id: string) => Promise<void>
   onRemoveGather: (id: string) => Promise<void>
   onRemoveExpense: (id: string) => Promise<void>
   onRemoveSolErdaPurchase: (expenseId: string, memo: string | null) => Promise<void>
   onRemoveDrop: (id: string) => Promise<void>
+  onCreateNote: (data: { characterId?: string | null; recordDate: string; memo: string }) => Promise<void>
+  onSaveNote: (id: string, data: { characterId?: string | null; memo: string }) => Promise<void>
+  onRemoveNote: (id: string) => Promise<void>
+  onNavigateToSource: (entry: DiaryEntry) => void
 }
 
 type ViewMode = 'list' | 'calendar'
-type TypeFilter = 'all' | DiaryEntryType
+type TypeFilter = 'all' | DiaryEntryType | 'solErda'
 
 const TYPE_FILTERS: { id: TypeFilter; label: string }[] = [
   { id: 'all', label: '전체' },
+  { id: 'note', label: '메모' },
+  { id: 'solErda', label: '솔 에르다' },
   { id: 'hunt', label: '사냥' },
   { id: 'gather', label: '채집' },
   { id: 'drop', label: '드랍' },
   { id: 'expense', label: '지출' },
   { id: 'boss', label: '보스' },
 ]
+
+const PAGE_LABEL: Record<string, string> = {
+  hunt: '사냥',
+  gather: '채집',
+  drop: '드랍',
+  expense: '지출',
+  boss: '보스',
+}
 
 export default function DiaryPage({
   characters,
@@ -55,11 +72,16 @@ export default function DiaryPage({
   expenses,
   drops,
   snapshots,
+  diaryNotes,
   onRemoveHunt,
   onRemoveGather,
   onRemoveExpense,
   onRemoveSolErdaPurchase,
   onRemoveDrop,
+  onCreateNote,
+  onSaveNote,
+  onRemoveNote,
+  onNavigateToSource,
 }: DiaryPageProps) {
   const [filterCharacterId, setFilterCharacterId] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<TypeFilter>('all')
@@ -76,8 +98,9 @@ export default function DiaryPage({
       drops,
       snapshots,
       bossDataMap,
+      notes: diaryNotes,
     }),
-    [hunts, gathers, expenses, drops, characters, snapshots, bossDataMap, filterCharacterId]
+    [hunts, gathers, expenses, drops, characters, snapshots, bossDataMap, diaryNotes, filterCharacterId]
   )
 
   const days = useMemo(
@@ -93,6 +116,11 @@ export default function DiaryPage({
   const monthSummary = useMemo(
     () => summarizeDiaryMonth(days, yearMonth.year, yearMonth.month),
     [days, yearMonth]
+  )
+
+  const solErdaMonth = useMemo(
+    () => summarizeSolErdaMonth(hunts, expenses, monthKey, charFilter),
+    [hunts, expenses, monthKey, charFilter]
   )
 
   const categoryBreakdown = useMemo(
@@ -114,7 +142,13 @@ export default function DiaryPage({
     [expenses]
   )
 
+  const defaultNoteCharacterId = filterCharacterId ?? characters[0]?.id ?? null
+
   const handleRemove = async (entry: DiaryEntry) => {
+    if (entry.type === 'note' && entry.sourceId) {
+      await onRemoveNote(entry.sourceId)
+      return
+    }
     if (entry.id.startsWith('hunt-')) {
       await onRemoveHunt(entry.id.slice(5))
       return
@@ -152,7 +186,7 @@ export default function DiaryPage({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-100">다이어리</h1>
-          <p className="text-sm text-slate-500 mt-1">날짜별 수입·지출 기록을 한눈에</p>
+          <p className="text-sm text-slate-500 mt-1">날짜별 수입·지출·메모를 한눈에</p>
         </div>
         <div className="flex gap-1 shrink-0">
           <ViewTab active={viewMode === 'calendar'} onClick={() => setViewMode('calendar')}>
@@ -214,7 +248,17 @@ export default function DiaryPage({
           </div>
           {Object.keys(monthSummary.incomeByType).length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
-              {(['hunt', 'gather', 'drop', 'boss'] as const).map((type) => {
+              {monthSummary.huntMesoIncome > 0 && (
+                <span className="text-xs px-2 py-1 rounded bg-cyber-500/10 text-cyber-400 border border-cyber-500/20">
+                  사냥 {formatMesoKorean(monthSummary.huntMesoIncome)}
+                </span>
+              )}
+              {monthSummary.solErdaSaleIncome > 0 && (
+                <span className="text-xs px-2 py-1 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                  솔 에르다 판매 {formatMesoKorean(monthSummary.solErdaSaleIncome)}
+                </span>
+              )}
+              {(['gather', 'drop', 'boss'] as const).map((type) => {
                 const amount = monthSummary.incomeByType[type]
                 if (!amount) return null
                 return (
@@ -226,6 +270,38 @@ export default function DiaryPage({
                   </span>
                 )
               })}
+            </div>
+          )}
+          {(solErdaMonth.acquired > 0 ||
+            solErdaMonth.purchased > 0 ||
+            solErdaMonth.used > 0 ||
+            solErdaMonth.sold > 0 ||
+            solErdaMonth.held > 0) && (
+            <div className="mb-4 pt-3 border-t border-dark-border/60">
+              <p className="text-xs text-slate-500 mb-2">솔 에르다 조각 ({monthKey})</p>
+              <div className="flex flex-wrap gap-2">
+                {solErdaMonth.acquired > 0 && (
+                  <SolErdaChip label="획득" value={`+${solErdaMonth.acquired.toLocaleString()}개`} />
+                )}
+                {solErdaMonth.purchased > 0 && (
+                  <SolErdaChip
+                    label="구매"
+                    value={`+${solErdaMonth.purchased.toLocaleString()}개 · ${formatMesoKorean(solErdaMonth.purchaseMeso)}`}
+                  />
+                )}
+                {solErdaMonth.used > 0 && (
+                  <SolErdaChip label="사용" value={`-${solErdaMonth.used.toLocaleString()}개`} />
+                )}
+                {solErdaMonth.sold > 0 && (
+                  <SolErdaChip
+                    label="판매"
+                    value={`-${solErdaMonth.sold.toLocaleString()}개 · ${formatMesoKorean(solErdaMonth.saleMeso)}`}
+                  />
+                )}
+                {solErdaMonth.held > 0 && (
+                  <SolErdaChip label="현재 보유" value={`${solErdaMonth.held.toLocaleString()}개`} highlight />
+                )}
+              </div>
             </div>
           )}
           {categoryBreakdown.length > 0 && filterType === 'all' && (
@@ -269,20 +345,31 @@ export default function DiaryPage({
           />
 
           {selectedDate ? (
-            selectedDay && selectedDay.entries.length > 0 ? (
-              <DaySection
-                day={selectedDay}
-                showCharacter={filterCharacterId === null}
-                onRemove={handleRemove}
+            <div className="space-y-4">
+              <DiaryNoteForm
+                date={selectedDate}
+                characters={characters}
+                defaultCharacterId={defaultNoteCharacterId}
+                showCharacterSelect={filterCharacterId === null}
+                onSubmit={onCreateNote}
               />
-            ) : (
-              <div className="panel-light p-8 text-center">
-                <p className="text-sm text-slate-500">이 날짜에 기록이 없어요</p>
-              </div>
-            )
+              {selectedDay && selectedDay.entries.length > 0 ? (
+                <DaySection
+                  day={selectedDay}
+                  showCharacter={filterCharacterId === null}
+                  onRemove={handleRemove}
+                  onSaveNote={onSaveNote}
+                  onNavigate={onNavigateToSource}
+                />
+              ) : (
+                <div className="panel-light p-6 text-center">
+                  <p className="text-sm text-slate-500">이 날짜에 숫자 기록은 없어요. 메모를 남겨보세요.</p>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="panel-light p-6 text-center">
-              <p className="text-sm text-slate-500">날짜를 클릭하면 상세 기록을 볼 수 있어요</p>
+              <p className="text-sm text-slate-500">날짜를 클릭하면 상세 기록과 메모를 볼 수 있어요</p>
             </div>
           )}
         </div>
@@ -290,20 +377,112 @@ export default function DiaryPage({
         <div className="panel-light p-12 text-center">
           <span className="text-4xl">📔</span>
           <p className="text-slate-400 mt-4">아직 기록이 없어요</p>
-          <p className="text-sm text-slate-500 mt-1">사냥·채집·드랍·지출·보스 기록이 여기에 쌓여요</p>
+          <p className="text-sm text-slate-500 mt-1">사냥·채집·드랍·지출·보스·메모가 여기에 쌓여요</p>
         </div>
       ) : (
         <div className="space-y-8">
           {days.map((day) => (
-            <DaySection
-              key={day.date}
-              day={day}
-              showCharacter={filterCharacterId === null}
-              onRemove={handleRemove}
-            />
+            <div key={day.date} className="space-y-4">
+              <DiaryNoteForm
+                date={day.date}
+                characters={characters}
+                defaultCharacterId={defaultNoteCharacterId}
+                showCharacterSelect={filterCharacterId === null}
+                onSubmit={onCreateNote}
+                compact
+              />
+              <DaySection
+                day={day}
+                showCharacter={filterCharacterId === null}
+                onRemove={handleRemove}
+                onSaveNote={onSaveNote}
+                onNavigate={onNavigateToSource}
+              />
+            </div>
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function DiaryNoteForm({
+  date,
+  characters,
+  defaultCharacterId,
+  showCharacterSelect,
+  onSubmit,
+  compact = false,
+}: {
+  date: string
+  characters: Character[]
+  defaultCharacterId: string | null
+  showCharacterSelect: boolean
+  onSubmit: (data: { characterId?: string | null; recordDate: string; memo: string }) => Promise<void>
+  compact?: boolean
+}) {
+  const [memo, setMemo] = useState('')
+  const [characterId, setCharacterId] = useState<string>('account')
+  const [saving, setSaving] = useState(false)
+
+  const handleSubmit = async () => {
+    if (!memo.trim()) return
+    setSaving(true)
+    try {
+      const resolvedCharacterId = showCharacterSelect
+        ? (characterId === 'account' ? null : characterId)
+        : defaultCharacterId
+      await onSubmit({
+        characterId: resolvedCharacterId,
+        recordDate: date,
+        memo: memo.trim(),
+      })
+      setMemo('')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className={`panel-light border-amber-500/15 ${compact ? 'p-4' : 'p-5'}`}>
+      <p className="text-sm font-medium text-slate-200 mb-3">
+        {compact ? `${date} 메모 추가` : '메모 추가'}
+      </p>
+      <div className="space-y-3">
+        {showCharacterSelect && (
+          <div>
+            <label className="text-xs text-slate-500 mb-1 block">캐릭터</label>
+            <select
+              value={characterId}
+              onChange={(e) => setCharacterId(e.target.value)}
+              className="input-field text-sm"
+            >
+              <option value="account">전체 (계정 공통)</option>
+              {characters.map((char) => (
+                <option key={char.id} value={char.id}>{char.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        <div>
+          <label className="text-xs text-slate-500 mb-1 block">메모</label>
+          <textarea
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+            placeholder="오늘 있었던 일, 강화 결과, 보스 클리어 등"
+            rows={compact ? 2 : 3}
+            className="input-field text-sm resize-none"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!memo.trim() || saving}
+          className="btn-primary text-sm w-full py-2 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {saving ? '저장 중...' : '메모 저장'}
+        </button>
+      </div>
     </div>
   )
 }
@@ -327,15 +506,66 @@ function SummaryChip({
   )
 }
 
+function SolErdaChip({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string
+  value: string
+  highlight?: boolean
+}) {
+  return (
+    <span
+      className={`text-xs px-2 py-1 rounded border ${
+        highlight
+          ? 'bg-violet-500/15 text-violet-300 border-violet-500/30 font-medium'
+          : 'bg-violet-500/10 text-violet-400 border-violet-500/20'
+      }`}
+    >
+      {label} {value}
+    </span>
+  )
+}
+
 function DaySection({
   day,
   showCharacter,
   onRemove,
+  onSaveNote,
+  onNavigate,
 }: {
   day: DiaryDay
   showCharacter: boolean
   onRemove: (entry: DiaryEntry) => void
+  onSaveNote: (id: string, data: { characterId?: string | null; memo: string }) => Promise<void>
+  onNavigate: (entry: DiaryEntry) => void
 }) {
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [editMemo, setEditMemo] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const startEditNote = (entry: DiaryEntry) => {
+    if (!entry.sourceId) return
+    setEditingNoteId(entry.sourceId)
+    setEditMemo(entry.memo ?? '')
+  }
+
+  const saveEditNote = async (entry: DiaryEntry) => {
+    if (!entry.sourceId || !editMemo.trim()) return
+    setSaving(true)
+    try {
+      await onSaveNote(entry.sourceId, {
+        characterId: entry.characterId || null,
+        memo: editMemo.trim(),
+      })
+      setEditingNoteId(null)
+      setEditMemo('')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <section>
       <div className="sticky top-0 z-10 py-2 mb-3 bg-dark-bg/90 backdrop-blur-sm border-b border-dark-border/40">
@@ -357,12 +587,18 @@ function DaySection({
         {day.entries.map((entry) => {
           const meta = getDiaryTypeMeta(entry.type)
           const amountDisplay = formatDiaryEntryAmount(entry)
+          const targetPage = getDiaryEntryTargetPage(entry)
+          const isNote = entry.type === 'note'
+          const isEditing = isNote && editingNoteId === entry.sourceId
           const canDelete = entry.type !== 'boss'
+          const canNavigate = !!targetPage && (entry.characterId || entry.type === 'expense')
 
           return (
             <article
               key={entry.id}
-              className="relative panel-light p-4 transition-colors"
+              className={`relative panel-light p-4 transition-colors ${
+                canNavigate ? 'cursor-pointer hover:bg-dark-surface/80' : ''
+              }`}
               style={{
                 borderLeft: `2px solid ${
                   amountDisplay.tone === 'expense'
@@ -371,10 +607,16 @@ function DaySection({
                       ? 'rgba(251,191,36,0.35)'
                       : entry.type === 'drop'
                         ? 'rgba(251,191,36,0.25)'
-                        : amountDisplay.tone === 'neutral'
-                          ? 'rgba(167,139,250,0.35)'
-                          : 'rgba(34,211,238,0.35)'
+                        : entry.type === 'note'
+                          ? 'rgba(245,158,11,0.35)'
+                          : amountDisplay.tone === 'neutral'
+                            ? 'rgba(167,139,250,0.35)'
+                            : 'rgba(34,211,238,0.35)'
                 }`,
+              }}
+              onClick={() => {
+                if (isEditing) return
+                if (canNavigate) onNavigate(entry)
               }}
             >
               <div className="absolute -left-6 top-5 w-[18px] h-[18px] rounded-full bg-dark-bg border-2 border-cyber-600/50 flex items-center justify-center text-[10px]">
@@ -390,25 +632,73 @@ function DaySection({
                     {showCharacter && (
                       <span className="text-[10px] text-cyber-500">{entry.characterName}</span>
                     )}
+                    {canNavigate && targetPage && (
+                      <span className="text-[10px] text-slate-600">
+                        {PAGE_LABEL[targetPage]} 탭 →
+                      </span>
+                    )}
                   </div>
-                  <p className="text-sm font-medium text-slate-200 mt-1">{entry.title}</p>
-                  {(entry.detail || entry.memo) && (
-                    <p className="text-xs text-slate-500 mt-0.5">{entry.detail ?? entry.memo}</p>
+                  {!isNote && <p className="text-sm font-medium text-slate-200 mt-1">{entry.title}</p>}
+                  {isEditing ? (
+                    <div className="mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
+                      <textarea
+                        value={editMemo}
+                        onChange={(e) => setEditMemo(e.target.value)}
+                        rows={3}
+                        className="input-field text-sm resize-none w-full"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => saveEditNote(entry)}
+                          disabled={!editMemo.trim() || saving}
+                          className="btn-primary text-xs px-3 py-1.5 disabled:opacity-40"
+                        >
+                          저장
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingNoteId(null)}
+                          className="btn-secondary text-xs px-3 py-1.5"
+                        >
+                          취소
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {(entry.detail || entry.memo || isNote) && (
+                        <p className={`text-sm mt-1 ${isNote ? 'text-slate-200 whitespace-pre-wrap' : 'text-xs text-slate-500'}`}>
+                          {isNote ? entry.memo : (entry.detail ?? entry.memo)}
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <span
-                    className={`text-sm font-bold ${
-                      amountDisplay.tone === 'expense'
-                        ? 'text-red-400'
-                        : amountDisplay.tone === 'neutral'
-                          ? 'text-violet-400'
-                          : 'text-cyber-400'
-                    }`}
-                  >
-                    {amountDisplay.text}
-                  </span>
+                <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  {!isNote && (
+                    <span
+                      className={`text-sm font-bold ${
+                        amountDisplay.tone === 'expense'
+                          ? 'text-red-400'
+                          : amountDisplay.tone === 'neutral'
+                            ? 'text-violet-400'
+                            : 'text-cyber-400'
+                      }`}
+                    >
+                      {amountDisplay.text}
+                    </span>
+                  )}
+                  {isNote && !isEditing && (
+                    <button
+                      onClick={() => startEditNote(entry)}
+                      className="text-slate-600 hover:text-cyber-400 text-xs px-1"
+                      title="수정"
+                    >
+                      ✎
+                    </button>
+                  )}
                   {canDelete && (
                     <button
                       onClick={() => onRemove(entry)}

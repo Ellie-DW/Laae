@@ -116,3 +116,12 @@ export interface BossSnapshot {
   totalMeso: number
   createdAt: string
 }
+
+export interface DiaryNote {
+  id: string
+  characterId: string | null
+  recordDate: string
+  memo: string
+  createdAt: string
+  updatedAt: string
+}

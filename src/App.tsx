@@ -16,6 +16,7 @@ import LoginPage from './pages/LoginPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import { useAppData } from './hooks/useAppData'
 import { useLedger } from './hooks/useLedger'
+import { getDiaryEntryTargetPage, type DiaryEntry } from './lib/diaryEntries'
 import { computeExpenseByCategory } from './lib/ledgerAnalytics'
 import { useAuth } from './contexts/AuthContext'
 import { getWeeklyPeriod } from './utils'
@@ -90,6 +91,13 @@ function MainApp() {
     })
   }
 
+  const handleDiaryNavigate = (entry: DiaryEntry) => {
+    const page = getDiaryEntryTargetPage(entry)
+    if (!page) return
+    if (entry.characterId) selectCharacter(entry.characterId)
+    setPage(page)
+  }
+
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
@@ -139,11 +147,16 @@ function MainApp() {
             expenses={ledger.expenses}
             drops={ledger.drops}
             snapshots={ledger.snapshots}
+            diaryNotes={ledger.diaryNotes}
             onRemoveHunt={ledger.removeHunt}
             onRemoveGather={ledger.removeGather}
             onRemoveExpense={ledger.removeExpense}
             onRemoveSolErdaPurchase={ledger.removeSolErdaPurchase}
             onRemoveDrop={ledger.removeDrop}
+            onCreateNote={ledger.createDiaryNote}
+            onSaveNote={ledger.saveDiaryNote}
+            onRemoveNote={ledger.removeDiaryNote}
+            onNavigateToSource={handleDiaryNavigate}
           />
         )
       case 'boss':
