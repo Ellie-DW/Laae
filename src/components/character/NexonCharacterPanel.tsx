@@ -80,7 +80,7 @@ export default function NexonCharacterPanel({
             <img
               src={profile.character_image}
               alt=""
-              className="absolute left-1/2 bottom-0 block h-40 w-auto max-w-none -translate-x-1/2 translate-y-14 scale-[2.2] origin-bottom drop-shadow-[0_10px_28px_rgba(0,0,0,0.55)]"
+              className="absolute left-1/2 bottom-0 block h-40 w-auto max-w-none -translate-x-1/2 translate-y-16 scale-[2.2] origin-bottom drop-shadow-[0_10px_28px_rgba(0,0,0,0.55)]"
             />
           </div>
           <p className="text-lg font-bold text-slate-100 mt-3 truncate">{profile.character_name}</p>
