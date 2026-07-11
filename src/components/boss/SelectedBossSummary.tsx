@@ -1,6 +1,7 @@
 import type { BossSelection } from '../../types'
 import { BOSSES, getBossResetCycle } from '../../data/bosses'
 import { formatMesoKorean } from '../../utils'
+import { getBossIconSrc } from '../../lib/assetImages'
 import ResetCycleBadge from './ResetCycleBadge'
 
 interface SelectedBossSummaryProps {
@@ -26,16 +27,26 @@ export default function SelectedBossSummary({ plannedBosses }: SelectedBossSumma
             const boss = BOSSES.find((b) => b.id === sel.bossId)
             const diff = boss?.difficulties.find((d) => d.difficulty === sel.difficulty)
             const myShare = diff ? Math.floor(diff.meso / sel.partySize) : 0
+            const bossIconSrc = boss ? getBossIconSrc(boss.id) : undefined
 
             return (
               <div
                 key={`${sel.bossId}-${sel.difficulty}`}
                 className="flex items-center justify-between p-3 bg-cyber-500/5 rounded-lg border border-cyber-500/15"
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-cyber-400 w-8 text-center">
-                    {boss?.shortName}
-                  </span>
+                <div className="flex items-center gap-3">
+                  {bossIconSrc ? (
+                    <img
+                      src={bossIconSrc}
+                      alt=""
+                      className="w-10 h-10 rounded-lg bg-dark-surface border border-dark-border object-contain p-0.5 shrink-0"
+                      draggable={false}
+                    />
+                  ) : (
+                    <span className="w-10 h-10 rounded-lg bg-dark-surface border border-dark-border flex items-center justify-center text-xs font-bold text-cyber-400 shrink-0">
+                      {boss?.shortName}
+                    </span>
+                  )}
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium text-slate-200">{boss?.name}</p>
