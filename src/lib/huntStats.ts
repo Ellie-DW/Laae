@@ -45,6 +45,7 @@ export interface SolErdaMonthStats {
   saleMeso: number
   purchaseMeso: number
   held: number
+  netChange: number
 }
 
 export function summarizeSolErdaMonth(
@@ -104,6 +105,7 @@ export function summarizeSolErdaMonth(
     saleMeso,
     purchaseMeso,
     held: getHeldSolErdaFragments(heldHunts),
+    netChange: acquired + purchased - used - sold,
   }
 }
 

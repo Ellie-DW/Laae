@@ -1,4 +1,6 @@
 import type { CalendarCell } from '../../lib/monthCalendar'
+import type { SolErdaMonthStats } from '../../lib/huntStats'
+import { hasSolErdaActivity, SolErdaMonthSummary } from '../diary/SolErdaMonthSummary'
 import { getWeekdayLabels } from '../../lib/monthCalendar'
 import { formatMeso, formatMesoKorean } from '../../utils'
 
@@ -7,6 +9,7 @@ interface MonthCalendarProps {
   month: number
   weeks: CalendarCell[][]
   monthTotal: { income: number; expense: number; net: number }
+  solErdaSummary?: SolErdaMonthStats
   selectedDate: string | null
   onSelectDate: (date: string) => void
   onPrevMonth: () => void
@@ -19,6 +22,7 @@ export default function MonthCalendar({
   month,
   weeks,
   monthTotal,
+  solErdaSummary,
   selectedDate,
   onSelectDate,
   onPrevMonth,
@@ -115,15 +119,23 @@ export default function MonthCalendar({
         ))}
       </div>
 
-      <div className="p-4 border-t border-dark-border bg-dark-surface/30">
-        <p className="text-xs text-slate-500 mb-2">이번 달 합계</p>
-        <div className="flex flex-wrap gap-4 text-sm">
-          <span className="text-cyber-400">수익 +{formatMesoKorean(monthTotal.income)}</span>
-          <span className="text-red-400">지출 -{formatMesoKorean(monthTotal.expense)}</span>
-          <span className={`font-semibold ${monthTotal.net >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-            순수익 {formatMesoKorean(monthTotal.net)}
-          </span>
+      <div className="p-4 border-t border-dark-border bg-dark-surface/30 space-y-3">
+        <div>
+          <p className="text-xs text-slate-500 mb-2">이번 달 합계</p>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <span className="text-cyber-400">수익 +{formatMesoKorean(monthTotal.income)}</span>
+            <span className="text-red-400">지출 -{formatMesoKorean(monthTotal.expense)}</span>
+            <span className={`font-semibold ${monthTotal.net >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              순수익 {formatMesoKorean(monthTotal.net)}
+            </span>
+          </div>
         </div>
+        {solErdaSummary && hasSolErdaActivity(solErdaSummary) && (
+          <div className="pt-3 border-t border-dark-border/60">
+            <p className="text-xs text-slate-500 mb-2">솔 에르다 조각</p>
+            <SolErdaMonthSummary summary={solErdaSummary} compact />
+          </div>
+        )}
       </div>
     </div>
   )

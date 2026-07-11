@@ -20,6 +20,7 @@ import {
   shiftMonth,
 } from '../lib/monthCalendar'
 import MonthCalendar from '../components/ledger/MonthCalendar'
+import { SolErdaMonthSummary } from '../components/diary/SolErdaMonthSummary'
 import { formatMesoKorean } from '../utils'
 
 interface DiaryPageProps {
@@ -241,13 +242,14 @@ export default function DiaryPage({
               순수익 {formatMesoKorean(monthSummary.net)}
             </span>
           </div>
-          <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="grid grid-cols-3 gap-2 mb-3">
             <SummaryChip label="수입" value={formatMesoKorean(monthSummary.income)} tone="income" />
             <SummaryChip label="지출" value={formatMesoKorean(monthSummary.expense)} tone="expense" />
             <SummaryChip label="순수익" value={formatMesoKorean(monthSummary.net)} tone={monthSummary.net >= 0 ? 'income' : 'expense'} />
           </div>
+          <SolErdaMonthSummary summary={solErdaMonth} showPurchaseMeso />
           {Object.keys(monthSummary.incomeByType).length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
+            <div className="flex flex-wrap gap-2 mb-4 pt-3 border-t border-dark-border/60">
               {monthSummary.huntMesoIncome > 0 && (
                 <span className="text-xs px-2 py-1 rounded bg-cyber-500/10 text-cyber-400 border border-cyber-500/20">
                   사냥 {formatMesoKorean(monthSummary.huntMesoIncome)}
@@ -272,38 +274,6 @@ export default function DiaryPage({
               })}
             </div>
           )}
-          {(solErdaMonth.acquired > 0 ||
-            solErdaMonth.purchased > 0 ||
-            solErdaMonth.used > 0 ||
-            solErdaMonth.sold > 0 ||
-            solErdaMonth.held > 0) && (
-            <div className="mb-4 pt-3 border-t border-dark-border/60">
-              <p className="text-xs text-slate-500 mb-2">솔 에르다 조각 ({monthKey})</p>
-              <div className="flex flex-wrap gap-2">
-                {solErdaMonth.acquired > 0 && (
-                  <SolErdaChip label="획득" value={`+${solErdaMonth.acquired.toLocaleString()}개`} />
-                )}
-                {solErdaMonth.purchased > 0 && (
-                  <SolErdaChip
-                    label="구매"
-                    value={`+${solErdaMonth.purchased.toLocaleString()}개 · ${formatMesoKorean(solErdaMonth.purchaseMeso)}`}
-                  />
-                )}
-                {solErdaMonth.used > 0 && (
-                  <SolErdaChip label="사용" value={`-${solErdaMonth.used.toLocaleString()}개`} />
-                )}
-                {solErdaMonth.sold > 0 && (
-                  <SolErdaChip
-                    label="판매"
-                    value={`-${solErdaMonth.sold.toLocaleString()}개 · ${formatMesoKorean(solErdaMonth.saleMeso)}`}
-                  />
-                )}
-                {solErdaMonth.held > 0 && (
-                  <SolErdaChip label="현재 보유" value={`${solErdaMonth.held.toLocaleString()}개`} highlight />
-                )}
-              </div>
-            </div>
-          )}
           {categoryBreakdown.length > 0 && filterType === 'all' && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-dark-border/60">
               {categoryBreakdown.map((item) => (
@@ -324,6 +294,7 @@ export default function DiaryPage({
             month={yearMonth.month}
             weeks={weeks}
             monthTotal={monthTotal}
+            solErdaSummary={solErdaMonth}
             selectedDate={selectedDate}
             onSelectDate={setSelectedDate}
             onPrevMonth={() => {
@@ -503,28 +474,6 @@ function SummaryChip({
         {value}
       </p>
     </div>
-  )
-}
-
-function SolErdaChip({
-  label,
-  value,
-  highlight = false,
-}: {
-  label: string
-  value: string
-  highlight?: boolean
-}) {
-  return (
-    <span
-      className={`text-xs px-2 py-1 rounded border ${
-        highlight
-          ? 'bg-violet-500/15 text-violet-300 border-violet-500/30 font-medium'
-          : 'bg-violet-500/10 text-violet-400 border-violet-500/20'
-      }`}
-    >
-      {label} {value}
-    </span>
   )
 }
 
