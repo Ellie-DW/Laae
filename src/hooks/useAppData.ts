@@ -5,6 +5,7 @@ import {
   calculateAccountStats,
   isWeeklyBossCleared,
   isMonthlyBossCleared,
+  canSelectWeeklyBoss,
 } from '../lib/bossStats'
 import { BOSSES, getBossResetCycle } from '../data/bosses'
 import { STORAGE_KEY, getToday, getWeeklyPeriod, getMonthlyPeriod, getErrorMessage } from '../utils'
@@ -247,6 +248,9 @@ export function useAppData() {
 
       setData((prev) => {
         const current = prev.bossData[charId] ?? createDefaultBossData()
+        if (difficulty !== null && !canSelectWeeklyBoss(current, bossId)) {
+          return prev
+        }
         const selections = current.selections.map((s) => {
           if (s.bossId !== bossId) return s
           return { ...s, checked: difficulty !== null && s.difficulty === difficulty }

@@ -73,8 +73,8 @@ export default function CumulativeDashboardSection({
   ]
 
   const bossItems: StatCard[] = [
-    { label: '주간 누적', value: `${bossStats.weeklyCrystals.toLocaleString()}개`, active: bossStats.weeklyCrystals > 0, tone: 'cyber', icon: <DropItemIcon name={INTENSE_POWER_WEEKLY_NAME} size="xs" /> },
-    { label: '월간 누적', value: `${bossStats.monthlyCrystals.toLocaleString()}개`, active: bossStats.monthlyCrystals > 0, tone: 'maple', icon: <DropItemIcon name={INTENSE_POWER_MONTHLY_NAME} size="xs" /> },
+    { label: '주간 누적', value: formatMesoKorean(bossStats.weeklyMeso), active: bossStats.weeklyMeso > 0, tone: 'cyber', icon: <DropItemIcon name={INTENSE_POWER_WEEKLY_NAME} size="xs" /> },
+    { label: '월간 누적', value: formatMesoKorean(bossStats.monthlyMeso), active: bossStats.monthlyMeso > 0, tone: 'maple', icon: <DropItemIcon name={INTENSE_POWER_MONTHLY_NAME} size="xs" /> },
     { label: '총 누적 수익', value: formatMesoKorean(bossStats.totalMeso), active: bossStats.totalMeso > 0, tone: 'maple' },
   ]
 

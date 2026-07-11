@@ -7,15 +7,26 @@ import ResetCycleBadge from './ResetCycleBadge'
 interface BossCardProps {
   boss: BossDefinition
   selections: BossSelection[]
+  weeklySelectedCount: number
+  maxWeeklyBosses: number
   onUpdate: (bossId: string, difficulty: string, updates: Partial<BossSelection>) => void
   onSelectDifficulty: (bossId: string, difficulty: string | null) => void
 }
 
-export default function BossCard({ boss, selections, onUpdate, onSelectDifficulty }: BossCardProps) {
+export default function BossCard({
+  boss,
+  selections,
+  weeklySelectedCount,
+  maxWeeklyBosses,
+  onUpdate,
+  onSelectDifficulty,
+}: BossCardProps) {
   const bossSelections = selections.filter((s) => s.bossId === boss.id)
   const selected = bossSelections.find((s) => s.checked)
   const partySize = selected?.partySize ?? bossSelections[0]?.partySize ?? 1
   const resetCycle = getBossResetCycle(boss)
+  const weeklyLimitReached =
+    resetCycle === 'weekly' && !selected && weeklySelectedCount >= maxWeeklyBosses
 
   const setPartySize = (size: number) => {
     for (const sel of bossSelections) {
@@ -24,6 +35,7 @@ export default function BossCard({ boss, selections, onUpdate, onSelectDifficult
   }
 
   const handleDifficultyClick = (difficulty: string) => {
+    if (weeklyLimitReached && selected?.difficulty !== difficulty) return
     if (selected?.difficulty === difficulty) {
       onSelectDifficulty(boss.id, null)
     } else {
@@ -83,15 +95,19 @@ export default function BossCard({ boss, selections, onUpdate, onSelectDifficult
               {boss.difficulties.map((diff) => {
                 const isSelected = selected?.difficulty === diff.difficulty
                 const myShare = Math.floor(diff.meso / partySize)
+                const isDisabled = weeklyLimitReached && !isSelected
 
                 return (
                   <button
                     key={diff.difficulty}
                     onClick={() => handleDifficultyClick(diff.difficulty)}
+                    disabled={isDisabled}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm transition-all ${
                       isSelected
                         ? DIFFICULTY_COLORS[diff.difficulty] + ' border'
-                        : 'bg-dark-surface/50 border-dark-border text-slate-400 hover:bg-dark-panel/50 hover:text-slate-200'
+                        : isDisabled
+                          ? 'bg-dark-surface/30 border-dark-border text-slate-600 cursor-not-allowed'
+                          : 'bg-dark-surface/50 border-dark-border text-slate-400 hover:bg-dark-panel/50 hover:text-slate-200'
                     }`}
                   >
                     <span className="font-medium">{diff.difficulty}</span>
@@ -102,7 +118,11 @@ export default function BossCard({ boss, selections, onUpdate, onSelectDifficult
             </div>
           </div>
 
-          <p className="text-xs text-slate-500 mt-2">잡음 체크는 대시보드에서 하세요</p>
+          <p className="text-xs text-slate-500 mt-2">
+            {weeklyLimitReached
+              ? `주간 보스는 최대 ${maxWeeklyBosses}개까지 선택할 수 있어요`
+              : '잡음 체크는 대시보드에서 하세요'}
+          </p>
         </div>
       </div>
     </div>

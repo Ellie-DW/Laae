@@ -2,7 +2,6 @@ import { useState } from 'react'
 import type { Character, HuntRecord } from '../types'
 import { formatMesoKorean, getToday, parseMesoInput } from '../utils'
 import NoCharacterPrompt, { CharacterBanner } from '../components/ledger/NoCharacterPrompt'
-import HuntCumulativeSummary from '../components/hunt/HuntCumulativeSummary'
 import HuntHeldSummary from '../components/hunt/HuntHeldSummary'
 import SolErdaSaleSection from '../components/hunt/SolErdaSaleSection'
 import SolErdaIcon from '../components/hunt/SolErdaIcon'
@@ -48,8 +47,6 @@ export default function HuntPage({ selectedCharacter, hunts, onAdd, onSellSolErd
         <h1 className="text-2xl font-bold text-slate-100">사냥</h1>
         <CharacterBanner character={selectedCharacter} />
       </div>
-
-      <HuntCumulativeSummary hunts={hunts} characterId={selectedCharacter.id} />
 
       <HuntHeldSummary hunts={hunts} characterId={selectedCharacter.id} />
 

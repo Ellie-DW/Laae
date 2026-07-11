@@ -1,16 +1,14 @@
 import { useMemo, useState } from 'react'
-import type { Character, CharacterBossData, BossTab, BossSnapshot } from '../types'
-import { calculatePlannedBossStats, calculateMonthlyExpectedBossStats } from '../lib/bossStats'
+import type { Character, CharacterBossData, BossTab } from '../types'
+import { calculatePlannedBossStats, calculateMonthlyExpectedBossStats, MAX_WEEKLY_BOSSES } from '../lib/bossStats'
 import { BOSS_TABS, getBossesByTab } from '../data/bosses'
 import { formatMesoKorean, getWeeklyPeriod, getMonthlyPeriod, getCurrentMonth, getToday } from '../utils'
 import BossCard from '../components/boss/BossCard'
-import BossCumulativeSummary from '../components/boss/BossCumulativeSummary'
 import SelectedBossSummary from '../components/boss/SelectedBossSummary'
 
 interface BossPageProps {
   selectedCharacter: Character | null
   bossData: CharacterBossData
-  snapshots: BossSnapshot[]
   onUpdateBoss: (bossId: string, difficulty: string, updates: Partial<CharacterBossData['selections'][0]>) => void
   onSelectBossDifficulty: (bossId: string, difficulty: string | null) => void
   onResetTab: (tab: string) => void
@@ -19,7 +17,6 @@ interface BossPageProps {
 export default function BossPage({
   selectedCharacter,
   bossData,
-  snapshots,
   onUpdateBoss,
   onSelectBossDifficulty,
   onResetTab,
@@ -54,12 +51,6 @@ export default function BossPage({
         </p>
       </div>
 
-      <BossCumulativeSummary
-        snapshots={snapshots}
-        characterId={selectedCharacter.id}
-        bossData={bossData}
-      />
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="panel-light p-4">
           <p className="text-xs text-cyber-400 font-medium mb-1">주간 기간 (목~수)</p>
@@ -79,6 +70,7 @@ export default function BossPage({
         <div className="flex flex-wrap gap-4 mt-2 text-xs text-slate-500">
           <span>주간 {formatMesoKorean(plannedStats.weeklyBossMeso)}</span>
           <span>월간 주기 {formatMesoKorean(plannedStats.monthlyBossMeso)}</span>
+          <span>주간 보스 {plannedStats.weeklyPlannedBossCount}/{MAX_WEEKLY_BOSSES}개</span>
           <span>선택 {plannedStats.plannedBossCount}개</span>
         </div>
         <p className="text-[10px] text-slate-600 mt-2">난이도를 선택하면 예상 수익에 바로 반영돼요. 잡음 체크는 대시보드에서 하세요.</p>
@@ -146,6 +138,8 @@ export default function BossPage({
             key={boss.id}
             boss={boss}
             selections={bossData.selections}
+            weeklySelectedCount={plannedStats.weeklyPlannedBossCount}
+            maxWeeklyBosses={MAX_WEEKLY_BOSSES}
             onUpdate={onUpdateBoss}
             onSelectDifficulty={onSelectBossDifficulty}
           />

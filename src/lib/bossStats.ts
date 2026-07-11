@@ -4,6 +4,7 @@ import { getWeeklyPeriod, getMonthlyPeriod, getToday, getCurrentMonth, enumerate
 
 export const INTENSE_POWER_WEEKLY_NAME = '강렬한 힘의 결정(주간)'
 export const INTENSE_POWER_MONTHLY_NAME = '강렬한 힘의 결정(월간)'
+export const MAX_WEEKLY_BOSSES = 12
 
 export interface BossStats {
   totalMeso: number
@@ -39,6 +40,16 @@ export function getPlannedBossCycles(bossData: CharacterBossData) {
     monthlyCount: monthlyBossIds.size,
     count: weeklyBossIds.size + monthlyBossIds.size,
   }
+}
+
+export function canSelectWeeklyBoss(bossData: CharacterBossData, bossId: string): boolean {
+  const boss = BOSSES.find((b) => b.id === bossId)
+  if (!boss || getBossResetCycle(boss) === 'monthly') return true
+
+  const alreadySelected = bossData.selections.some((s) => s.bossId === bossId && s.checked)
+  if (alreadySelected) return true
+
+  return getPlannedBossCycles(bossData).weeklyCount < MAX_WEEKLY_BOSSES
 }
 
 export function isWeeklyBossCleared(bossData: CharacterBossData): boolean {
