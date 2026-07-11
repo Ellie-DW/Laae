@@ -18,6 +18,7 @@ import {
   createCharacter,
   saveBossData,
   deleteCharacter,
+  reorderCharacters as persistCharacterOrder,
   migrateLocalDataToSupabase,
   isGlobalCharacterNameTaken,
 } from '../lib/appDataApi'
@@ -174,6 +175,38 @@ export function useAppData() {
       }
     },
     [user, data]
+  )
+
+  const moveCharacter = useCallback(
+    async (id: string, direction: 'up' | 'down') => {
+      if (!user) return
+
+      const index = data.characters.findIndex((c) => c.id === id)
+      if (index === -1) return
+
+      const targetIndex = direction === 'up' ? index - 1 : index + 1
+      if (targetIndex < 0 || targetIndex >= data.characters.length) return
+
+      const reordered = [...data.characters]
+      const [moved] = reordered.splice(index, 1)
+      reordered.splice(targetIndex, 0, moved)
+      const orderedIds = reordered.map((c) => c.id)
+
+      const previousCharacters = data.characters
+      setData((prev) => ({
+        ...prev,
+        characters: reordered.map((char, sortOrder) => ({ ...char, sortOrder })),
+      }))
+
+      try {
+        await persistCharacterOrder(orderedIds)
+        setSyncError(null)
+      } catch (err) {
+        setData((prev) => ({ ...prev, characters: previousCharacters }))
+        setSyncError(err instanceof Error ? err.message : '캐릭터 순서 저장에 실패했습니다.')
+      }
+    },
+    [user, data.characters]
   )
 
   const selectCharacter = useCallback(
@@ -363,6 +396,7 @@ export function useAppData() {
     syncError,
     addCharacter,
     removeCharacter,
+    moveCharacter,
     selectCharacter,
     setPage,
     updateBossSelection,

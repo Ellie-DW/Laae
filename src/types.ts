@@ -9,6 +9,7 @@ export type BossDifficulty = 'EASY' | 'NORMAL' | 'HARD' | 'EXTREME' | 'CHAOS'
 export interface Character {
   id: string
   name: string
+  sortOrder: number
   createdAt: string
 }
 

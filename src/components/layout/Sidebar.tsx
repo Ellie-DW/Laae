@@ -6,6 +6,7 @@ import {
   normalizeCharacterName,
 } from '../../lib/characters'
 import { isGlobalCharacterNameTaken } from '../../lib/appDataApi'
+import CharacterList from './CharacterList'
 
 interface SidebarProps {
   characters: Character[]
@@ -13,6 +14,7 @@ interface SidebarProps {
   onSelectCharacter: (id: string) => void
   onAddCharacter: (name: string) => void
   onRemoveCharacter: (id: string) => void
+  onMoveCharacter: (id: string, direction: 'up' | 'down') => void
 }
 
 export default function Sidebar({
@@ -21,6 +23,7 @@ export default function Sidebar({
   onSelectCharacter,
   onAddCharacter,
   onRemoveCharacter,
+  onMoveCharacter,
 }: SidebarProps) {
   const { user, signOut } = useAuth()
   const [showAdd, setShowAdd] = useState(false)
@@ -59,7 +62,7 @@ export default function Sidebar({
           <span className="text-2xl">🍁</span>
           <div>
             <h1 className="font-display font-bold text-slate-100 tracking-wide">Maple Diary</h1>
-            <p className="text-xs text-slate-500">메이플 가게부</p>
+            <p className="text-xs text-slate-500">메이플 가계부</p>
           </div>
         </div>
       </div>
@@ -74,30 +77,13 @@ export default function Sidebar({
             <p className="text-xs text-slate-500 mt-1">캐릭터를 추가해주세요</p>
           </div>
         ) : (
-          <div className="space-y-1">
-            {characters.map((char) => (
-              <div key={char.id} className="flex items-center gap-1 group">
-                <button
-                  onClick={() => onSelectCharacter(char.id)}
-                  className={`flex-1 text-left px-3 py-2.5 rounded-lg text-sm transition-all ${
-                    selectedCharacter?.id === char.id
-                      ? 'nav-active'
-                      : 'text-slate-400 hover:bg-dark-panel/50 hover:text-slate-200'
-                  }`}
-                >
-                  {char.name}
-                </button>
-                <button
-                  onClick={() => handleRemove(char)}
-                  className="w-7 h-7 shrink-0 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10
-                             opacity-0 group-hover:opacity-100 transition-all text-xs"
-                  title="캐릭터 삭제"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
+          <CharacterList
+            characters={characters}
+            selectedCharacter={selectedCharacter}
+            onSelectCharacter={onSelectCharacter}
+            onRemoveCharacter={onRemoveCharacter}
+            onMoveCharacter={onMoveCharacter}
+          />
         )}
 
         {showAdd ? (

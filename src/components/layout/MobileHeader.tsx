@@ -6,6 +6,7 @@ import {
   normalizeCharacterName,
 } from '../../lib/characters'
 import { isGlobalCharacterNameTaken } from '../../lib/appDataApi'
+import CharacterList from './CharacterList'
 
 interface MobileHeaderProps {
   characters: Character[]
@@ -13,6 +14,7 @@ interface MobileHeaderProps {
   onSelectCharacter: (id: string) => void
   onAddCharacter: (name: string) => void
   onRemoveCharacter: (id: string) => void
+  onMoveCharacter: (id: string, direction: 'up' | 'down') => void
 }
 
 export default function MobileHeader({
@@ -21,6 +23,7 @@ export default function MobileHeader({
   onSelectCharacter,
   onAddCharacter,
   onRemoveCharacter,
+  onMoveCharacter,
 }: MobileHeaderProps) {
   const { user, signOut } = useAuth()
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -53,9 +56,8 @@ export default function MobileHeader({
     setPickerOpen(false)
   }
 
-  const handleRemove = (char: Character) => {
-    if (!confirm(`"${char.name}" 캐릭터를 삭제할까요?\n보스·드랍 데이터도 함께 삭제됩니다.`)) return
-    onRemoveCharacter(char.id)
+  const handleRemove = (id: string) => {
+    onRemoveCharacter(id)
     if (characters.length <= 1) setPickerOpen(false)
   }
 
@@ -119,7 +121,10 @@ export default function MobileHeader({
             <div className="flex items-center justify-between px-4 py-3 border-b border-dark-border/60 shrink-0">
               <div>
                 <h2 className="font-semibold text-slate-100">캐릭터 선택</h2>
-                <p className="text-xs text-slate-500 mt-0.5">{characters.length}개 등록됨</p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {characters.length}개 등록됨
+                  {characters.length > 1 && ' · ▲▼로 순서 변경'}
+                </p>
               </div>
               <button
                 onClick={closePicker}
@@ -136,35 +141,14 @@ export default function MobileHeader({
                   <p className="text-sm text-slate-400 mt-3">등록된 캐릭터가 없어요</p>
                 </div>
               ) : (
-                <div className="space-y-1">
-                  {characters.map((char) => {
-                    const isSelected = selectedCharacter?.id === char.id
-                    return (
-                      <div key={char.id} className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleSelect(char.id)}
-                          className={`flex-1 text-left px-3 py-3 rounded-lg text-sm transition-all ${
-                            isSelected
-                              ? 'nav-active'
-                              : 'text-slate-300 hover:bg-dark-panel/50'
-                          }`}
-                        >
-                          <span className="font-medium">{char.name}</span>
-                          {isSelected && (
-                            <span className="ml-2 text-[10px] text-cyber-400">선택됨</span>
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleRemove(char)}
-                          className="w-9 h-9 shrink-0 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 text-xs"
-                          title="캐릭터 삭제"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
+                <CharacterList
+                  characters={characters}
+                  selectedCharacter={selectedCharacter}
+                  onSelectCharacter={handleSelect}
+                  onRemoveCharacter={handleRemove}
+                  onMoveCharacter={onMoveCharacter}
+                  variant="mobile"
+                />
               )}
             </div>
 

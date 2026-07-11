@@ -29,6 +29,7 @@ interface CharacterRow {
   user_id: string
   name: string
   boss_data: CharacterBossData
+  sort_order: number
   created_at: string
 }
 
@@ -108,6 +109,7 @@ function rowToCharacter(row: CharacterRow): Character {
   return {
     id: row.id,
     name: row.name,
+    sortOrder: row.sort_order ?? 0,
     createdAt: row.created_at,
   }
 }
@@ -133,8 +135,9 @@ export async function fetchUserAppData(userId: string): Promise<AppData> {
   const [charsResult, prefsResult] = await Promise.all([
     supabase
       .from('characters')
-      .select('id, user_id, name, boss_data, created_at')
+      .select('id, user_id, name, boss_data, sort_order, created_at')
       .eq('user_id', userId)
+      .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true }),
     supabase
       .from('user_preferences')
@@ -166,7 +169,8 @@ export async function savePreferences(
 export async function createCharacter(
   userId: string,
   name: string,
-  bossData: CharacterBossData = createDefaultBossData()
+  bossData: CharacterBossData = createDefaultBossData(),
+  sortOrder?: number
 ): Promise<Character> {
   const trimmed = normalizeCharacterName(name)
   if (!trimmed) throw new Error('캐릭터명을 입력해주세요.')
@@ -175,10 +179,24 @@ export async function createCharacter(
     throw new Error(DUPLICATE_CHARACTER_NAME_MESSAGE)
   }
 
+  let nextSortOrder = sortOrder
+  if (nextSortOrder === undefined) {
+    const { data: maxRow, error: maxError } = await supabase
+      .from('characters')
+      .select('sort_order')
+      .eq('user_id', userId)
+      .order('sort_order', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (maxError) throw maxError
+    nextSortOrder = (maxRow?.sort_order ?? -1) + 1
+  }
+
   const { data, error } = await supabase
     .from('characters')
-    .insert({ user_id: userId, name: trimmed, boss_data: bossData })
-    .select('id, name, created_at')
+    .insert({ user_id: userId, name: trimmed, boss_data: bossData, sort_order: nextSortOrder })
+    .select('id, name, sort_order, created_at')
     .single()
 
   if (error) {
@@ -189,6 +207,7 @@ export async function createCharacter(
   return {
     id: data.id,
     name: data.name,
+    sortOrder: data.sort_order ?? nextSortOrder,
     createdAt: data.created_at,
   }
 }
@@ -207,6 +226,15 @@ export async function deleteCharacter(characterId: string) {
   if (error) throw error
 }
 
+export async function reorderCharacters(orderedIds: string[]) {
+  const updates = orderedIds.map((id, index) =>
+    supabase.from('characters').update({ sort_order: index }).eq('id', id)
+  )
+  const results = await Promise.all(updates)
+  const failed = results.find((r) => r.error)
+  if (failed?.error) throw failed.error
+}
+
 export async function migrateLocalDataToSupabase(
   userId: string,
   localData: AppData
@@ -215,9 +243,10 @@ export async function migrateLocalDataToSupabase(
   const createdCharacters: Character[] = []
   const bossData: Record<string, CharacterBossData> = {}
 
-  for (const char of localData.characters) {
+  for (let i = 0; i < localData.characters.length; i++) {
+    const char = localData.characters[i]
     const data = localData.bossData[char.id] ?? createDefaultBossData()
-    const created = await createCharacter(userId, char.name, data)
+    const created = await createCharacter(userId, char.name, data, i)
     idMap.set(char.id, created.id)
     createdCharacters.push(created)
     bossData[created.id] = data
