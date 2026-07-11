@@ -141,7 +141,7 @@ export default function BossPage({
           이적자 돌이
         </button>
         <p className="w-full text-[10px] text-slate-500">
-          각 루트에 맞는 보스·난이도가 일괄 선택돼요. 기존 선택은 초기화돼요.
+          각 루트에 맞는 보스·난이도가 일괄 선택돼요. 하드 검은 마법사(월간)도 포함돼요.
         </p>
       </div>
 

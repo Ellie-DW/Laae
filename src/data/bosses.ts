@@ -175,6 +175,7 @@ export const BOSS_RUNNER_PRESETS: Record<
     { bossId: 'gloom', difficulty: 'CHAOS' },
     { bossId: 'true-hilla', difficulty: 'HARD' },
     { bossId: 'darknell', difficulty: 'HARD' },
+    { bossId: 'black-mage', difficulty: 'HARD' },
   ],
   transcendent: [
     { bossId: 'papulatus', difficulty: 'CHAOS' },
@@ -189,5 +190,6 @@ export const BOSS_RUNNER_PRESETS: Record<
     { bossId: 'seren', difficulty: 'HARD' },
     { bossId: 'kalos', difficulty: 'EASY' },
     { bossId: 'first-adversary', difficulty: 'EASY' },
+    { bossId: 'black-mage', difficulty: 'HARD' },
   ],
 }
