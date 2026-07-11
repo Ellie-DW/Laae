@@ -76,14 +76,12 @@ export default function NexonCharacterPanel({
     <div className={shellClass}>
       {isSidebar ? (
         <div className="text-center">
-          <div className="relative h-56 overflow-hidden rounded-lg bg-gradient-to-b from-dark-bg/20 to-dark-bg/60">
-            <div className="absolute inset-x-0 bottom-0 flex justify-center">
-              <img
-                src={profile.character_image}
-                alt=""
-                className="h-44 w-auto max-w-none scale-[2.5] origin-bottom drop-shadow-[0_10px_28px_rgba(0,0,0,0.55)]"
-              />
-            </div>
+          <div className="relative h-52 overflow-hidden rounded-lg bg-gradient-to-b from-dark-bg/20 to-dark-bg/60">
+            <img
+              src={profile.character_image}
+              alt=""
+              className="absolute left-1/2 bottom-0 block h-40 w-auto max-w-none -translate-x-1/2 translate-y-10 scale-[2.2] origin-bottom drop-shadow-[0_10px_28px_rgba(0,0,0,0.55)]"
+            />
           </div>
           <p className="text-lg font-bold text-slate-100 mt-3 truncate">{profile.character_name}</p>
           <p className="text-sm text-cyber-300 mt-1">
