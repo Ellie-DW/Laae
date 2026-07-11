@@ -14,7 +14,8 @@ import {
 } from '../lib/diaryEntries'
 import { summarizeSolErdaMonth } from '../lib/huntStats'
 import { computeExpenseByCategory, type GoalProgress } from '../lib/ledgerAnalytics'
-import { formatGoalPace, goalPercentTone } from '../lib/goalHelpers'
+import { formatGoalPace, formatGoalDeadline, goalOverlapsMonth, goalPercentTone, isGoalActive, isGoalNotStarted } from '../lib/goalHelpers'
+import { getToday } from '../utils'
 import {
   buildMonthCalendar,
   getCurrentYearMonth,
@@ -43,7 +44,6 @@ interface DiaryPageProps {
   onRemoveNote: (id: string) => Promise<void>
   onNavigateToSource: (entry: DiaryEntry) => void
   goals: Goal[]
-  currentMonth: string
   getGoalProgress: (goal: Goal) => GoalProgress
   onGoGoals: () => void
 }
@@ -89,7 +89,6 @@ export default function DiaryPage({
   onRemoveNote,
   onNavigateToSource,
   goals,
-  currentMonth,
   getGoalProgress,
   onGoGoals,
 }: DiaryPageProps) {
@@ -129,18 +128,22 @@ export default function DiaryPage({
   )
 
   const primaryGoal = useMemo(() => {
-    if (monthKey !== currentMonth) return null
-    const monthGoals = goals.filter((g) => g.periodMonth === currentMonth)
+    const monthGoals = goals.filter((g) => goalOverlapsMonth(g.startDate, g.endDate, monthKey))
     const scoped = filterCharacterId
       ? monthGoals.filter((g) => g.characterId === null || g.characterId === filterCharacterId)
       : monthGoals
     if (scoped.length === 0) return null
+
+    const today = getToday()
+    const active = scoped.filter((g) => isGoalActive(g.startDate, g.endDate, today) || isGoalNotStarted(g.startDate, today))
+    const pool = active.length > 0 ? active : scoped
+
     return (
-      scoped.find((g) => g.characterId === filterCharacterId) ??
-      scoped.find((g) => !g.characterId) ??
-      scoped[0]
+      pool.find((g) => g.characterId === filterCharacterId) ??
+      pool.find((g) => !g.characterId) ??
+      pool[0]
     )
-  }, [goals, currentMonth, monthKey, filterCharacterId])
+  }, [goals, monthKey, filterCharacterId])
 
   const primaryGoalProgress = primaryGoal ? getGoalProgress(primaryGoal) : null
 
@@ -282,7 +285,7 @@ export default function DiaryPage({
               <div className="flex items-center justify-between gap-2 mb-1.5">
                 <span className="text-xs text-slate-400">🎯 {primaryGoal.title}</span>
                 <span className={`text-xs font-semibold ${goalPercentTone(primaryGoalProgress.percent)}`}>
-                  {primaryGoalProgress.percent}%
+                  {formatGoalDeadline(primaryGoal.endDate)} · {primaryGoalProgress.percent}%
                 </span>
               </div>
               <div className="h-1 bg-dark-border rounded-full overflow-hidden mb-1.5">
@@ -291,7 +294,9 @@ export default function DiaryPage({
                   style={{ width: `${primaryGoalProgress.barPercent}%` }}
                 />
               </div>
-              <p className="text-xs text-slate-500">{formatGoalPace(primaryGoalProgress)}</p>
+              <p className="text-xs text-slate-500">
+                {formatGoalPace(primaryGoalProgress, primaryGoal.startDate, primaryGoal.endDate)}
+              </p>
             </button>
           )}
           {Object.keys(monthSummary.incomeByType).length > 0 && (

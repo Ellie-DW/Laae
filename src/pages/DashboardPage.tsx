@@ -14,6 +14,7 @@ import {
 } from '../lib/bossStats'
 import { createDefaultBossData } from '../lib/appDataApi'
 import { formatMesoKorean, getToday } from '../utils'
+import { isGoalActive, isGoalNotStarted } from '../lib/goalHelpers'
 import { formatHuntIncomeSub } from '../lib/huntStats'
 import DropDashboardSection from '../components/drop/DropDashboardSection'
 import CumulativeDashboardSection from '../components/dashboard/CumulativeDashboardSection'
@@ -116,8 +117,10 @@ export default function DashboardPage({
     ? accountStats.perCharacter.find((c) => c.id === selectedCharacter.id)
     : null
 
-  const monthGoals = goals.filter(
-    (g) => g.periodMonth === currentMonth && (!g.characterId || g.characterId === selectedCharacter?.id)
+  const activeGoals = goals.filter(
+    (g) =>
+      (isGoalActive(g.startDate, g.endDate) || isGoalNotStarted(g.startDate)) &&
+      (!g.characterId || g.characterId === selectedCharacter?.id)
   )
   const expenseTotal = expenseByCategory.reduce((s, c) => s + c.amount, 0)
 
@@ -454,12 +457,12 @@ export default function DashboardPage({
         </div>
       )}
 
-      {monthGoals.length > 0 && (
+      {activeGoals.length > 0 && (
         <div className="panel-light p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="font-semibold text-slate-100">목표 진행</h2>
-              <p className="text-xs text-slate-500 mt-0.5">{currentMonth}</p>
+              <p className="text-xs text-slate-500 mt-0.5">진행 중 · {getToday()}</p>
             </div>
             <button
               onClick={onGoGoals}
@@ -469,7 +472,7 @@ export default function DashboardPage({
             </button>
           </div>
           <div className="space-y-3">
-            {monthGoals.slice(0, 3).map((goal) => {
+            {activeGoals.slice(0, 3).map((goal) => {
               const progress = getGoalProgress(goal)
               const scopeLabel = goal.characterId
                 ? characters.find((c) => c.id === goal.characterId)?.name ?? '캐릭터'

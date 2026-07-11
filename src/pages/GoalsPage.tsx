@@ -1,30 +1,57 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Character, Goal } from '../types'
 import type { GoalProgress } from '../lib/ledgerAnalytics'
 import GoalProgressCard from '../components/goals/GoalProgressCard'
-import { parseMesoInput } from '../utils'
+import {
+  deadlineFromDays,
+  formatGoalDeadline,
+  formatGoalPeriod,
+  getEndOfMonthYMD,
+  isGoalActive,
+  isGoalEnded,
+  isGoalNotStarted,
+} from '../lib/goalHelpers'
+import { getToday, parseMesoInput } from '../utils'
 
 interface GoalsPageProps {
   characters: Character[]
   goals: Goal[]
-  currentMonth: string
   getGoalProgress: (goal: Goal) => GoalProgress
-  onSave: (data: { characterId: string | null; title: string; targetMeso: number; periodMonth: string }) => Promise<void>
+  onSave: (data: {
+    characterId: string | null
+    title: string
+    targetMeso: number
+    startDate: string
+    endDate: string
+  }) => Promise<void>
   onRemove: (id: string) => Promise<void>
 }
+
+type DeadlinePreset = 'd7' | 'd14' | 'd30' | 'monthEnd' | 'custom'
+
+const DEADLINE_PRESETS: { id: DeadlinePreset; label: string; days?: number }[] = [
+  { id: 'd7', label: 'D-7', days: 7 },
+  { id: 'd14', label: 'D-14', days: 14 },
+  { id: 'd30', label: 'D-30', days: 30 },
+  { id: 'monthEnd', label: '이번 달 말' },
+  { id: 'custom', label: '직접 선택' },
+]
 
 export default function GoalsPage({
   characters,
   goals,
-  currentMonth,
   getGoalProgress,
   onSave,
   onRemove,
 }: GoalsPageProps) {
+  const today = getToday()
   const [title, setTitle] = useState('')
   const [targetInput, setTargetInput] = useState('')
   const [filterCharacterId, setFilterCharacterId] = useState<string | null>(null)
   const [scope, setScope] = useState<'account' | 'character'>('character')
+  const [deadlinePreset, setDeadlinePreset] = useState<DeadlinePreset>('d30')
+  const [endDate, setEndDate] = useState(() => deadlineFromDays(30))
+  const [listFilter, setListFilter] = useState<'active' | 'ended' | 'all'>('active')
   const [saving, setSaving] = useState(false)
 
   const activeCharacter = filterCharacterId
@@ -37,26 +64,54 @@ export default function GoalsPage({
     }
   }, [filterCharacterId])
 
-  const monthGoals = goals.filter((g) => g.periodMonth === currentMonth)
-  const visibleGoals = filterCharacterId
-    ? monthGoals.filter((g) => g.characterId === null || g.characterId === filterCharacterId)
-    : monthGoals
+  useEffect(() => {
+    if (deadlinePreset === 'custom') return
+    if (deadlinePreset === 'monthEnd') {
+      setEndDate(getEndOfMonthYMD())
+      return
+    }
+    const preset = DEADLINE_PRESETS.find((p) => p.id === deadlinePreset)
+    if (preset?.days) setEndDate(deadlineFromDays(preset.days))
+  }, [deadlinePreset])
 
   const formCharacterId = filterCharacterId ?? characters[0]?.id ?? null
+  const saveCharacterId = scope === 'account' ? null : formCharacterId
+
+  const existingGoal = useMemo(
+    () => goals.find((g) => g.characterId === saveCharacterId) ?? null,
+    [goals, saveCharacterId]
+  )
+
+  const scopedGoals = useMemo(() => {
+    return filterCharacterId
+      ? goals.filter((g) => g.characterId === null || g.characterId === filterCharacterId)
+      : goals
+  }, [goals, filterCharacterId])
+
+  const visibleGoals = useMemo(() => {
+    const filtered = scopedGoals.filter((goal) => {
+      if (listFilter === 'active') return isGoalActive(goal.startDate, goal.endDate) || isGoalNotStarted(goal.startDate)
+      if (listFilter === 'ended') return isGoalEnded(goal.endDate)
+      return true
+    })
+    return filtered.sort((a, b) => a.endDate.localeCompare(b.endDate))
+  }, [scopedGoals, listFilter])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const targetMeso = parseMesoInput(targetInput)
     if (!title.trim() || targetMeso <= 0) return
     if (scope === 'character' && !formCharacterId) return
+    if (endDate < today) return
 
     setSaving(true)
     try {
       await onSave({
-        characterId: scope === 'account' ? null : formCharacterId,
+        characterId: saveCharacterId,
         title: title.trim(),
         targetMeso,
-        periodMonth: currentMonth,
+        startDate: today,
+        endDate,
       })
       setTitle('')
       setTargetInput('')
@@ -78,11 +133,7 @@ export default function GoalsPage({
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-100">목표</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          {activeCharacter
-            ? `${activeCharacter.name} · ${currentMonth} 순수익 목표`
-            : `${currentMonth} 순수익 목표 (사냥·채집·보스−지출)`}
-        </p>
+        <p className="text-sm text-slate-500 mt-1">마감일(D-day) 기준 순수익 목표</p>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -101,14 +152,20 @@ export default function GoalsPage({
       </div>
 
       <form onSubmit={handleSubmit} className="panel-light p-5 space-y-4">
-        <h2 className="font-semibold text-slate-100">새 목표</h2>
+        <div>
+          <h2 className="font-semibold text-slate-100">새 목표</h2>
+          <p className="text-xs text-slate-500 mt-1">
+            {formatGoalPeriod(today, endDate)} · {formatGoalDeadline(endDate)} ·{' '}
+            {activeCharacter ? activeCharacter.name : scope === 'account' ? '계정 전체' : '캐릭터'}
+          </p>
+        </div>
 
         <div>
           <label className="text-xs text-slate-500 mb-1 block">목표 이름</label>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="예: 이번 달 100억 모으기"
+            placeholder="예: 100억 모으기"
             className="input-field text-sm"
             required
           />
@@ -123,6 +180,39 @@ export default function GoalsPage({
             className="input-field text-sm"
             required
           />
+        </div>
+
+        <div>
+          <label className="text-xs text-slate-500 mb-2 block">마감일</label>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {DEADLINE_PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => setDeadlinePreset(preset.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs border transition-colors ${
+                  deadlinePreset === preset.id
+                    ? 'bg-cyber-500/20 border-cyber-500/40 text-cyber-300'
+                    : 'border-dark-border text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+          {deadlinePreset === 'custom' && (
+            <input
+              type="date"
+              value={endDate}
+              min={today}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="input-field text-sm"
+              required
+            />
+          )}
+          {endDate < today && (
+            <p className="text-xs text-red-400 mt-1">마감일은 오늘 이후로 설정해주세요</p>
+          )}
         </div>
 
         <div>
@@ -149,29 +239,54 @@ export default function GoalsPage({
                   : 'border-dark-border text-slate-400 hover:text-slate-200'
               }`}
             >
-              {activeCharacter?.name ?? formCharacterId
-                ? characters.find((c) => c.id === formCharacterId)?.name ?? '캐릭터'
-                : '캐릭터'}
+              {activeCharacter?.name ??
+                (formCharacterId ? characters.find((c) => c.id === formCharacterId)?.name : '캐릭터')}
             </button>
           </div>
-          {filterCharacterId && (
-            <p className="text-xs text-slate-600 mt-1.5">캐릭터 필터 중에는 해당 캐릭터 목표만 설정할 수 있어요</p>
-          )}
         </div>
 
-        <button type="submit" disabled={saving} className="btn-primary text-sm w-full py-2">
-          {saving ? '저장 중...' : '목표 설정'}
+        {existingGoal && (
+          <p className="text-xs text-amber-400/90 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+            같은 범위 목표가 있어요. 저장하면 「{existingGoal.title}」을 덮어씁니다.
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={saving || endDate < today}
+          className="btn-primary text-sm w-full py-2"
+        >
+          {saving ? '저장 중...' : existingGoal ? '목표 수정' : '목표 설정'}
         </button>
       </form>
 
       <div className="panel-light p-5">
-        <h2 className="font-semibold text-slate-100 mb-4">
-          이번 달 목표 ({visibleGoals.length})
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 className="font-semibold text-slate-100">목표 현황 ({visibleGoals.length})</h2>
+            <p className="text-xs text-slate-500 mt-0.5">오늘({today}) 기준</p>
+          </div>
+          <div className="flex gap-1">
+            {(['active', 'ended', 'all'] as const).map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setListFilter(id)}
+                className={`px-2.5 py-1 rounded-lg text-xs border transition-colors ${
+                  listFilter === id
+                    ? 'bg-cyber-500/20 border-cyber-500/40 text-cyber-300'
+                    : 'border-dark-border text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                {id === 'active' ? '진행 중' : id === 'ended' ? '종료' : '전체'}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {visibleGoals.length === 0 ? (
           <p className="text-sm text-slate-500 text-center py-8">
-            {filterCharacterId ? '이 캐릭터에 설정된 목표가 없어요' : '설정된 목표가 없어요'}
+            {listFilter === 'active' ? '진행 중인 목표가 없어요' : '표시할 목표가 없어요'}
           </p>
         ) : (
           <div className="space-y-4">

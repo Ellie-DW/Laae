@@ -1,4 +1,4 @@
-import type { Expense, HuntRecord, GatherRecord, DropRecord, Goal, ExpenseCategory } from '../types'
+import type { Expense, HuntRecord, GatherRecord, DropRecord, Goal, ExpenseCategory, BossSnapshot } from '../types'
 import { EXPENSE_CATEGORY_LABEL } from './ledgerApi'
 import { splitHuntIncome } from './huntStats'
 import { getToday } from '../utils'
@@ -224,13 +224,24 @@ export interface GoalProgress {
   summary: LedgerSummary
 }
 
-export function getDaysLeftInMonth(periodMonth: string, today = getToday()): number {
-  const [y, m] = periodMonth.split('-').map(Number)
-  const daysInMonth = new Date(y, m, 0).getDate()
-  if (today.slice(0, 7) < periodMonth) return daysInMonth
-  if (today.slice(0, 7) > periodMonth) return 0
-  const todayDay = parseInt(today.slice(8, 10), 10)
-  return Math.max(0, daysInMonth - todayDay + 1)
+export function getDaysLeftUntil(endDate: string, today = getToday()): number {
+  const diff = Math.round(
+    (new Date(`${endDate}T00:00:00`).getTime() - new Date(`${today}T00:00:00`).getTime()) / 86_400_000
+  )
+  return Math.max(0, diff)
+}
+
+function computeBossIncomeForRange(
+  snapshots: BossSnapshot[],
+  characterId: string | null,
+  startDate: string,
+  endDate: string
+): number {
+  return snapshots.reduce((sum, snapshot) => {
+    if (characterId != null && snapshot.characterId !== characterId) return sum
+    if (snapshot.periodEnd < startDate || snapshot.periodStart > endDate) return sum
+    return sum + snapshot.totalMeso
+  }, 0)
 }
 
 export function computeGoalProgress(
@@ -239,17 +250,38 @@ export function computeGoalProgress(
   gathers: GatherRecord[],
   expenses: Expense[],
   drops: DropRecord[],
-  bossIncome = 0
+  snapshots: BossSnapshot[] = []
 ) {
-  const month = goal.periodMonth
+  const today = getToday()
   const charId = goal.characterId
+
+  if (today < goal.startDate) {
+    const daysLeft = getDaysLeftUntil(goal.endDate, today)
+    const dailyNeeded = goal.targetMeso > 0 && daysLeft > 0 ? goal.targetMeso / daysLeft : null
+    const empty = computeLedgerSummary(hunts, gathers, expenses, drops, {
+      characterId: charId ?? undefined,
+      startDate: goal.startDate,
+      endDate: goal.startDate,
+    })
+    return {
+      netProfit: 0,
+      percent: 0,
+      barPercent: 0,
+      remaining: goal.targetMeso,
+      daysLeft,
+      dailyNeeded,
+      summary: empty,
+    } satisfies GoalProgress
+  }
+
+  const progressEnd = today <= goal.endDate ? today : goal.endDate
   const summary = enrichLedgerWithBoss(
     computeLedgerSummary(hunts, gathers, expenses, drops, {
       characterId: charId ?? undefined,
-      startDate: `${month}-01`,
-      endDate: `${month}-31`,
+      startDate: goal.startDate,
+      endDate: progressEnd,
     }),
-    bossIncome
+    computeBossIncomeForRange(snapshots, charId, goal.startDate, progressEnd)
   )
 
   const netProfit = summary.netProfit
@@ -257,7 +289,7 @@ export function computeGoalProgress(
     goal.targetMeso > 0 ? Math.round((netProfit / goal.targetMeso) * 100) : netProfit >= 0 ? 100 : 0
   const barPercent = Math.min(100, Math.max(0, percent))
   const remaining = goal.targetMeso - netProfit
-  const daysLeft = getDaysLeftInMonth(month)
+  const daysLeft = today > goal.endDate ? 0 : getDaysLeftUntil(goal.endDate, today)
   const dailyNeeded = remaining > 0 && daysLeft > 0 ? remaining / daysLeft : null
 
   return { netProfit, percent, barPercent, remaining, daysLeft, dailyNeeded, summary } satisfies GoalProgress

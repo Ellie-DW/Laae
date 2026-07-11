@@ -62,12 +62,23 @@ function mapDrop(row: Record<string, unknown>): DropRecord {
 }
 
 function mapGoal(row: Record<string, unknown>): Goal {
+  const periodMonth = row.period_month as string | undefined
+  const legacyStart = periodMonth ? `${periodMonth}-01` : undefined
+  const legacyEnd = periodMonth
+    ? (() => {
+        const [y, m] = periodMonth.split('-').map(Number)
+        const lastDay = new Date(y, m, 0).getDate()
+        return `${periodMonth}-${String(lastDay).padStart(2, '0')}`
+      })()
+    : undefined
+
   return {
     id: row.id as string,
     characterId: (row.character_id as string) ?? null,
     title: row.title as string,
     targetMeso: Number(row.target_meso),
-    periodMonth: row.period_month as string,
+    startDate: (row.start_date as string) ?? legacyStart ?? '',
+    endDate: (row.end_date as string) ?? legacyEnd ?? '',
     createdAt: row.created_at as string,
   }
 }
@@ -270,16 +281,29 @@ export async function sellDropRecords(
 
 export async function upsertGoal(
   userId: string,
-  data: { characterId: string | null; title: string; targetMeso: number; periodMonth: string }
+  data: {
+    characterId: string | null
+    title: string
+    targetMeso: number
+    startDate: string
+    endDate: string
+  }
 ) {
   const existing = data.characterId
-    ? await supabase.from('goals').select('id').eq('user_id', userId).eq('character_id', data.characterId).eq('period_month', data.periodMonth).maybeSingle()
-    : await supabase.from('goals').select('id').eq('user_id', userId).is('character_id', null).eq('period_month', data.periodMonth).maybeSingle()
+    ? await supabase.from('goals').select('id').eq('user_id', userId).eq('character_id', data.characterId).maybeSingle()
+    : await supabase.from('goals').select('id').eq('user_id', userId).is('character_id', null).maybeSingle()
+
+  const payload = {
+    title: data.title,
+    target_meso: data.targetMeso,
+    start_date: data.startDate,
+    end_date: data.endDate,
+  }
 
   if (existing.data?.id) {
     const { data: row, error } = await supabase
       .from('goals')
-      .update({ title: data.title, target_meso: data.targetMeso })
+      .update(payload)
       .eq('id', existing.data.id)
       .select('*')
       .single()
@@ -292,9 +316,7 @@ export async function upsertGoal(
     .insert({
       user_id: userId,
       character_id: data.characterId,
-      title: data.title,
-      target_meso: data.targetMeso,
-      period_month: data.periodMonth,
+      ...payload,
     })
     .select('*')
     .single()

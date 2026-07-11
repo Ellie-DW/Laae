@@ -159,7 +159,6 @@ function MainApp() {
             onRemoveNote={ledger.removeDiaryNote}
             onNavigateToSource={handleDiaryNavigate}
             goals={ledger.goals}
-            currentMonth={ledger.currentMonth}
             getGoalProgress={ledger.getGoalProgress}
             onGoGoals={() => setPage('goals')}
           />
@@ -236,7 +235,6 @@ function MainApp() {
           <GoalsPage
             characters={characters}
             goals={ledger.goals}
-            currentMonth={ledger.currentMonth}
             getGoalProgress={ledger.getGoalProgress}
             onSave={ledger.saveGoal}
             onRemove={ledger.removeGoal}

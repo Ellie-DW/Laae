@@ -102,7 +102,8 @@ export interface Goal {
   characterId: string | null
   title: string
   targetMeso: number
-  periodMonth: string
+  startDate: string
+  endDate: string
   createdAt: string
 }
 

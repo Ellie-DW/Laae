@@ -155,13 +155,9 @@ export function useLedger(
   )
 
   const getGoalProgress = useCallback(
-    (goal: (typeof goals)[0]) => {
-      const bossIncome = goal.characterId
-        ? (bossIncomeByCharacter[goal.characterId] ?? 0)
-        : totalBossIncome
-      return computeGoalProgress(goal, hunts, gathers, expenses, drops, bossIncome)
-    },
-    [hunts, gathers, expenses, drops, bossIncomeByCharacter, totalBossIncome]
+    (goal: (typeof goals)[0]) =>
+      computeGoalProgress(goal, hunts, gathers, expenses, drops, snapshots),
+    [hunts, gathers, expenses, drops, snapshots]
   )
 
   const createExpense = useCallback(
@@ -308,13 +304,17 @@ export function useLedger(
   }, [])
 
   const saveGoal = useCallback(
-    async (data: { characterId: string | null; title: string; targetMeso: number; periodMonth: string }) => {
+    async (data: {
+      characterId: string | null
+      title: string
+      targetMeso: number
+      startDate: string
+      endDate: string
+    }) => {
       if (!user) return
       const row = await upsertGoal(user.id, data)
       setGoals((prev) => {
-        const filtered = prev.filter(
-          (g) => !(g.periodMonth === data.periodMonth && g.characterId === data.characterId)
-        )
+        const filtered = prev.filter((g) => !(g.characterId === data.characterId))
         return [row, ...filtered]
       })
       setError(null)

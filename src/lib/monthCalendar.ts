@@ -138,3 +138,12 @@ export function shiftMonth(year: number, month: number, delta: number) {
   while (m > 12) { m -= 12; y += 1 }
   return { year: y, month: m }
 }
+
+export function yearMonthToPeriodMonth(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, '0')}`
+}
+
+export function periodMonthToYearMonth(periodMonth: string): { year: number; month: number } {
+  const [year, month] = periodMonth.split('-').map(Number)
+  return { year, month }
+}
