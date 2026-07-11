@@ -7,6 +7,14 @@ export function getHeldSolErdaFragments(hunts: HuntRecord[], characterId?: strin
     .reduce((s, h) => s + h.solErdaFragments, 0)
 }
 
+export function isSolErdaSale(hunt: HuntRecord) {
+  return hunt.solErdaFragments < 0 && hunt.meso > 0
+}
+
+export function isSolErdaSpend(hunt: HuntRecord) {
+  return hunt.solErdaFragments < 0 && hunt.meso === 0
+}
+
 export interface HuntCumulativeStats {
   huntMesoTotal: number
   saleMesoTotal: number
@@ -29,12 +37,11 @@ export function getHuntCumulativeStats(hunts: HuntRecord[], characterId?: string
   let saleCount = 0
 
   for (const h of filtered) {
-    const isSale = h.solErdaFragments < 0
-    if (isSale) {
+    if (isSolErdaSale(h)) {
       saleMesoTotal += h.meso
       soldSolErda += Math.abs(h.solErdaFragments)
       saleCount += 1
-    } else {
+    } else if (!isSolErdaSpend(h)) {
       huntMesoTotal += h.meso
       acquiredSolErda += Math.max(0, h.solErdaFragments)
       huntCount += 1
@@ -58,7 +65,7 @@ export function splitHuntIncome(hunts: HuntRecord[]) {
   let solErdaSaleIncome = 0
 
   for (const h of hunts) {
-    if (h.solErdaFragments < 0) solErdaSaleIncome += h.meso
+    if (isSolErdaSale(h)) solErdaSaleIncome += h.meso
     else huntMesoIncome += h.meso
   }
 

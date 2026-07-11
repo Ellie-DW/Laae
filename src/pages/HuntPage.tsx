@@ -103,19 +103,24 @@ export default function HuntPage({ selectedCharacter, hunts, onAdd, onSellSolErd
         ) : (
           <div className="space-y-2">
             {charHunts.map((h) => {
-              const isSale = h.solErdaFragments < 0
+              const isSale = h.solErdaFragments < 0 && h.meso > 0
+              const isSpend = h.solErdaFragments < 0 && h.meso === 0
               return (
                 <div key={h.id} className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50 border border-dark-border">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-200">
                       {h.recordDate}
                       {isSale && <span className="text-violet-400 ml-2">솔 에르다 판매</span>}
+                      {isSpend && <span className="text-violet-400 ml-2">솔 에르다 사용</span>}
                     </p>
                     {h.solErdaFragments > 0 && (
                       <p className="text-xs text-slate-500 mt-0.5">솔 에르다 조각 +{h.solErdaFragments.toLocaleString()}개</p>
                     )}
                     {isSale && (
                       <p className="text-xs text-slate-500 mt-0.5">솔 에르다 조각 {h.solErdaFragments.toLocaleString()}개</p>
+                    )}
+                    {isSpend && (
+                      <p className="text-xs text-slate-500 mt-0.5">솔 에르다 조각 {h.solErdaFragments.toLocaleString()}개 사용</p>
                     )}
                   </div>
                   {h.meso > 0 && (

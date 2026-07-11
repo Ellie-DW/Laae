@@ -1,6 +1,7 @@
 import type { HuntRecord, GatherRecord, Expense, DropRecord, BossSnapshot, CharacterBossData } from '../types'
 import { EXPENSE_CATEGORY_LABEL } from './ledgerApi'
 import { calculateBossStats } from './bossStats'
+import { isSolErdaSale, isSolErdaSpend } from './huntStats'
 import { getToday, formatMesoKorean } from '../utils'
 
 export type DiaryEntryType = 'hunt' | 'gather' | 'drop' | 'expense' | 'boss'
@@ -104,10 +105,13 @@ export function buildDiaryDays(
 
   for (const h of hunts) {
     if (charId && h.characterId !== charId) continue
-    const isSolErdaSale = h.solErdaFragments < 0
+    const isSale = isSolErdaSale(h)
+    const isSpend = isSolErdaSpend(h)
     const detailParts: string[] = []
-    if (isSolErdaSale) {
+    if (isSale) {
       detailParts.push(`솔 에르다 ${Math.abs(h.solErdaFragments).toLocaleString()}개 판매`)
+    } else if (isSpend) {
+      detailParts.push(`솔 에르다 ${Math.abs(h.solErdaFragments).toLocaleString()}개 사용`)
     } else if (h.solErdaFragments > 0) {
       detailParts.push(`솔 에르다 조각 ${h.solErdaFragments}개`)
     }
@@ -119,7 +123,7 @@ export function buildDiaryDays(
       recordDate: h.recordDate,
       createdAt: h.createdAt,
       amount: h.meso,
-      title: isSolErdaSale ? '솔 에르다 판매' : '사냥',
+      title: isSale ? '솔 에르다 판매' : isSpend ? '솔 에르다 사용' : '사냥',
       detail: detailParts.length > 0 ? detailParts.join(' · ') : undefined,
       memo: null,
     })

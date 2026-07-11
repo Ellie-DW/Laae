@@ -24,6 +24,7 @@ import {
   enrichLedgerWithBoss,
   getCurrentMonth,
 } from '../lib/ledgerAnalytics'
+import { getHeldSolErdaFragments } from '../lib/huntStats'
 import { getWeeklyPeriod, getErrorMessage } from '../utils'
 
 export function useLedger(
@@ -197,6 +198,26 @@ export function useLedger(
     [user]
   )
 
+  const spendSolErda = useCallback(
+    async (data: { characterId: string; quantity: number; recordDate: string }) => {
+      if (!user || data.quantity <= 0) return
+      const held = getHeldSolErdaFragments(hunts)
+      if (data.quantity > held) {
+        setError(`솔 에르다 조각 보유 수량(${held.toLocaleString()}개)이 부족합니다.`)
+        return
+      }
+      const row = await addHuntRecord(user.id, {
+        characterId: data.characterId,
+        meso: 0,
+        solErdaFragments: -data.quantity,
+        recordDate: data.recordDate,
+      })
+      setHunts((prev) => [row, ...prev])
+      setError(null)
+    },
+    [user, hunts]
+  )
+
   const removeHunt = useCallback(async (id: string) => {
     await deleteHuntRecord(id)
     setHunts((prev) => prev.filter((h) => h.id !== id))
@@ -307,6 +328,7 @@ export function useLedger(
     removeExpense,
     createHunt,
     sellSolErda,
+    spendSolErda,
     removeHunt,
     createGather,
     removeGather,

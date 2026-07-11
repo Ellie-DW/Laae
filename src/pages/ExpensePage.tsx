@@ -1,18 +1,31 @@
 import { useMemo, useState } from 'react'
-import type { Character, Expense, ExpenseCategory } from '../types'
+import type { Character, Expense, ExpenseCategory, HuntRecord } from '../types'
 import { EXPENSE_CATEGORY_LABEL } from '../lib/ledgerApi'
 import { computeExpenseByCategory } from '../lib/ledgerAnalytics'
+import { getHeldSolErdaFragments, isSolErdaSpend } from '../lib/huntStats'
 import { formatMesoKorean, getCurrentMonth } from '../utils'
 import MesoRecordForm from '../components/ledger/MesoRecordForm'
+import SolErdaSpendSection from '../components/hunt/SolErdaSpendSection'
 
 interface ExpensePageProps {
   characters: Character[]
   expenses: Expense[]
+  hunts: HuntRecord[]
   onAdd: (data: { characterId: string; category: ExpenseCategory; amount: number; memo?: string; recordDate: string }) => Promise<void>
   onRemove: (id: string) => Promise<void>
+  onSpendSolErda: (data: { characterId: string; quantity: number; recordDate: string }) => Promise<void>
+  onRemoveHunt: (id: string) => Promise<void>
 }
 
-export default function ExpensePage({ characters, expenses, onAdd, onRemove }: ExpensePageProps) {
+export default function ExpensePage({
+  characters,
+  expenses,
+  hunts,
+  onAdd,
+  onRemove,
+  onSpendSolErda,
+  onRemoveHunt,
+}: ExpensePageProps) {
   const [filterCharacterId, setFilterCharacterId] = useState<string | null>(null)
   const [category, setCategory] = useState<ExpenseCategory>('other')
   const [formCharacterId, setFormCharacterId] = useState<string>('')
@@ -52,6 +65,21 @@ export default function ExpensePage({ characters, expenses, onAdd, onRemove }: E
   const monthTotal = categoryBreakdown.reduce((s, c) => s + c.amount, 0)
 
   const addCharacterId = formCharacterId || filterCharacterId || characters[0]?.id || ''
+
+  const heldSolErda = useMemo(() => getHeldSolErdaFragments(hunts), [hunts])
+
+  const solErdaSpends = useMemo(() => {
+    const filtered = hunts.filter((h) => {
+      if (!isSolErdaSpend(h)) return false
+      if (filterCharacterId && h.characterId !== filterCharacterId) return false
+      return true
+    })
+    return [...filtered].sort((a, b) =>
+      b.recordDate.localeCompare(a.recordDate) || b.createdAt.localeCompare(a.createdAt)
+    )
+  }, [hunts, filterCharacterId])
+
+  const spentSolErdaTotal = solErdaSpends.reduce((s, h) => s + Math.abs(h.solErdaFragments), 0)
 
   if (characters.length === 0) {
     return (
@@ -94,6 +122,9 @@ export default function ExpensePage({ characters, expenses, onAdd, onRemove }: E
         </p>
         <p className="text-2xl font-bold text-red-400 mt-1">{formatMesoKorean(total)}</p>
         <p className="text-xs text-slate-500 mt-1">{visibleExpenses.length}건</p>
+        {heldSolErda > 0 && (
+          <p className="text-xs text-violet-400 mt-2">전체 보유 솔 에르다 {heldSolErda.toLocaleString()}개</p>
+        )}
       </div>
 
       {categoryBreakdown.length > 0 && (
@@ -160,6 +191,49 @@ export default function ExpensePage({ characters, expenses, onAdd, onRemove }: E
           </select>
         </div>
       </MesoRecordForm>
+
+      <SolErdaSpendSection
+        hunts={hunts}
+        characters={characters}
+        recordCharacterId={addCharacterId}
+        onRecordCharacterChange={setFormCharacterId}
+        showCharacterSelect={!filterCharacterId}
+        onSpend={onSpendSolErda}
+      />
+
+      {solErdaSpends.length > 0 && (
+        <div className="panel-light p-5 border-violet-500/15">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-semibold text-slate-100">솔 에르다 조각 사용 내역</h2>
+              <p className="text-xs text-slate-500 mt-0.5">총 {spentSolErdaTotal.toLocaleString()}개 사용</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {solErdaSpends.map((h) => (
+              <div key={h.id} className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50 border border-dark-border">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs px-2 py-0.5 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                      솔 에르다 사용
+                    </span>
+                    {showCharacter && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyber-500/10 text-cyber-400 border border-cyber-500/20">
+                        {charNameById[h.characterId] ?? '캐릭터'}
+                      </span>
+                    )}
+                    <span className="text-xs text-slate-500">{h.recordDate}</span>
+                  </div>
+                </div>
+                <span className="text-sm font-semibold text-violet-400 shrink-0">
+                  -{Math.abs(h.solErdaFragments).toLocaleString()}개
+                </span>
+                <button onClick={() => onRemoveHunt(h.id)} className="text-slate-600 hover:text-red-400 text-xs">✕</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="panel-light p-5">
         <h2 className="font-semibold text-slate-100 mb-4">지출 내역</h2>

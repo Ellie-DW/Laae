@@ -181,8 +181,11 @@ function MainApp() {
           <ExpensePage
             characters={characters}
             expenses={ledger.expenses}
+            hunts={ledger.hunts}
             onAdd={ledger.createExpense}
             onRemove={ledger.removeExpense}
+            onSpendSolErda={ledger.spendSolErda}
+            onRemoveHunt={ledger.removeHunt}
           />
         )
       case 'gather':
