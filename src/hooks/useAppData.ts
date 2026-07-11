@@ -203,22 +203,6 @@ export function useAppData() {
     [user, data.characters]
   )
 
-  const moveCharacter = useCallback(
-    async (id: string, direction: 'up' | 'down') => {
-      const index = data.characters.findIndex((c) => c.id === id)
-      if (index === -1) return
-
-      const targetIndex = direction === 'up' ? index - 1 : index + 1
-      if (targetIndex < 0 || targetIndex >= data.characters.length) return
-
-      const reordered = [...data.characters]
-      const [moved] = reordered.splice(index, 1)
-      reordered.splice(targetIndex, 0, moved)
-      await reorderCharactersList(reordered.map((c) => c.id))
-    },
-    [data.characters, reorderCharactersList]
-  )
-
   const selectCharacter = useCallback(
     (id: string) => {
       setData((prev) => ({ ...prev, selectedCharacterId: id }))
@@ -406,7 +390,6 @@ export function useAppData() {
     syncError,
     addCharacter,
     removeCharacter,
-    moveCharacter,
     reorderCharacters: reorderCharactersList,
     selectCharacter,
     setPage,

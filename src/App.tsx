@@ -44,7 +44,6 @@ function MainApp() {
     syncError,
     addCharacter,
     removeCharacter,
-    moveCharacter,
     reorderCharacters,
     selectCharacter,
     setPage,
@@ -233,7 +232,6 @@ function MainApp() {
         onSelectCharacter={selectCharacter}
         onAddCharacter={addCharacter}
         onRemoveCharacter={removeCharacter}
-        onMoveCharacter={moveCharacter}
         onReorderCharacters={reorderCharacters}
       />
 
@@ -244,7 +242,6 @@ function MainApp() {
           onSelectCharacter={selectCharacter}
           onAddCharacter={addCharacter}
           onRemoveCharacter={removeCharacter}
-          onMoveCharacter={moveCharacter}
           onReorderCharacters={reorderCharacters}
         />
 

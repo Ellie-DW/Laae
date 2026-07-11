@@ -14,7 +14,6 @@ interface SidebarProps {
   onSelectCharacter: (id: string) => void
   onAddCharacter: (name: string) => void
   onRemoveCharacter: (id: string) => void
-  onMoveCharacter: (id: string, direction: 'up' | 'down') => void
   onReorderCharacters: (orderedIds: string[]) => void
 }
 
@@ -24,7 +23,6 @@ export default function Sidebar({
   onSelectCharacter,
   onAddCharacter,
   onRemoveCharacter,
-  onMoveCharacter,
   onReorderCharacters,
 }: SidebarProps) {
   const { user, signOut } = useAuth()
@@ -84,7 +82,6 @@ export default function Sidebar({
             selectedCharacter={selectedCharacter}
             onSelectCharacter={onSelectCharacter}
             onRemoveCharacter={onRemoveCharacter}
-            onMoveCharacter={onMoveCharacter}
             onReorderCharacters={onReorderCharacters}
           />
         )}

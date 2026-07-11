@@ -14,7 +14,6 @@ interface MobileHeaderProps {
   onSelectCharacter: (id: string) => void
   onAddCharacter: (name: string) => void
   onRemoveCharacter: (id: string) => void
-  onMoveCharacter: (id: string, direction: 'up' | 'down') => void
   onReorderCharacters: (orderedIds: string[]) => void
 }
 
@@ -24,7 +23,6 @@ export default function MobileHeader({
   onSelectCharacter,
   onAddCharacter,
   onRemoveCharacter,
-  onMoveCharacter,
   onReorderCharacters,
 }: MobileHeaderProps) {
   const { user, signOut } = useAuth()
@@ -123,10 +121,7 @@ export default function MobileHeader({
             <div className="flex items-center justify-between px-4 py-3 border-b border-dark-border/60 shrink-0">
               <div>
                 <h2 className="font-semibold text-slate-100">캐릭터 선택</h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {characters.length}개 등록됨
-                  {characters.length > 1 && ' · 드래그 또는 ▲▼로 순서 변경'}
-                </p>
+                <p className="text-xs text-slate-500 mt-0.5">{characters.length}개 등록됨</p>
               </div>
               <button
                 onClick={closePicker}
@@ -148,7 +143,6 @@ export default function MobileHeader({
                   selectedCharacter={selectedCharacter}
                   onSelectCharacter={handleSelect}
                   onRemoveCharacter={handleRemove}
-                  onMoveCharacter={onMoveCharacter}
                   onReorderCharacters={onReorderCharacters}
                   variant="mobile"
                 />
