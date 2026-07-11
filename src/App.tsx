@@ -159,7 +159,7 @@ function MainApp() {
       case 'drop':
         return (
           <DropPage
-            selectedCharacter={selectedCharacter}
+            characters={characters}
             drops={ledger.drops}
             onAdd={ledger.createDrop}
             onSell={ledger.sellDrops}

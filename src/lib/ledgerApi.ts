@@ -217,7 +217,6 @@ export async function deleteDropRecord(id: string) {
 
 export async function sellDropRecords(
   userId: string,
-  characterId: string,
   items: { itemName: string; meso: number; recordDate: string; memo?: string }[],
   acquisitions: DropRecord[]
 ) {
@@ -228,7 +227,6 @@ export async function sellDropRecords(
     const acquisition = acquisitions
       .filter(
         (d) =>
-          d.characterId === characterId &&
           normalizeDropItemName(d.itemName) === normalizeDropItemName(item.itemName) &&
           d.meso === 0 &&
           !consumedIds.includes(d.id)
@@ -243,7 +241,7 @@ export async function sellDropRecords(
     await deleteDropRecord(acquisition.id)
 
     const sale = await addDropRecord(userId, {
-      characterId,
+      characterId: acquisition.characterId,
       itemName: item.itemName,
       meso: item.meso,
       memo: item.memo,

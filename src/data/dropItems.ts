@@ -68,10 +68,14 @@ export function getDropItemGroups(items: DropItem[]) {
   }))
 }
 
-export function getAcquisitionCounts(drops: { characterId: string; itemName: string; meso: number }[], characterId: string) {
+export function getAcquisitionCounts(
+  drops: { characterId: string; itemName: string; meso: number }[],
+  characterId?: string
+) {
   const map = new Map<string, number>()
   for (const d of drops) {
-    if (d.characterId !== characterId || d.meso > 0) continue
+    if (characterId && d.characterId !== characterId) continue
+    if (d.meso > 0) continue
     map.set(normalizeDropItemName(d.itemName), (map.get(normalizeDropItemName(d.itemName)) ?? 0) + 1)
   }
   return map

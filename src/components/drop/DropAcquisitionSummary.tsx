@@ -4,7 +4,7 @@ import { PREDEFINED_DROP_ITEMS, getAcquisitionCounts } from '../../data/dropItem
 
 interface DropAcquisitionSummaryProps {
   drops: DropRecord[]
-  characterId: string
+  characterId?: string
 }
 
 export default function DropAcquisitionSummary({ drops, characterId }: DropAcquisitionSummaryProps) {

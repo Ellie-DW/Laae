@@ -228,9 +228,9 @@ export function useLedger(
   )
 
   const sellDrops = useCallback(
-    async (characterId: string, items: { itemName: string; meso: number; recordDate: string; memo?: string }[]) => {
+    async (items: { itemName: string; meso: number; recordDate: string; memo?: string }[]) => {
       if (!user || items.length === 0) return
-      const { consumedIds, created } = await sellDropRecords(user.id, characterId, items, drops)
+      const { consumedIds, created } = await sellDropRecords(user.id, items, drops)
       setDrops((prev) => [...created, ...prev.filter((d) => !consumedIds.includes(d.id))])
       setError(null)
     },

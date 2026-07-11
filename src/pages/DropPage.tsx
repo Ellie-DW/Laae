@@ -3,10 +3,10 @@ import DropRecordPanel from '../components/drop/DropRecordPanel'
 import type { DropSaleItem } from '../components/drop/DropSaleSection'
 
 interface DropPageProps {
-  selectedCharacter: Character | null
+  characters: Character[]
   drops: DropRecord[]
   onAdd: (data: { characterId: string; itemName: string; meso: number; memo?: string; recordDate: string }) => Promise<void>
-  onSell: (characterId: string, items: DropSaleItem[]) => Promise<void>
+  onSell: (items: DropSaleItem[]) => Promise<void>
   onRemove: (id: string) => Promise<void>
 }
 

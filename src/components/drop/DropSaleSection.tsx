@@ -11,17 +11,16 @@ export interface DropSaleItem {
 
 interface DropSaleSectionProps {
   drops: DropRecord[]
-  characterId: string
   onSell: (items: DropSaleItem[]) => Promise<void>
 }
 
-export default function DropSaleSection({ drops, characterId, onSell }: DropSaleSectionProps) {
+export default function DropSaleSection({ drops, onSell }: DropSaleSectionProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [recordDate, setRecordDate] = useState(getToday())
   const [mesoInput, setMesoInput] = useState('')
   const [selling, setSelling] = useState(false)
 
-  const stockByName = useMemo(() => getAcquisitionCounts(drops, characterId), [drops, characterId])
+  const stockByName = useMemo(() => getAcquisitionCounts(drops), [drops])
 
   const stockById = useMemo(
     () => new Map(PREDEFINED_DROP_ITEMS.map((i) => [i.id, stockByName.get(i.name) ?? 0])),
@@ -79,7 +78,7 @@ export default function DropSaleSection({ drops, characterId, onSell }: DropSale
       <div className="mb-4">
         <h2 className="font-semibold text-slate-100">판매 기록</h2>
         <p className="text-xs text-slate-500 mt-0.5">
-          보유 중인 항목만 선택할 수 있습니다. 판매 시 획득 현황에서 1개씩 차감됩니다.
+          전체 캐릭터 보유 수량 기준 · 판매 시 획득 기록에서 1개씩 차감됩니다.
         </p>
       </div>
 
