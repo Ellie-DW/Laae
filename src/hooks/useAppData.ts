@@ -177,26 +177,20 @@ export function useAppData() {
     [user, data]
   )
 
-  const moveCharacter = useCallback(
-    async (id: string, direction: 'up' | 'down') => {
+  const reorderCharactersList = useCallback(
+    async (orderedIds: string[]) => {
       if (!user) return
+      if (orderedIds.length !== data.characters.length) return
 
-      const index = data.characters.findIndex((c) => c.id === id)
-      if (index === -1) return
-
-      const targetIndex = direction === 'up' ? index - 1 : index + 1
-      if (targetIndex < 0 || targetIndex >= data.characters.length) return
-
-      const reordered = [...data.characters]
-      const [moved] = reordered.splice(index, 1)
-      reordered.splice(targetIndex, 0, moved)
-      const orderedIds = reordered.map((c) => c.id)
+      const charMap = new Map(data.characters.map((c) => [c.id, c]))
+      const reordered = orderedIds.flatMap((id, sortOrder) => {
+        const char = charMap.get(id)
+        return char ? [{ ...char, sortOrder }] : []
+      })
+      if (reordered.length !== data.characters.length) return
 
       const previousCharacters = data.characters
-      setData((prev) => ({
-        ...prev,
-        characters: reordered.map((char, sortOrder) => ({ ...char, sortOrder })),
-      }))
+      setData((prev) => ({ ...prev, characters: reordered }))
 
       try {
         await persistCharacterOrder(orderedIds)
@@ -207,6 +201,22 @@ export function useAppData() {
       }
     },
     [user, data.characters]
+  )
+
+  const moveCharacter = useCallback(
+    async (id: string, direction: 'up' | 'down') => {
+      const index = data.characters.findIndex((c) => c.id === id)
+      if (index === -1) return
+
+      const targetIndex = direction === 'up' ? index - 1 : index + 1
+      if (targetIndex < 0 || targetIndex >= data.characters.length) return
+
+      const reordered = [...data.characters]
+      const [moved] = reordered.splice(index, 1)
+      reordered.splice(targetIndex, 0, moved)
+      await reorderCharactersList(reordered.map((c) => c.id))
+    },
+    [data.characters, reorderCharactersList]
   )
 
   const selectCharacter = useCallback(
@@ -397,6 +407,7 @@ export function useAppData() {
     addCharacter,
     removeCharacter,
     moveCharacter,
+    reorderCharacters: reorderCharactersList,
     selectCharacter,
     setPage,
     updateBossSelection,

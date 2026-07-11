@@ -15,6 +15,7 @@ interface MobileHeaderProps {
   onAddCharacter: (name: string) => void
   onRemoveCharacter: (id: string) => void
   onMoveCharacter: (id: string, direction: 'up' | 'down') => void
+  onReorderCharacters: (orderedIds: string[]) => void
 }
 
 export default function MobileHeader({
@@ -24,6 +25,7 @@ export default function MobileHeader({
   onAddCharacter,
   onRemoveCharacter,
   onMoveCharacter,
+  onReorderCharacters,
 }: MobileHeaderProps) {
   const { user, signOut } = useAuth()
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -123,7 +125,7 @@ export default function MobileHeader({
                 <h2 className="font-semibold text-slate-100">캐릭터 선택</h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   {characters.length}개 등록됨
-                  {characters.length > 1 && ' · ▲▼로 순서 변경'}
+                  {characters.length > 1 && ' · 드래그 또는 ▲▼로 순서 변경'}
                 </p>
               </div>
               <button
@@ -147,6 +149,7 @@ export default function MobileHeader({
                   onSelectCharacter={handleSelect}
                   onRemoveCharacter={handleRemove}
                   onMoveCharacter={onMoveCharacter}
+                  onReorderCharacters={onReorderCharacters}
                   variant="mobile"
                 />
               )}
