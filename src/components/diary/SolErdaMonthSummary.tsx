@@ -11,27 +11,30 @@ export function hasSolErdaActivity(summary: SolErdaMonthStats) {
   )
 }
 
+function spentTotal(summary: SolErdaMonthStats) {
+  return summary.used + summary.sold
+}
+
+function formatSpent(summary: SolErdaMonthStats) {
+  const total = spentTotal(summary)
+  if (summary.saleMeso > 0) {
+    return `-${total.toLocaleString()}개 · ${formatMesoKorean(summary.saleMeso)}`
+  }
+  return `-${total.toLocaleString()}개`
+}
+
 export function SolErdaMonthSummary({
   summary,
-  showPurchaseMeso = false,
   compact = false,
 }: {
   summary: SolErdaMonthStats
-  showPurchaseMeso?: boolean
   compact?: boolean
 }) {
   if (compact) {
     return (
       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
         <StatLine label="획득" value={`+${summary.acquired.toLocaleString()}개`} />
-        <StatLine label="구매" value={`+${summary.purchased.toLocaleString()}개`} />
-        <StatLine label="사용" value={`-${summary.used.toLocaleString()}개`} muted />
-        <StatLine label="판매" value={`-${summary.sold.toLocaleString()}개`} muted />
-        <StatLine
-          label="순증"
-          value={`${summary.netChange > 0 ? '+' : ''}${summary.netChange.toLocaleString()}개`}
-          highlight
-        />
+        <StatLine label="지출" value={formatSpent(summary)} muted />
         <StatLine label="보유" value={`${summary.held.toLocaleString()}개`} highlight />
       </div>
     )
@@ -40,31 +43,9 @@ export function SolErdaMonthSummary({
   return (
     <div className="mb-4 pt-3 border-t border-dark-border/60">
       <p className="text-xs text-slate-500 mb-2">솔 에르다 조각 · 이번 달</p>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <StatChip label="획득" value={`+${summary.acquired.toLocaleString()}개`} />
-        <StatChip
-          label="구매"
-          value={
-            showPurchaseMeso && summary.purchaseMeso > 0
-              ? `+${summary.purchased.toLocaleString()}개 · ${formatMesoKorean(summary.purchaseMeso)}`
-              : `+${summary.purchased.toLocaleString()}개`
-          }
-        />
-        <StatChip label="사용" value={`-${summary.used.toLocaleString()}개`} tone="muted" />
-        <StatChip
-          label="판매"
-          value={
-            summary.saleMeso > 0
-              ? `-${summary.sold.toLocaleString()}개 · ${formatMesoKorean(summary.saleMeso)}`
-              : `-${summary.sold.toLocaleString()}개`
-          }
-          tone="muted"
-        />
-        <StatChip
-          label="순증"
-          value={`${summary.netChange > 0 ? '+' : ''}${summary.netChange.toLocaleString()}개`}
-          highlight
-        />
+        <StatChip label="지출" value={formatSpent(summary)} tone="muted" />
         <StatChip label="현재 보유" value={`${summary.held.toLocaleString()}개`} highlight />
       </div>
     </div>

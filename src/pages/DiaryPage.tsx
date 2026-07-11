@@ -247,7 +247,7 @@ export default function DiaryPage({
             <SummaryChip label="지출" value={formatMesoKorean(monthSummary.expense)} tone="expense" />
             <SummaryChip label="순수익" value={formatMesoKorean(monthSummary.net)} tone={monthSummary.net >= 0 ? 'income' : 'expense'} />
           </div>
-          <SolErdaMonthSummary summary={solErdaMonth} showPurchaseMeso />
+          <SolErdaMonthSummary summary={solErdaMonth} />
           {Object.keys(monthSummary.incomeByType).length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4 pt-3 border-t border-dark-border/60">
               {monthSummary.huntMesoIncome > 0 && (
