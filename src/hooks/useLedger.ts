@@ -5,6 +5,7 @@ import {
   fetchLedgerData,
   addExpense,
   deleteExpense,
+  updateExpense,
   addHuntRecord,
   deleteHuntRecord,
   addGatherRecord,
@@ -173,6 +174,12 @@ export function useLedger(
   const removeExpense = useCallback(async (id: string) => {
     await deleteExpense(id)
     setExpenses((prev) => prev.filter((e) => e.id !== id))
+  }, [])
+
+  const saveExpenseMemo = useCallback(async (id: string, memo: string | null) => {
+    const row = await updateExpense(id, { memo: memo?.trim() || null })
+    setExpenses((prev) => prev.map((e) => (e.id === id ? row : e)))
+    setError(null)
   }, [])
 
   const createHunt = useCallback(
@@ -401,6 +408,7 @@ export function useLedger(
     getGoalProgress,
     createExpense,
     removeExpense,
+    saveExpenseMemo,
     createHunt,
     sellSolErda,
     spendSolErda,

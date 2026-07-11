@@ -76,7 +76,7 @@ export default function MobileHeader({
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
             <img src={SITE_LOGO_SRC} alt="" className="w-7 h-7 object-contain shrink-0" draggable={false} />
-            <span className="font-display font-bold text-slate-100 tracking-wide truncate">Maple Diary</span>
+            <span className="font-display font-bold text-slate-100 tracking-wide truncate">Laae</span>
           </div>
 
           <button

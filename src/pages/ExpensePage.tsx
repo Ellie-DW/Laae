@@ -13,6 +13,7 @@ interface ExpensePageProps {
   expenses: Expense[]
   hunts: HuntRecord[]
   onAdd: (data: { characterId: string; category: ExpenseCategory; amount: number; memo?: string; recordDate: string }) => Promise<void>
+  onSaveMemo: (id: string, memo: string | null) => Promise<void>
   onRemove: (id: string) => Promise<void>
   onSpendSolErda: (data: { characterId: string; quantity: number; recordDate: string }) => Promise<void>
   onPurchaseSolErda: (data: { characterId: string; quantity: number; amount: number; recordDate: string }) => Promise<void>
@@ -25,6 +26,7 @@ export default function ExpensePage({
   expenses,
   hunts,
   onAdd,
+  onSaveMemo,
   onRemove,
   onSpendSolErda,
   onPurchaseSolErda,
@@ -284,40 +286,144 @@ export default function ExpensePage({
         ) : (
           <div className="space-y-2">
             {visibleExpenses.map((e) => (
-              <div key={e.id} className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50 border border-dark-border">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20">
-                      {EXPENSE_CATEGORY_LABEL[e.category]}
-                    </span>
-                    {showCharacter && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyber-500/10 text-cyber-400 border border-cyber-500/20">
-                        {charNameById[e.characterId] ?? '캐릭터'}
-                      </span>
-                    )}
-                    <span className="text-xs text-slate-500">{e.recordDate}</span>
-                  </div>
-                  {e.memo && (
-                    <p className="text-sm text-slate-400 mt-1 truncate">
-                      {parseSolErdaPurchaseMemo(e.memo)?.displayMemo ?? e.memo}
-                    </p>
-                  )}
-                </div>
-                <span className="text-sm font-semibold text-red-400 shrink-0">-{formatMesoKorean(e.amount)}</span>
-                <button
-                  onClick={() =>
-                    isSolErdaPurchaseExpense(e.memo)
-                      ? onRemoveSolErdaPurchase(e.id, e.memo)
-                      : onRemove(e.id)
-                  }
-                  className="text-slate-600 hover:text-red-400 text-xs"
-                >
-                  ✕
-                </button>
-              </div>
+              <ExpenseListItem
+                key={e.id}
+                expense={e}
+                showCharacter={showCharacter}
+                charName={charNameById[e.characterId] ?? '캐릭터'}
+                onSaveMemo={onSaveMemo}
+                onRemove={() =>
+                  isSolErdaPurchaseExpense(e.memo)
+                    ? onRemoveSolErdaPurchase(e.id, e.memo)
+                    : onRemove(e.id)
+                }
+              />
             ))}
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+function ExpenseListItem({
+  expense,
+  showCharacter,
+  charName,
+  onSaveMemo,
+  onRemove,
+}: {
+  expense: Expense
+  showCharacter: boolean
+  charName: string
+  onSaveMemo: (id: string, memo: string | null) => Promise<void>
+  onRemove: () => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [editMemo, setEditMemo] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const isSolErdaPurchase = isSolErdaPurchaseExpense(expense.memo)
+  const displayMemo = parseSolErdaPurchaseMemo(expense.memo)?.displayMemo ?? expense.memo
+
+  const startEdit = () => {
+    setEditMemo(expense.memo ?? '')
+    setEditing(true)
+  }
+
+  const saveMemo = async () => {
+    setSaving(true)
+    try {
+      await onSaveMemo(expense.id, editMemo.trim() || null)
+      setEditing(false)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="flex items-start gap-3 p-3 rounded-lg bg-dark-surface/50 border border-dark-border">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20">
+            {EXPENSE_CATEGORY_LABEL[expense.category]}
+          </span>
+          {showCharacter && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyber-500/10 text-cyber-400 border border-cyber-500/20">
+              {charName}
+            </span>
+          )}
+          <span className="text-xs text-slate-500">{expense.recordDate}</span>
+        </div>
+        {editing ? (
+          <div className="mt-2 space-y-2">
+            <input
+              value={editMemo}
+              onChange={(e) => setEditMemo(e.target.value)}
+              placeholder="메모"
+              className="input-field text-sm w-full"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={saveMemo}
+                disabled={saving}
+                className="btn-primary text-xs px-3 py-1.5 disabled:opacity-40"
+              >
+                {saving ? '저장 중...' : '저장'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditing(false)}
+                className="btn-secondary text-xs px-3 py-1.5"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-1 flex items-start gap-2">
+            {displayMemo ? (
+              <p
+                className={`text-sm text-slate-400 flex-1 min-w-0 ${!isSolErdaPurchase ? 'cursor-pointer hover:text-slate-300' : ''}`}
+                onClick={() => !isSolErdaPurchase && startEdit()}
+              >
+                {displayMemo}
+              </p>
+            ) : (
+              !isSolErdaPurchase && (
+                <button
+                  type="button"
+                  onClick={startEdit}
+                  className="text-xs text-slate-600 hover:text-cyber-400"
+                >
+                  메모 추가
+                </button>
+              )
+            )}
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
+        <span className="text-sm font-semibold text-red-400">-{formatMesoKorean(expense.amount)}</span>
+        {!isSolErdaPurchase && !editing && (
+          <button
+            type="button"
+            onClick={startEdit}
+            className="text-xs px-2 py-1 rounded border border-dark-border text-slate-500 hover:text-cyber-400 hover:border-cyber-500/40 transition-colors"
+          >
+            {displayMemo ? '수정' : '메모'}
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onRemove}
+          className="text-slate-600 hover:text-red-400 text-xs px-1"
+          title="삭제"
+        >
+          ✕
+        </button>
       </div>
     </div>
   )

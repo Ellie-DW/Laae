@@ -162,6 +162,20 @@ export async function deleteExpense(id: string) {
   if (error) throw error
 }
 
+export async function updateExpense(
+  id: string,
+  data: { memo?: string | null }
+) {
+  const { data: row, error } = await supabase
+    .from('expenses')
+    .update({ memo: data.memo ?? null })
+    .eq('id', id)
+    .select('*')
+    .single()
+  if (error) throw error
+  return mapExpense(row)
+}
+
 export async function addHuntRecord(
   userId: string,
   data: { characterId: string; meso: number; solErdaFragments: number; recordDate: string }

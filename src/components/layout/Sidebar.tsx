@@ -63,7 +63,7 @@ export default function Sidebar({
         <div className="flex items-center gap-2">
           <img src={SITE_LOGO_SRC} alt="" className="w-8 h-8 object-contain" draggable={false} />
           <div>
-            <h1 className="font-display font-bold text-slate-100 tracking-wide">Maple Diary</h1>
+            <h1 className="font-display font-bold text-slate-100 tracking-wide">Laae</h1>
             <p className="text-xs text-slate-500">메이플 가계부</p>
           </div>
         </div>

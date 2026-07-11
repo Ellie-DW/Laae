@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { SITE_LOGO_SRC } from '../lib/assetImages'
+import { LEGAL_PATHS } from '../lib/site'
 import StarBorder from '../components/animations/StarBorder'
 import ThemeSwitcher from '../components/layout/ThemeSwitcher'
+import SiteFooter from '../components/layout/SiteFooter'
 
 export default function LoginPage() {
   const { signInWithGoogle } = useAuth()
@@ -21,45 +23,60 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col">
       <div className="fixed top-4 right-4 w-44 z-10">
         <ThemeSwitcher compact />
       </div>
-      <div className="w-full max-w-md">
-        <StarBorder as="div" color="#22d3ee" speed="7s" thickness={1} className="w-full">
-          <div className="panel-glow p-8 text-center rounded-[18px] bg-dark-panel/95">
-          <img
-            src={SITE_LOGO_SRC}
-            alt=""
-            className="w-16 h-16 mx-auto mb-4 object-contain drop-shadow-[0_0_20px_rgba(34,211,238,0.3)]"
-            draggable={false}
-          />
-          <h1 className="font-display text-2xl font-bold text-slate-100 tracking-wide">
-            Maple Diary
-          </h1>
-          <p className="text-sm text-slate-500 mt-2 mb-8">메이플 가게부에 오신 것을 환영합니다</p>
 
-          <button
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50
-                       text-gray-800 font-medium px-6 py-3 rounded-lg transition-all duration-200
-                       disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-          >
-            <GoogleIcon />
-            {loading ? '로그인 중...' : 'Google로 계속하기'}
-          </button>
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <StarBorder as="div" color="#22d3ee" speed="7s" thickness={1} className="w-full">
+            <div className="panel-glow p-8 text-center rounded-[18px] bg-dark-panel/95">
+            <img
+              src={SITE_LOGO_SRC}
+              alt=""
+              className="w-16 h-16 mx-auto mb-4 object-contain drop-shadow-[0_0_20px_rgba(34,211,238,0.3)]"
+              draggable={false}
+            />
+            <h1 className="font-display text-2xl font-bold text-slate-100 tracking-wide">
+              Laae
+            </h1>
+            <p className="text-sm text-slate-500 mt-2 mb-8">메이플 가게부에 오신 것을 환영합니다</p>
 
-          {error && (
-            <p className="mt-4 text-sm text-red-400">{error}</p>
-          )}
+            <button
+              onClick={handleGoogleLogin}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50
+                         text-gray-800 font-medium px-6 py-3 rounded-lg transition-all duration-200
+                         disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            >
+              <GoogleIcon />
+              {loading ? '로그인 중...' : 'Google로 계속하기'}
+            </button>
 
-          <p className="mt-6 text-xs text-slate-600">
-            로그인하면 캐릭터 데이터가 계정에 안전하게 저장됩니다
-          </p>
-          </div>
-        </StarBorder>
+            {error && (
+              <p className="mt-4 text-sm text-red-400">{error}</p>
+            )}
+
+            <p className="mt-6 text-xs text-slate-600 leading-relaxed">
+              로그인하면 캐릭터 데이터가 계정에 안전하게 저장됩니다.
+              <br />
+              계속하면{' '}
+              <a href={LEGAL_PATHS.terms} className="text-slate-500 hover:text-cyber-400 underline underline-offset-2">
+                이용약관
+              </a>
+              {' '}및{' '}
+              <a href={LEGAL_PATHS.privacy} className="text-slate-500 hover:text-cyber-400 underline underline-offset-2">
+                개인정보처리방침
+              </a>
+              에 동의하게 됩니다.
+            </p>
+            </div>
+          </StarBorder>
+        </div>
       </div>
+
+      <SiteFooter compact />
     </div>
   )
 }

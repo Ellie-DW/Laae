@@ -14,6 +14,9 @@ import DiaryPage from './pages/DiaryPage'
 import DropPage from './pages/DropPage'
 import LoginPage from './pages/LoginPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TermsPage from './pages/TermsPage'
+import SiteFooter from './components/layout/SiteFooter'
 import { useAppData } from './hooks/useAppData'
 import { useLedger } from './hooks/useLedger'
 import { getDiaryEntryTargetPage, type DiaryEntry } from './lib/diaryEntries'
@@ -202,6 +205,7 @@ function MainApp() {
             expenses={ledger.expenses}
             hunts={ledger.hunts}
             onAdd={ledger.createExpense}
+            onSaveMemo={ledger.saveExpenseMemo}
             onRemove={ledger.removeExpense}
             onSpendSolErda={ledger.spendSolErda}
             onPurchaseSolErda={ledger.purchaseSolErda}
@@ -279,6 +283,8 @@ function MainApp() {
           )}
           {renderPage()}
         </main>
+
+        <SiteFooter />
       </div>
 
       <BottomNav currentPage={currentPage} onNavigate={setPage} />
@@ -291,8 +297,18 @@ export default function App() {
   const { theme } = useTheme()
 
   const content = (() => {
-    if (window.location.pathname === '/auth/callback') {
+    const pathname = window.location.pathname
+
+    if (pathname === '/auth/callback') {
       return <AuthCallbackPage />
+    }
+
+    if (pathname === '/privacy') {
+      return <PrivacyPolicyPage />
+    }
+
+    if (pathname === '/terms') {
+      return <TermsPage />
     }
 
     if (loading) return <LoadingScreen />
