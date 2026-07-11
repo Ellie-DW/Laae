@@ -1,6 +1,4 @@
-import type { HuntRecord, GatherRecord, Expense, DropRecord } from '../types'
-import { buildBossDiaryEntries } from './diaryEntries'
-import type { CharacterBossData } from '../types'
+import type { DiaryDay } from './diaryEntries'
 
 export interface CalendarCell {
   date: string
@@ -25,70 +23,26 @@ function formatDate(y: number, m: number, d: number) {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
 
-function dayStats(
-  date: string,
-  hunts: HuntRecord[],
-  gathers: GatherRecord[],
-  expenses: Expense[],
-  drops: DropRecord[],
-  characterId?: string,
-  bossIncome = 0,
-  bossCount = 0
-) {
-  const huntIncome = hunts
-    .filter((h) => h.recordDate === date && (!characterId || h.characterId === characterId))
-    .reduce((s, h) => s + h.meso, 0)
-  const gatherIncome = gathers
-    .filter((g) => g.recordDate === date && (!characterId || g.characterId === characterId))
-    .reduce((s, g) => s + g.meso, 0)
-  const dropIncome = drops
-    .filter((d) => d.recordDate === date && (!characterId || d.characterId === characterId))
-    .reduce((s, d) => s + d.meso, 0)
-  const expense = expenses
-    .filter((e) => e.recordDate === date && (!characterId || e.characterId === characterId))
-    .reduce((s, e) => s + e.amount, 0)
-  const income = huntIncome + gatherIncome + dropIncome + bossIncome
-  const entryCount =
-    hunts.filter((h) => h.recordDate === date && (!characterId || h.characterId === characterId)).length +
-    gathers.filter((g) => g.recordDate === date && (!characterId || g.characterId === characterId)).length +
-    drops.filter((d) => d.recordDate === date && (!characterId || d.characterId === characterId)).length +
-    expenses.filter((e) => e.recordDate === date && (!characterId || e.characterId === characterId)).length +
-    bossCount
-
-  return { income, expense, net: income - expense, entryCount }
-}
-
-function bossStatsByDate(
-  characters: { id: string; name: string }[],
-  bossDataMap: Record<string, CharacterBossData>,
-  characterId?: string
-) {
-  const map = new Map<string, { income: number; count: number }>()
-  for (const entry of buildBossDiaryEntries(characters, bossDataMap, characterId)) {
-    const prev = map.get(entry.recordDate) ?? { income: 0, count: 0 }
-    map.set(entry.recordDate, { income: prev.income + entry.amount, count: prev.count + 1 })
-  }
-  return map
+function emptyStats() {
+  return { income: 0, expense: 0, net: 0, entryCount: 0 }
 }
 
 export function buildMonthCalendar(
   year: number,
   month: number,
-  hunts: HuntRecord[],
-  gathers: GatherRecord[],
-  expenses: Expense[],
-  drops: DropRecord[] = [],
-  characterId?: string,
-  bossDataMap?: Record<string, CharacterBossData>,
-  characters: { id: string; name: string }[] = []
+  diaryDays: DiaryDay[]
 ): { weeks: CalendarCell[][]; monthTotal: { income: number; expense: number; net: number } } {
-  const bossByDate = bossDataMap
-    ? bossStatsByDate(characters, bossDataMap, characterId)
-    : new Map<string, { income: number; count: number }>()
+  const dayMap = new Map(diaryDays.map((d) => [d.date, d]))
 
   const statsFor = (date: string) => {
-    const boss = bossByDate.get(date)
-    return dayStats(date, hunts, gathers, expenses, drops, characterId, boss?.income ?? 0, boss?.count ?? 0)
+    const day = dayMap.get(date)
+    if (!day) return emptyStats()
+    return {
+      income: day.income,
+      expense: day.expense,
+      net: day.net,
+      entryCount: day.entries.length,
+    }
   }
 
   const today = formatDate(

@@ -142,6 +142,7 @@ function MainApp() {
             onRemoveHunt={ledger.removeHunt}
             onRemoveGather={ledger.removeGather}
             onRemoveExpense={ledger.removeExpense}
+            onRemoveSolErdaPurchase={ledger.removeSolErdaPurchase}
             onRemoveDrop={ledger.removeDrop}
           />
         )

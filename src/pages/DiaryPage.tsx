@@ -1,6 +1,17 @@
 import { useMemo, useState } from 'react'
 import type { Character, HuntRecord, GatherRecord, Expense, DropRecord, BossSnapshot, CharacterBossData } from '../types'
-import { buildDiaryDays, getDiaryTypeMeta, type DiaryDay } from '../lib/diaryEntries'
+import {
+  buildDiaryDays,
+  filterDiaryDaysByType,
+  formatDiaryEntryAmount,
+  getDiaryTypeMeta,
+  isSolErdaPurchaseExpense,
+  summarizeDiaryMonth,
+  type DiaryDay,
+  type DiaryEntry,
+  type DiaryEntryType,
+} from '../lib/diaryEntries'
+import { computeExpenseByCategory } from '../lib/ledgerAnalytics'
 import {
   buildMonthCalendar,
   getCurrentYearMonth,
@@ -20,10 +31,21 @@ interface DiaryPageProps {
   onRemoveHunt: (id: string) => Promise<void>
   onRemoveGather: (id: string) => Promise<void>
   onRemoveExpense: (id: string) => Promise<void>
+  onRemoveSolErdaPurchase: (expenseId: string, memo: string | null) => Promise<void>
   onRemoveDrop: (id: string) => Promise<void>
 }
 
 type ViewMode = 'list' | 'calendar'
+type TypeFilter = 'all' | DiaryEntryType
+
+const TYPE_FILTERS: { id: TypeFilter; label: string }[] = [
+  { id: 'all', label: '전체' },
+  { id: 'hunt', label: '사냥' },
+  { id: 'gather', label: '채집' },
+  { id: 'drop', label: '드랍' },
+  { id: 'expense', label: '지출' },
+  { id: 'boss', label: '보스' },
+]
 
 export default function DiaryPage({
   characters,
@@ -36,16 +58,19 @@ export default function DiaryPage({
   onRemoveHunt,
   onRemoveGather,
   onRemoveExpense,
+  onRemoveSolErdaPurchase,
   onRemoveDrop,
 }: DiaryPageProps) {
   const [filterCharacterId, setFilterCharacterId] = useState<string | null>(null)
+  const [filterType, setFilterType] = useState<TypeFilter>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('calendar')
   const [yearMonth, setYearMonth] = useState(getCurrentYearMonth)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
   const charFilter = filterCharacterId ?? undefined
+  const monthKey = `${yearMonth.year}-${String(yearMonth.month).padStart(2, '0')}`
 
-  const days = useMemo(
+  const allDays = useMemo(
     () => buildDiaryDays(hunts, gathers, expenses, characters, {
       characterId: charFilter,
       drops,
@@ -55,19 +80,28 @@ export default function DiaryPage({
     [hunts, gathers, expenses, drops, characters, snapshots, bossDataMap, filterCharacterId]
   )
 
+  const days = useMemo(
+    () => filterDiaryDaysByType(allDays, filterType),
+    [allDays, filterType]
+  )
+
   const { weeks, monthTotal } = useMemo(
-    () => buildMonthCalendar(
-      yearMonth.year,
-      yearMonth.month,
-      hunts,
-      gathers,
-      expenses,
-      drops,
-      charFilter,
-      bossDataMap,
-      characters
-    ),
-    [yearMonth, hunts, gathers, expenses, drops, bossDataMap, characters, filterCharacterId]
+    () => buildMonthCalendar(yearMonth.year, yearMonth.month, days),
+    [yearMonth, days]
+  )
+
+  const monthSummary = useMemo(
+    () => summarizeDiaryMonth(days, yearMonth.year, yearMonth.month),
+    [days, yearMonth]
+  )
+
+  const categoryBreakdown = useMemo(
+    () =>
+      computeExpenseByCategory(expenses, {
+        characterId: charFilter,
+        month: monthKey,
+      }).filter((c) => c.amount > 0),
+    [expenses, charFilter, monthKey]
   )
 
   const selectedDay = useMemo(() => {
@@ -75,11 +109,33 @@ export default function DiaryPage({
     return days.find((d) => d.date === selectedDate) ?? null
   }, [days, selectedDate])
 
-  const handleRemove = async (entryId: string) => {
-    if (entryId.startsWith('hunt-')) await onRemoveHunt(entryId.slice(5))
-    else if (entryId.startsWith('gather-')) await onRemoveGather(entryId.slice(7))
-    else if (entryId.startsWith('drop-')) await onRemoveDrop(entryId.slice(5))
-    else if (entryId.startsWith('expense-')) await onRemoveExpense(entryId.slice(8))
+  const expenseMemoById = useMemo(
+    () => Object.fromEntries(expenses.map((e) => [e.id, e.memo])),
+    [expenses]
+  )
+
+  const handleRemove = async (entry: DiaryEntry) => {
+    if (entry.id.startsWith('hunt-')) {
+      await onRemoveHunt(entry.id.slice(5))
+      return
+    }
+    if (entry.id.startsWith('gather-')) {
+      await onRemoveGather(entry.id.slice(7))
+      return
+    }
+    if (entry.id.startsWith('drop-')) {
+      await onRemoveDrop(entry.id.slice(5))
+      return
+    }
+    if (entry.id.startsWith('expense-')) {
+      const expenseId = entry.id.slice(8)
+      const memo = expenseMemoById[expenseId] ?? null
+      if (isSolErdaPurchaseExpense(memo)) {
+        await onRemoveSolErdaPurchase(expenseId, memo)
+        return
+      }
+      await onRemoveExpense(expenseId)
+    }
   }
 
   if (characters.length === 0) {
@@ -122,6 +178,68 @@ export default function DiaryPage({
           </ScopeButton>
         ))}
       </div>
+
+      <div className="flex flex-wrap gap-2">
+        {TYPE_FILTERS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setFilterType(item.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs border transition-colors ${
+              filterType === item.id
+                ? 'bg-violet-500/20 border-violet-500/40 text-violet-300'
+                : 'border-dark-border text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      {viewMode === 'calendar' && (
+        <div className="panel-light p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-semibold text-slate-100">{monthKey} 월간 결산</h2>
+              <p className="text-xs text-slate-500 mt-0.5">{monthSummary.entryCount}건 기록</p>
+            </div>
+            <span className={`text-sm font-bold ${monthSummary.net >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              순수익 {formatMesoKorean(monthSummary.net)}
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <SummaryChip label="수입" value={formatMesoKorean(monthSummary.income)} tone="income" />
+            <SummaryChip label="지출" value={formatMesoKorean(monthSummary.expense)} tone="expense" />
+            <SummaryChip label="순수익" value={formatMesoKorean(monthSummary.net)} tone={monthSummary.net >= 0 ? 'income' : 'expense'} />
+          </div>
+          {Object.keys(monthSummary.incomeByType).length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {(['hunt', 'gather', 'drop', 'boss'] as const).map((type) => {
+                const amount = monthSummary.incomeByType[type]
+                if (!amount) return null
+                return (
+                  <span
+                    key={type}
+                    className="text-xs px-2 py-1 rounded bg-cyber-500/10 text-cyber-400 border border-cyber-500/20"
+                  >
+                    {getDiaryTypeMeta(type).label} {formatMesoKorean(amount)}
+                  </span>
+                )
+              })}
+            </div>
+          )}
+          {categoryBreakdown.length > 0 && filterType === 'all' && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-dark-border/60">
+              {categoryBreakdown.map((item) => (
+                <div key={item.category} className="px-3 py-2 rounded-lg bg-red-500/5 border border-red-500/15">
+                  <p className="text-xs text-slate-500">{item.label}</p>
+                  <p className="text-sm font-bold text-red-400 mt-0.5">{formatMesoKorean(item.amount)}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {viewMode === 'calendar' ? (
         <div className="space-y-4">
@@ -172,7 +290,7 @@ export default function DiaryPage({
         <div className="panel-light p-12 text-center">
           <span className="text-4xl">📔</span>
           <p className="text-slate-400 mt-4">아직 기록이 없어요</p>
-          <p className="text-sm text-slate-500 mt-1">사냥·채집·지출을 추가하면 다이어리에 쌓여요</p>
+          <p className="text-sm text-slate-500 mt-1">사냥·채집·드랍·지출·보스 기록이 여기에 쌓여요</p>
         </div>
       ) : (
         <div className="space-y-8">
@@ -190,6 +308,25 @@ export default function DiaryPage({
   )
 }
 
+function SummaryChip({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: string
+  tone: 'income' | 'expense'
+}) {
+  return (
+    <div className="px-3 py-2 rounded-lg bg-dark-surface/50 border border-dark-border">
+      <p className="text-xs text-slate-500">{label}</p>
+      <p className={`text-sm font-bold mt-0.5 ${tone === 'income' ? 'text-cyber-400' : 'text-red-400'}`}>
+        {value}
+      </p>
+    </div>
+  )
+}
+
 function DaySection({
   day,
   showCharacter,
@@ -197,7 +334,7 @@ function DaySection({
 }: {
   day: DiaryDay
   showCharacter: boolean
-  onRemove: (id: string) => void
+  onRemove: (entry: DiaryEntry) => void
 }) {
   return (
     <section>
@@ -219,7 +356,7 @@ function DaySection({
 
         {day.entries.map((entry) => {
           const meta = getDiaryTypeMeta(entry.type)
-          const isExpense = entry.amount < 0
+          const amountDisplay = formatDiaryEntryAmount(entry)
           const canDelete = entry.type !== 'boss'
 
           return (
@@ -228,13 +365,15 @@ function DaySection({
               className="relative panel-light p-4 transition-colors"
               style={{
                 borderLeft: `2px solid ${
-                  isExpense
+                  amountDisplay.tone === 'expense'
                     ? 'rgba(239,68,68,0.35)'
                     : entry.type === 'boss'
                       ? 'rgba(251,191,36,0.35)'
                       : entry.type === 'drop'
                         ? 'rgba(251,191,36,0.25)'
-                        : 'rgba(34,211,238,0.35)'
+                        : amountDisplay.tone === 'neutral'
+                          ? 'rgba(167,139,250,0.35)'
+                          : 'rgba(34,211,238,0.35)'
                 }`,
               }}
             >
@@ -254,19 +393,25 @@ function DaySection({
                   </div>
                   <p className="text-sm font-medium text-slate-200 mt-1">{entry.title}</p>
                   {(entry.detail || entry.memo) && (
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {[entry.detail, entry.memo].filter(Boolean).join(' · ')}
-                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">{entry.detail ?? entry.memo}</p>
                   )}
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className={`text-sm font-bold ${isExpense ? 'text-red-400' : 'text-cyber-400'}`}>
-                    {isExpense ? '' : '+'}{formatMesoKorean(entry.amount)}
+                  <span
+                    className={`text-sm font-bold ${
+                      amountDisplay.tone === 'expense'
+                        ? 'text-red-400'
+                        : amountDisplay.tone === 'neutral'
+                          ? 'text-violet-400'
+                          : 'text-cyber-400'
+                    }`}
+                  >
+                    {amountDisplay.text}
                   </span>
                   {canDelete && (
                     <button
-                      onClick={() => onRemove(entry.id)}
+                      onClick={() => onRemove(entry)}
                       className="text-slate-600 hover:text-red-400 text-xs px-1"
                       title="삭제"
                     >
