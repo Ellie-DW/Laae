@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { Character, HuntRecord } from '../../types'
 import { getHeldSolErdaFragments } from '../../lib/huntStats'
 import { getToday } from '../../utils'
+import { HeldSolErdaStat, SolErdaSectionTitle } from './SolErdaIcon'
 
 interface SolErdaSpendSectionProps {
   hunts: HuntRecord[]
@@ -40,18 +41,13 @@ export default function SolErdaSpendSection({
   }
 
   return (
-    <div className="panel-light p-5 border-violet-500/20">
-      <div className="mb-4">
-        <h2 className="font-semibold text-slate-100">솔 에르다 조각 사용</h2>
-        <p className="text-xs text-slate-500 mt-0.5">
-          전체 캐릭터 보유 조각에서 차감 · 사용 기록은 선택한 캐릭터에 남습니다.
-        </p>
-      </div>
+    <div className="panel-light p-5 border-violet-500/20 space-y-4">
+      <SolErdaSectionTitle
+          title="솔 에르다 조각 사용"
+          description="전체 캐릭터 보유 조각에서 차감 · 사용 기록은 선택한 캐릭터에 남습니다."
+      />
 
-      <div className="mb-4 px-4 py-3 rounded-lg bg-violet-500/10 border border-violet-500/30">
-        <p className="text-xs text-slate-500">전체 보유 솔 에르다 조각</p>
-        <p className="text-xl font-bold text-violet-400 mt-0.5">{held.toLocaleString()}개</p>
-      </div>
+      <HeldSolErdaStat label="전체 보유 솔 에르다 조각" count={held} />
 
       {held <= 0 ? (
         <p className="text-sm text-slate-500 text-center py-4">사용할 솔 에르다 조각이 없어요</p>

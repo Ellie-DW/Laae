@@ -1,7 +1,9 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import type { Character, HuntRecord, GatherRecord, DropRecord, Expense, BossSnapshot, CharacterBossData } from '../../types'
-import { getDropItemStats, getDropStatsSummary, PREDEFINED_DROP_ITEMS } from '../../data/dropItems'
+import { getDropItemStats, getDropStatsSummary, getIntensePowerCrystalCounts, PREDEFINED_DROP_ITEMS, INTENSE_POWER_WEEKLY_NAME, INTENSE_POWER_MONTHLY_NAME } from '../../data/dropItems'
 import DropItemIcon from '../drop/DropItemIcon'
+import SolErdaIcon from '../hunt/SolErdaIcon'
+import MesoIcon from '../hunt/MesoIcon'
 import { getHuntCumulativeStats } from '../../lib/huntStats'
 import { getAccountBossCumulativeStats } from '../../lib/bossStats'
 import { createDefaultBossData } from '../../lib/appDataApi'
@@ -22,6 +24,7 @@ interface StatCard {
   value: string
   active: boolean
   tone?: 'cyber' | 'maple' | 'violet' | 'emerald' | 'expense'
+  icon?: ReactNode
 }
 
 export default function CumulativeDashboardSection({
@@ -51,6 +54,7 @@ export default function CumulativeDashboardSection({
     () => getAccountBossCumulativeStats(snapshots, characters, bossDataMap, createDefaultBossData()),
     [snapshots, characters, bossDataMap]
   )
+  const crystalCounts = useMemo(() => getIntensePowerCrystalCounts(drops), [drops])
   const gatherTotal = useMemo(() => gathers.reduce((s, g) => s + g.meso, 0), [gathers])
   const expenseTotal = useMemo(() => expenses.reduce((s, e) => s + e.amount, 0), [expenses])
 
@@ -64,14 +68,14 @@ export default function CumulativeDashboardSection({
   const netProfit = totalIncome - expenseTotal
 
   const huntItems: StatCard[] = [
-    { label: '사냥 수익', value: formatMesoKorean(huntStats.huntMesoTotal), active: huntStats.huntMesoTotal > 0, tone: 'cyber' },
-    { label: '솔 에르다 조각 판매 수익', value: formatMesoKorean(huntStats.saleMesoTotal), active: huntStats.saleMesoTotal > 0, tone: 'violet' },
-    { label: '솔 에르다 조각', value: `${huntStats.acquiredSolErda.toLocaleString()}개`, active: huntStats.acquiredSolErda > 0, tone: 'violet' },
+    { label: '사냥 수익', value: formatMesoKorean(huntStats.huntMesoTotal), active: huntStats.huntMesoTotal > 0, tone: 'cyber', icon: <MesoIcon size="xs" /> },
+    { label: '솔 에르다 조각 판매 수익', value: formatMesoKorean(huntStats.saleMesoTotal), active: huntStats.saleMesoTotal > 0, tone: 'violet', icon: <SolErdaIcon size="xs" /> },
+    { label: '솔 에르다 조각', value: `${huntStats.acquiredSolErda.toLocaleString()}개`, active: huntStats.acquiredSolErda > 0, tone: 'violet', icon: <SolErdaIcon size="xs" /> },
   ]
 
   const bossItems: StatCard[] = [
-    { label: '주간 누적', value: formatMesoKorean(bossStats.weeklyMeso), active: bossStats.weeklyMeso > 0, tone: 'cyber' },
-    { label: '월간 누적', value: formatMesoKorean(bossStats.monthlyMeso), active: bossStats.monthlyMeso > 0, tone: 'maple' },
+    { label: '주간 누적', value: `${crystalCounts.weekly.toLocaleString()}개`, active: crystalCounts.weekly > 0, tone: 'cyber', icon: <DropItemIcon name={INTENSE_POWER_WEEKLY_NAME} size="xs" /> },
+    { label: '월간 누적', value: `${crystalCounts.monthly.toLocaleString()}개`, active: crystalCounts.monthly > 0, tone: 'maple', icon: <DropItemIcon name={INTENSE_POWER_MONTHLY_NAME} size="xs" /> },
     { label: '총 누적 수익', value: formatMesoKorean(bossStats.totalMeso), active: bossStats.totalMeso > 0, tone: 'maple' },
   ]
 
@@ -205,7 +209,7 @@ function HeaderStat({
   )
 }
 
-function StatCard({ label, value, active, tone }: StatCard) {
+function StatCard({ label, value, active, tone, icon }: StatCard) {
   const valueClass =
     tone === 'cyber' ? 'text-cyber-400'
     : tone === 'maple' ? 'text-maple-400'
@@ -222,7 +226,10 @@ function StatCard({ label, value, active, tone }: StatCard) {
           : 'bg-dark-surface/40 border-dark-border text-slate-500'
       }`}
     >
-      <p className="truncate text-xs">{label}</p>
+      <div className="flex items-center gap-1.5 min-w-0">
+        {icon}
+        <p className="truncate text-xs">{label}</p>
+      </div>
       <p className={`text-lg font-bold mt-0.5 ${active ? valueClass : 'text-slate-600'}`}>{value}</p>
     </div>
   )

@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import type { HuntRecord } from '../../types'
 import { getHuntCumulativeStats } from '../../lib/huntStats'
 import { formatMesoKorean } from '../../utils'
+import SolErdaIcon from './SolErdaIcon'
+import MesoIcon from './MesoIcon'
 
 interface HuntCumulativeSummaryProps {
   hunts: HuntRecord[]
@@ -51,7 +53,11 @@ export default function HuntCumulativeSummary({ hunts, characterId }: HuntCumula
                   : 'bg-dark-surface/40 border-dark-border text-slate-500'
               }`}
             >
-              <p className="truncate text-xs">{item.label}</p>
+              <div className="flex items-center gap-1.5 min-w-0">
+                {(item.id === 'hunt-meso' && <MesoIcon size="xs" />) ||
+                  ((item.id.includes('sol-erda') || item.id === 'sale-meso') && <SolErdaIcon size="xs" />)}
+                <p className="truncate text-xs flex-1">{item.label}</p>
+              </div>
               <p className={`text-lg font-bold mt-0.5 ${active ? valueClass : 'text-slate-600'}`}>
                 {item.getValue(stats)}
                 {'suffix' in item && item.suffix && (

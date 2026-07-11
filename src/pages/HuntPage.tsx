@@ -5,6 +5,8 @@ import NoCharacterPrompt, { CharacterBanner } from '../components/ledger/NoChara
 import HuntCumulativeSummary from '../components/hunt/HuntCumulativeSummary'
 import HuntHeldSummary from '../components/hunt/HuntHeldSummary'
 import SolErdaSaleSection from '../components/hunt/SolErdaSaleSection'
+import SolErdaIcon from '../components/hunt/SolErdaIcon'
+import MesoIcon from '../components/hunt/MesoIcon'
 
 interface HuntPageProps {
   selectedCharacter: Character | null
@@ -53,7 +55,10 @@ export default function HuntPage({ selectedCharacter, hunts, onAdd, onSellSolErd
 
       <form onSubmit={handleSubmit} className="panel-light p-4 space-y-3">
         <div>
-          <label className="text-xs text-slate-500 mb-1 block">획득 메소 (억 단위)</label>
+          <label className="text-xs text-slate-500 mb-1 flex items-center gap-1.5">
+            <MesoIcon size="xs" />
+            획득 메소 (억 단위)
+          </label>
           <input
             value={mesoInput}
             onChange={(e) => setMesoInput(e.target.value)}
@@ -62,7 +67,10 @@ export default function HuntPage({ selectedCharacter, hunts, onAdd, onSellSolErd
           />
         </div>
         <div>
-          <label className="text-xs text-slate-500 mb-1 block">솔 에르다 조각</label>
+          <label className="text-xs text-slate-500 mb-1 flex items-center gap-1.5">
+            <SolErdaIcon size="xs" />
+            솔 에르다 조각
+          </label>
           <input
             value={solErdaInput}
             onChange={(e) => setSolErdaInput(e.target.value)}
@@ -105,8 +113,14 @@ export default function HuntPage({ selectedCharacter, hunts, onAdd, onSellSolErd
             {charHunts.map((h) => {
               const isSale = h.solErdaFragments < 0 && h.meso > 0
               const isSpend = h.solErdaFragments < 0 && h.meso === 0
+              const hasSolErda = h.solErdaFragments !== 0
               return (
                 <div key={h.id} className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50 border border-dark-border">
+                  {hasSolErda ? (
+                    <SolErdaIcon size="sm" />
+                  ) : (
+                    <MesoIcon size="sm" />
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-200">
                       {h.recordDate}

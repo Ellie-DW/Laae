@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import type { HuntRecord } from '../../types'
 import { getHuntCumulativeStats } from '../../lib/huntStats'
 import { formatMesoKorean } from '../../utils'
+import SolErdaIcon from './SolErdaIcon'
+import MesoIcon from './MesoIcon'
 
 interface HuntHeldSummaryProps {
   hunts: HuntRecord[]
@@ -33,6 +35,16 @@ const HELD_ITEMS = [
   },
 ]
 
+function isSolErdaItem(id: string) {
+  return id.includes('sol-erda') || id === 'sale-meso'
+}
+
+function getItemIcon(id: string) {
+  if (id === 'hunt-meso') return <MesoIcon size="xs" />
+  if (isSolErdaItem(id)) return <SolErdaIcon size="xs" />
+  return null
+}
+
 export default function HuntHeldSummary({ hunts, characterId }: HuntHeldSummaryProps) {
   const stats = useMemo(() => getHuntCumulativeStats(hunts, characterId), [hunts, characterId])
   const activeKinds = HELD_ITEMS.filter((i) => i.hasValue(stats)).length
@@ -62,7 +74,10 @@ export default function HuntHeldSummary({ hunts, characterId }: HuntHeldSummaryP
                   : 'bg-dark-surface/40 border-dark-border text-slate-500'
               }`}
             >
-              <p className="truncate text-xs">{item.label}</p>
+              <div className="flex items-center gap-1.5 min-w-0">
+                {getItemIcon(item.id)}
+                <p className="truncate text-xs flex-1">{item.label}</p>
+              </div>
               <p className={`text-lg font-bold mt-0.5 ${active ? valueClass : 'text-slate-600'}`}>
                 {item.getValue(stats)}
                 {'suffix' in item && item.suffix && (

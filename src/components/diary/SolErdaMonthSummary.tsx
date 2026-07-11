@@ -1,5 +1,6 @@
 import type { SolErdaMonthStats } from '../../lib/huntStats'
 import { formatMesoKorean } from '../../utils'
+import SolErdaIcon from '../hunt/SolErdaIcon'
 
 export function hasSolErdaActivity(summary: SolErdaMonthStats) {
   return (
@@ -32,7 +33,8 @@ export function SolErdaMonthSummary({
 }) {
   if (compact) {
     return (
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+        <SolErdaIcon size="xs" />
         <StatLine label="획득" value={`+${summary.acquired.toLocaleString()}개`} />
         <StatLine label="지출" value={formatSpent(summary)} muted />
         <StatLine label="보유" value={`${summary.held.toLocaleString()}개`} highlight />
@@ -42,7 +44,10 @@ export function SolErdaMonthSummary({
 
   return (
     <div className="mb-4 pt-3 border-t border-dark-border/60">
-      <p className="text-xs text-slate-500 mb-2">솔 에르다 조각 · 이번 달</p>
+      <div className="flex items-center gap-2 mb-2">
+        <SolErdaIcon size="xs" />
+        <p className="text-xs text-slate-500">솔 에르다 조각 · 이번 달</p>
+      </div>
       <div className="grid grid-cols-3 gap-2">
         <StatChip label="획득" value={`+${summary.acquired.toLocaleString()}개`} />
         <StatChip label="지출" value={formatSpent(summary)} tone="muted" />

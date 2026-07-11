@@ -1,9 +1,10 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import type { DropRecord, HuntRecord } from '../../types'
 import { getDropItemStats, getDropStatsSummary } from '../../data/dropItems'
 import { getHeldSolErdaFragments } from '../../lib/huntStats'
 import { formatMesoKorean } from '../../utils'
 import DropItemIcon from './DropItemIcon'
+import SolErdaIcon from '../hunt/SolErdaIcon'
 
 interface DropDashboardSectionProps {
   drops: DropRecord[]
@@ -80,7 +81,7 @@ export default function DropDashboardSection({
           )}
         </div>
         <div className="mt-4 max-w-xs">
-          <MiniStat label="솔 에르다 조각" value={`${totalSolErda.toLocaleString()}개`} violet />
+          <MiniStat label="솔 에르다 조각" value={`${totalSolErda.toLocaleString()}개`} violet icon={<SolErdaIcon size="xs" />} />
         </div>
       </div>
     )
@@ -110,7 +111,7 @@ export default function DropDashboardSection({
         <MiniStat label="보유 개수" value={`${summary.heldTotal}개`} highlight />
         <MiniStat label="누적 획득" value={`${summary.acquiredTotal}회`} />
         <MiniStat label="판매 수익" value={formatMesoKorean(summary.saleIncome)} gold />
-        <MiniStat label="솔 에르다 조각" value={`${totalSolErda.toLocaleString()}개`} violet />
+        <MiniStat label="솔 에르다 조각" value={`${totalSolErda.toLocaleString()}개`} violet icon={<SolErdaIcon size="xs" />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -200,10 +201,27 @@ export default function DropDashboardSection({
   )
 }
 
-function MiniStat({ label, value, highlight, gold, violet }: { label: string; value: string; highlight?: boolean; gold?: boolean; violet?: boolean }) {
+function MiniStat({
+  label,
+  value,
+  highlight,
+  gold,
+  violet,
+  icon,
+}: {
+  label: string
+  value: string
+  highlight?: boolean
+  gold?: boolean
+  violet?: boolean
+  icon?: ReactNode
+}) {
   return (
     <div className="px-3 py-2 rounded-lg bg-dark-surface/50 border border-dark-border text-center">
-      <p className="text-[10px] text-slate-500">{label}</p>
+      <p className="text-[10px] text-slate-500 flex items-center justify-center gap-1">
+        {icon}
+        {label}
+      </p>
       <p className={`text-sm font-bold mt-0.5 ${
         highlight ? 'text-maple-400' : gold ? 'text-maple-400' : violet ? 'text-violet-400' : 'text-slate-200'
       }`}>

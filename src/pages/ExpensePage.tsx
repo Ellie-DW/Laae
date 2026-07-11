@@ -6,6 +6,7 @@ import { getHeldSolErdaFragments, isSolErdaSpend, isSolErdaPurchaseExpense, pars
 import { formatMesoKorean, getCurrentMonth, getWeeklyPeriod } from '../utils'
 import MesoRecordForm from '../components/ledger/MesoRecordForm'
 import SolErdaFragmentSection from '../components/hunt/SolErdaFragmentSection'
+import SolErdaIcon from '../components/hunt/SolErdaIcon'
 
 interface ExpensePageProps {
   characters: Character[]
@@ -159,7 +160,8 @@ export default function ExpensePage({
           />
         </div>
         {heldSolErda > 0 && (
-          <p className="text-xs text-violet-400 pt-1 border-t border-dark-border/60">
+          <p className="text-xs text-violet-400 pt-1 border-t border-dark-border/60 flex items-center gap-1.5">
+            <SolErdaIcon size="xs" />
             전체 보유 솔 에르다 {heldSolErda.toLocaleString()}개
           </p>
         )}
@@ -251,6 +253,7 @@ export default function ExpensePage({
           <div className="space-y-2">
             {solErdaSpends.map((h) => (
               <div key={h.id} className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50 border border-dark-border">
+                <SolErdaIcon size="sm" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs px-2 py-0.5 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20">

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { Character, CharacterBossData, BossTab, BossSnapshot } from '../types'
+import type { Character, CharacterBossData, BossTab, BossSnapshot, DropRecord } from '../types'
 import { calculatePlannedBossStats, calculateMonthlyExpectedBossStats } from '../lib/bossStats'
 import { BOSS_TABS, getBossesByTab } from '../data/bosses'
 import { formatMesoKorean, getWeeklyPeriod, getMonthlyPeriod, getCurrentMonth, getToday } from '../utils'
@@ -11,6 +11,7 @@ interface BossPageProps {
   selectedCharacter: Character | null
   bossData: CharacterBossData
   snapshots: BossSnapshot[]
+  drops: DropRecord[]
   onUpdateBoss: (bossId: string, difficulty: string, updates: Partial<CharacterBossData['selections'][0]>) => void
   onSelectBossDifficulty: (bossId: string, difficulty: string | null) => void
   onResetTab: (tab: string) => void
@@ -20,6 +21,7 @@ export default function BossPage({
   selectedCharacter,
   bossData,
   snapshots,
+  drops,
   onUpdateBoss,
   onSelectBossDifficulty,
   onResetTab,
@@ -58,6 +60,7 @@ export default function BossPage({
         snapshots={snapshots}
         characterId={selectedCharacter.id}
         bossData={bossData}
+        drops={drops}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

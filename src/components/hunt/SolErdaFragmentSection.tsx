@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { Character, HuntRecord } from '../../types'
 import { getHeldSolErdaFragments } from '../../lib/huntStats'
 import { getToday, parseMesoInput } from '../../utils'
+import { HeldSolErdaStat, SolErdaSectionTitle } from './SolErdaIcon'
 
 interface SolErdaFragmentSectionProps {
   hunts: HuntRecord[]
@@ -92,17 +93,12 @@ export default function SolErdaFragmentSection({
 
   return (
     <div className="panel-light p-5 border-violet-500/20 space-y-5">
-      <div>
-        <h2 className="font-semibold text-slate-100">솔 에르다 조각</h2>
-        <p className="text-xs text-slate-500 mt-0.5">
-          메소로 구매해 전체 보유량에 더하고, 필요할 때 사용합니다. 기록은 선택한 캐릭터에 남습니다.
-        </p>
-      </div>
+      <SolErdaSectionTitle
+        title="솔 에르다 조각"
+        description="메소로 구매해 전체 보유량에 더하고, 필요할 때 사용합니다. 기록은 선택한 캐릭터에 남습니다."
+      />
 
-      <div className="px-4 py-3 rounded-lg bg-violet-500/10 border border-violet-500/30">
-        <p className="text-xs text-slate-500">전체 보유 솔 에르다 조각</p>
-        <p className="text-xl font-bold text-violet-400 mt-0.5">{held.toLocaleString()}개</p>
-      </div>
+      <HeldSolErdaStat label="전체 보유 솔 에르다 조각" count={held} />
 
       <div className="space-y-3 pt-1 border-t border-dark-border/60">
         <p className="text-sm font-medium text-slate-300">구매</p>

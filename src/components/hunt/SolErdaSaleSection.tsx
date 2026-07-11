@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { HuntRecord } from '../../types'
 import { getHeldSolErdaFragments } from '../../lib/huntStats'
 import { formatMesoKorean, getToday, parseMesoInput } from '../../utils'
+import { HeldSolErdaStat, SolErdaSectionTitle } from './SolErdaIcon'
 
 interface SolErdaSaleSectionProps {
   hunts: HuntRecord[]
@@ -34,16 +35,13 @@ export default function SolErdaSaleSection({ hunts, characterId, onSell }: SolEr
 
   return (
     <div className="panel-light p-5">
-      <div className="mb-4">
-        <h2 className="font-semibold text-slate-100">솔 에르다 조각 판매</h2>
-        <p className="text-xs text-slate-500 mt-0.5">
-          판매 시 보유 조각이 차감되고 솔 에르다 조각 판매 수익에 반영됩니다.
-        </p>
-      </div>
+      <SolErdaSectionTitle
+        title="솔 에르다 조각 판매"
+        description="판매 시 보유 조각이 차감되고 솔 에르다 조각 판매 수익에 반영됩니다."
+      />
 
-      <div className="mb-4 px-4 py-3 rounded-lg bg-violet-500/10 border border-violet-500/30">
-        <p className="text-xs text-slate-500">보유 솔 에르다 조각</p>
-        <p className="text-xl font-bold text-violet-400 mt-0.5">{held.toLocaleString()}개</p>
+      <div className="mb-4">
+        <HeldSolErdaStat label="보유 솔 에르다 조각" count={held} />
       </div>
 
       {held <= 0 ? (
