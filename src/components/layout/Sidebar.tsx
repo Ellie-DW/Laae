@@ -8,6 +8,7 @@ import {
 import { isGlobalCharacterNameTaken } from '../../lib/appDataApi'
 import { SITE_LOGO_SRC } from '../../lib/assetImages'
 import CharacterList from './CharacterList'
+import ThemeSwitcher from './ThemeSwitcher'
 
 interface SidebarProps {
   characters: Character[]
@@ -130,8 +131,9 @@ export default function Sidebar({
       )}
 
       {user && (
-        <div className="p-4 border-t border-dark-border/40">
-          <div className="flex items-center gap-3 mb-3">
+        <div className="p-4 border-t border-dark-border/40 space-y-4">
+          <ThemeSwitcher />
+          <div className="flex items-center gap-3">
             {user.user_metadata?.avatar_url ? (
               <img
                 src={user.user_metadata.avatar_url}

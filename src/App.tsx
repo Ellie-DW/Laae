@@ -21,6 +21,7 @@ import { computeExpenseByCategory } from './lib/ledgerAnalytics'
 import { useAuth } from './contexts/AuthContext'
 import { getWeeklyPeriod } from './utils'
 import GridScanBackground from './components/backgrounds/GridScanBackground'
+import { useTheme } from './contexts/ThemeContext'
 
 function LoadingScreen({ message = '로딩 중...' }: { message?: string }) {
   return (
@@ -287,6 +288,7 @@ function MainApp() {
 
 export default function App() {
   const { user, loading } = useAuth()
+  const { theme } = useTheme()
 
   const content = (() => {
     if (window.location.pathname === '/auth/callback') {
@@ -301,7 +303,7 @@ export default function App() {
 
   return (
     <>
-      <GridScanBackground />
+      <GridScanBackground theme={theme} />
       <div className="relative z-0 min-h-screen">{content}</div>
     </>
   )

@@ -33,11 +33,11 @@ export default {
           900: '#164e63',
         },
         dark: {
-          bg: '#06080f',
-          surface: '#0c1018',
-          panel: '#111827',
-          border: '#1e293b',
-          muted: '#64748b',
+          bg: 'rgb(var(--theme-bg) / <alpha-value>)',
+          surface: 'rgb(var(--theme-surface) / <alpha-value>)',
+          panel: 'rgb(var(--theme-panel) / <alpha-value>)',
+          border: 'rgb(var(--theme-border) / <alpha-value>)',
+          muted: 'rgb(var(--theme-muted) / <alpha-value>)',
         },
         meso: {
           gold: '#ffd700',

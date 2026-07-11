@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { SITE_LOGO_SRC } from '../lib/assetImages'
 import StarBorder from '../components/animations/StarBorder'
+import ThemeSwitcher from '../components/layout/ThemeSwitcher'
 
 export default function LoginPage() {
   const { signInWithGoogle } = useAuth()
@@ -21,6 +22,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="fixed top-4 right-4 w-44 z-10">
+        <ThemeSwitcher compact />
+      </div>
       <div className="w-full max-w-md">
         <StarBorder as="div" color="#22d3ee" speed="7s" thickness={1} className="w-full">
           <div className="panel-glow p-8 text-center rounded-[18px] bg-dark-panel/95">

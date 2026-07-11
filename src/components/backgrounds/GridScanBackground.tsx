@@ -1,6 +1,15 @@
+import type { ThemeMode } from '../../lib/theme'
 import { GridScan } from './GridScan'
 
-export default function GridScanBackground() {
+interface GridScanBackgroundProps {
+  theme: ThemeMode
+}
+
+export default function GridScanBackground({ theme }: GridScanBackgroundProps) {
+  if (theme !== 'cyber') {
+    return <div className="fixed inset-0 -z-10 bg-dark-bg" aria-hidden />
+  }
+
   return (
     <div className="fixed inset-0 -z-10 bg-dark-bg" aria-hidden>
       <GridScan

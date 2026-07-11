@@ -5,6 +5,13 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Maple Diary - 메이플 가게부</title>
+    <script>
+      (function () {
+        var stored = localStorage.getItem('maple-diary-theme');
+        var theme = stored === 'dark' || stored === 'light' || stored === 'cyber' ? stored : 'cyber';
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet" />

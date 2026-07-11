@@ -8,6 +8,7 @@ import {
 import { isGlobalCharacterNameTaken } from '../../lib/appDataApi'
 import { SITE_LOGO_SRC } from '../../lib/assetImages'
 import CharacterList from './CharacterList'
+import ThemeSwitcher from './ThemeSwitcher'
 
 interface MobileHeaderProps {
   characters: Character[]
@@ -90,8 +91,10 @@ export default function MobileHeader({
         </div>
 
         {user && (
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-dark-border/30">
-            <div className="flex items-center gap-2 min-w-0">
+          <div className="mt-2 pt-2 border-t border-dark-border/30 space-y-2">
+            <ThemeSwitcher compact />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
               {user.user_metadata?.avatar_url ? (
                 <img src={user.user_metadata.avatar_url} alt="" className="w-6 h-6 rounded-full" />
               ) : (
@@ -103,9 +106,10 @@ export default function MobileHeader({
                 {user.user_metadata?.full_name ?? user.email}
               </span>
             </div>
-            <button onClick={() => signOut()} className="text-xs text-slate-500 hover:text-red-400 shrink-0">
-              로그아웃
-            </button>
+              <button onClick={() => signOut()} className="text-xs text-slate-500 hover:text-red-400 shrink-0">
+                로그아웃
+              </button>
+            </div>
           </div>
         )}
       </header>

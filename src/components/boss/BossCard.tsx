@@ -35,7 +35,7 @@ export default function BossCard({
   }
 
   const handleDifficultyClick = (difficulty: string) => {
-    if (weeklyLimitReached && selected?.difficulty !== difficulty) return
+    if (weeklyLimitReached) return
     if (selected?.difficulty === difficulty) {
       onSelectDifficulty(boss.id, null)
     } else {
