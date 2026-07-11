@@ -38,7 +38,7 @@ export default function NexonCharacterPanel({
   }
 
   const shellClass = isSidebar
-    ? 'mb-4 p-4 rounded-xl bg-dark-panel/80 border border-maple-500/20'
+    ? 'mb-4 p-3 rounded-xl bg-dark-panel/80 border border-maple-500/20'
     : 'mt-4 p-3 rounded-lg bg-dark-surface/50 border border-dark-border'
 
   if (!profile) {
@@ -47,10 +47,10 @@ export default function NexonCharacterPanel({
         {isSidebar && (
           <p className="text-center text-sm font-semibold text-slate-300 mb-3">{character.name}</p>
         )}
-        <div className={`${isSidebar ? 'py-8' : ''} text-center`}>
+        <div className={`${isSidebar ? '' : ''} text-center`}>
           <div
-            className={`mx-auto rounded-xl bg-dark-bg/80 border border-dashed border-dark-border flex items-center justify-center ${
-              isSidebar ? 'w-full h-80' : 'w-16 h-16'
+            className={`mx-auto rounded-lg bg-dark-bg/80 border border-dashed border-dark-border flex items-center justify-center ${
+              isSidebar ? 'w-full h-56' : 'w-16 h-16'
             }`}
           >
             <span className="text-3xl opacity-40">🍁</span>
@@ -76,14 +76,16 @@ export default function NexonCharacterPanel({
     <div className={shellClass}>
       {isSidebar ? (
         <div className="text-center">
-          <div className="relative mx-auto w-full">
-            <img
-              src={profile.character_image}
-              alt=""
-              className="w-full h-[26rem] object-contain object-bottom drop-shadow-[0_12px_32px_rgba(0,0,0,0.5)]"
-            />
+          <div className="relative h-56 overflow-hidden rounded-lg bg-gradient-to-b from-dark-bg/20 to-dark-bg/60">
+            <div className="absolute inset-x-0 bottom-0 flex justify-center">
+              <img
+                src={profile.character_image}
+                alt=""
+                className="h-44 w-auto max-w-none scale-[2.5] origin-bottom drop-shadow-[0_10px_28px_rgba(0,0,0,0.55)]"
+              />
+            </div>
           </div>
-          <p className="text-lg font-bold text-slate-100 mt-2 truncate">{profile.character_name}</p>
+          <p className="text-lg font-bold text-slate-100 mt-3 truncate">{profile.character_name}</p>
           <p className="text-sm text-cyber-300 mt-1">
             Lv.{profile.character_level} · {profile.character_class}
           </p>
