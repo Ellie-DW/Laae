@@ -33,7 +33,7 @@ export default function SelectedBossSummary({ plannedBosses }: SelectedBossSumma
           아직 선택한 보스가 없어요
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="record-list-scroll">
           {sortedBosses.map((sel) => {
             const boss = BOSSES.find((b) => b.id === sel.bossId)
             const myShare = getPlannedBossShare(sel)

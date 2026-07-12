@@ -257,7 +257,7 @@ export default function DashboardPage({
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="record-list-scroll">
           {characters.map((character) => {
             const char = charStatsById[character.id]
             if (!char) return null

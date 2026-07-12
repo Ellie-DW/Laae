@@ -356,6 +356,28 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+@layer components {
+  .record-list-scroll {
+    @apply space-y-2 max-h-96 overflow-y-auto overscroll-contain pr-1;
+  }
+
+  .record-list-scroll-tall {
+    @apply space-y-3 max-h-[28rem] overflow-y-auto overscroll-contain pr-1;
+  }
+
+  .record-list-scroll-compact {
+    @apply space-y-2 max-h-[15.625rem] overflow-y-auto overscroll-contain pr-1;
+  }
+
+  .record-list-scroll-cards {
+    @apply space-y-4 max-h-[32rem] overflow-y-auto overscroll-contain pr-1;
+  }
+
+  .record-list-scroll-page {
+    @apply space-y-8 max-h-[70vh] overflow-y-auto overscroll-contain pr-1;
+  }
+}
+
 @layer utilities {
   .image-pixelated {
     image-rendering: pixelated;

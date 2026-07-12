@@ -70,7 +70,7 @@ export default function RiceAccessAdmin({ grants, onGrant, onRevoke }: RiceAcces
       {grants.length === 0 ? (
         <p className="text-sm text-slate-500 text-center py-4">권한을 받은 사용자가 없어요</p>
       ) : (
-        <div className="space-y-2">
+        <div className="record-list-scroll">
           {grants.map((grant) => (
             <div
               key={grant.userId}

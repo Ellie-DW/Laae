@@ -190,7 +190,7 @@ export default function RicePage({
         {records.length === 0 ? (
           <p className="text-sm text-slate-500 text-center py-6">아직 쌀먹 기록이 없어요</p>
         ) : (
-          <div className="space-y-2">
+          <div className="record-list-scroll">
             {records.map((r) => (
               <div
                 key={r.id}

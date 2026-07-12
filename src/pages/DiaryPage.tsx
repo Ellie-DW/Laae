@@ -420,7 +420,7 @@ export default function DiaryPage({
           <p className="text-sm text-slate-500 mt-1">사냥·채집·드랍·지출·보스·메모가 여기에 쌓여요</p>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="record-list-scroll-page">
           {days.map((day) => (
             <div key={day.date} className="space-y-4">
               <DiaryNoteForm
@@ -599,7 +599,7 @@ function DaySection({
         </div>
       </div>
 
-      <div className="relative pl-6 space-y-3">
+      <div className="relative pl-6 record-list-scroll-tall">
         <div className="absolute left-[9px] top-2 bottom-2 w-px bg-gradient-to-b from-cyber-700/50 via-dark-border to-transparent" />
 
         {day.entries.map((entry) => {

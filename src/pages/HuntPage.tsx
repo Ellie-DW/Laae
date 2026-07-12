@@ -106,7 +106,7 @@ export default function HuntPage({ selectedCharacter, hunts, onAdd, onSellSolErd
         {charHunts.length === 0 ? (
           <p className="text-sm text-slate-500 text-center py-6">아직 사냥 기록이 없어요</p>
         ) : (
-          <div className="space-y-2">
+          <div className="record-list-scroll">
             {charHunts.map((h) => {
               const isSale = h.solErdaFragments < 0 && h.meso > 0
               const isSpend = h.solErdaFragments < 0 && h.meso === 0

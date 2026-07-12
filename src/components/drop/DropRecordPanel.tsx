@@ -119,7 +119,7 @@ export default function DropRecordPanel({
         {saleRecords.length === 0 ? (
           <p className="text-sm text-slate-500 text-center py-6">아직 판매 기록이 없어요</p>
         ) : (
-          <div className="space-y-2">
+          <div className="record-list-scroll">
             {saleRecords.map((d) => (
               <div key={d.id} className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50 border border-dark-border">
                 <DropItemIcon name={d.itemName} size="sm" />

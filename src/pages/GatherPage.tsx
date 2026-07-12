@@ -64,7 +64,7 @@ export default function GatherPage({ selectedCharacter, gathers, onAdd, onRemove
         {charGathers.length === 0 ? (
           <p className="text-sm text-slate-500 text-center py-6">아직 채집 기록이 없어요</p>
         ) : (
-          <div className="space-y-2">
+          <div className="record-list-scroll">
             {charGathers.map((g) => (
               <div key={g.id} className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50 border border-dark-border">
                 <div className="flex-1 min-w-0">

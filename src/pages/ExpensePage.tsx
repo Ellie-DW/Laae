@@ -252,7 +252,7 @@ export default function ExpensePage({
               <p className="text-xs text-slate-500 mt-0.5">총 {spentSolErdaTotal.toLocaleString()}개 사용</p>
             </div>
           </div>
-          <div className="space-y-2">
+          <div className="record-list-scroll">
             {solErdaSpends.map((h) => (
               <div key={h.id} className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50 border border-dark-border">
                 <SolErdaIcon size="sm" />
@@ -284,7 +284,7 @@ export default function ExpensePage({
         {visibleExpenses.length === 0 ? (
           <p className="text-sm text-slate-500 text-center py-6">아직 지출 기록이 없어요</p>
         ) : (
-          <div className="space-y-2">
+          <div className="record-list-scroll-tall">
             {visibleExpenses.map((e) => (
               <ExpenseListItem
                 key={e.id}

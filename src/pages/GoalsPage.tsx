@@ -236,7 +236,7 @@ export default function GoalsPage({
             {listFilter === 'active' ? '진행 중인 목표가 없어요' : '표시할 목표가 없어요'}
           </p>
         ) : (
-          <div className="space-y-4">
+          <div className="record-list-scroll-cards">
             {visibleGoals.map((goal, index) => (
               <GoalProgressCard
                 key={goal.id}
