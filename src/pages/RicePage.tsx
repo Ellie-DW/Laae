@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { RiceRecord } from '../types'
 import type { RiceAccessGrant } from '../lib/riceAccessApi'
 import RiceAccessAdmin from '../components/rice/RiceAccessAdmin'
+import RiceIcon from '../components/rice/RiceIcon'
 import RiceRateTrend from '../components/rice/RiceRateTrend'
 import {
   buildRiceRateHistory,
@@ -95,7 +96,8 @@ export default function RicePage({
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
-          <span>🍚</span> 쌀곳간
+          <RiceIcon size="lg" />
+          쌀곳간
         </h1>
         <p className="text-sm text-slate-500 mt-1">보유 메소와 쌀먹 수익을 기록해요</p>
       </div>

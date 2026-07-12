@@ -12,6 +12,7 @@ import {
   type DiaryEntry,
   type DiaryEntryType,
 } from '../lib/diaryEntries'
+import DiaryTypeIcon from '../components/diary/DiaryTypeIcon'
 import { summarizeSolErdaMonth } from '../lib/huntStats'
 import { computeExpenseByCategory, type GoalProgress } from '../lib/ledgerAnalytics'
 import { formatGoalPace, formatGoalDeadline, goalOverlapsMonth, goalPercentTone, isGoalActive, isGoalNotStarted } from '../lib/goalHelpers'
@@ -641,8 +642,8 @@ function DaySection({
                 if (canNavigate) onNavigate(entry)
               }}
             >
-              <div className="absolute -left-6 top-5 w-[18px] h-[18px] rounded-full bg-dark-bg border-2 border-cyber-600/50 flex items-center justify-center text-[10px]">
-                {meta.icon}
+              <div className="absolute -left-6 top-5 w-[18px] h-[18px] rounded-full bg-dark-bg border-2 border-cyber-600/50 flex items-center justify-center overflow-hidden text-[10px]">
+                <DiaryTypeIcon type={entry.type} riceSize="sm" />
               </div>
 
               <div className="flex items-start justify-between gap-3">

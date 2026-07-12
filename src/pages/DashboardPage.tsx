@@ -3,7 +3,8 @@ import type { Character, Goal, HuntRecord, GatherRecord, Expense, DropRecord, Bo
 import type { AccountStats } from '../lib/bossStats'
 import type { LedgerSummary, DailyNetEntry, CategoryBreakdown, GoalProgress } from '../lib/ledgerAnalytics'
 import { EXPENSE_CATEGORY_LABEL } from '../lib/ledgerApi'
-import { buildDiaryDays, formatDiaryEntryAmount, getDiaryTypeMeta, getRecentDiaryEntries } from '../lib/diaryEntries'
+import { buildDiaryDays, formatDiaryEntryAmount, getRecentDiaryEntries } from '../lib/diaryEntries'
+import DiaryTypeIcon from '../components/diary/DiaryTypeIcon'
 import {
   calculateMonthlyExpectedBossStats,
   calculateAccountMonthlyExpectedBossStats,
@@ -509,12 +510,11 @@ export default function DashboardPage({
           <div className="relative pl-5 space-y-2">
             <div className="absolute left-[7px] top-1 bottom-1 w-px bg-dark-border" />
             {recentDiary.map((entry) => {
-              const meta = getDiaryTypeMeta(entry.type)
               const amountDisplay = formatDiaryEntryAmount(entry)
               return (
                 <div key={entry.id} className="relative flex items-center gap-3 py-1.5">
-                  <span className="absolute -left-5 w-3 h-3 rounded-full bg-dark-bg border border-cyber-600/40 text-[8px] flex items-center justify-center">
-                    {meta.icon}
+                  <span className="absolute -left-5 w-3 h-3 rounded-full bg-dark-bg border border-cyber-600/40 flex items-center justify-center overflow-hidden">
+                    <DiaryTypeIcon type={entry.type} />
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-slate-300 truncate">{entry.title}</p>
