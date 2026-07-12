@@ -18,6 +18,8 @@ import {
   addDiaryNote,
   updateDiaryNote,
   deleteDiaryNote,
+  addRiceRecord,
+  deleteRiceRecord,
 } from '../lib/ledgerApi'
 import {
   computeLedgerSummary,
@@ -44,6 +46,7 @@ export function useLedger(
   const [goals, setGoals] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['goals']>([])
   const [snapshots, setSnapshots] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['snapshots']>([])
   const [diaryNotes, setDiaryNotes] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['diaryNotes']>([])
+  const [riceRecords, setRiceRecords] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['riceRecords']>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -60,6 +63,7 @@ export function useLedger(
       setGoals(data.goals)
       setSnapshots(data.snapshots)
       setDiaryNotes(data.diaryNotes)
+      setRiceRecords(data.riceRecords)
     } catch (err) {
       setError(getErrorMessage(err, '기록을 불러오지 못했습니다.'))
     } finally {
@@ -76,6 +80,7 @@ export function useLedger(
       setGoals([])
       setSnapshots([])
       setDiaryNotes([])
+      setRiceRecords([])
       setLoading(false)
       return
     }
@@ -386,6 +391,27 @@ export function useLedger(
     setDiaryNotes((prev) => prev.filter((n) => n.id !== id))
   }, [])
 
+  const createRiceRecord = useCallback(
+    async (data: {
+      characterId?: string | null
+      amount: number
+      description: string
+      memo?: string
+      recordDate: string
+    }) => {
+      if (!user || data.amount <= 0 || !data.description.trim()) return
+      const row = await addRiceRecord(user.id, data)
+      setRiceRecords((prev) => [row, ...prev])
+      setError(null)
+    },
+    [user]
+  )
+
+  const removeRiceRecord = useCallback(async (id: string) => {
+    await deleteRiceRecord(id)
+    setRiceRecords((prev) => prev.filter((r) => r.id !== id))
+  }, [])
+
   return {
     expenses,
     hunts,
@@ -394,6 +420,7 @@ export function useLedger(
     goals,
     snapshots,
     diaryNotes,
+    riceRecords,
     loading,
     error,
     currentMonth,
@@ -425,6 +452,8 @@ export function useLedger(
     createDiaryNote,
     saveDiaryNote,
     removeDiaryNote,
+    createRiceRecord,
+    removeRiceRecord,
     reload,
     upsertSnapshot,
     removeSnapshot,

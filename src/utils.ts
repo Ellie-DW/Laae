@@ -46,6 +46,16 @@ export function formatMeso(amount: number): string {
   return formatMesoKorean(amount)
 }
 
+/** 원화 금액 표시 (예: 150,000원) */
+export function formatWon(amount: number): string {
+  return `${Math.round(amount).toLocaleString('ko-KR')}원`
+}
+
+export function parseWonInput(value: string): number {
+  const num = parseInt(value.replace(/[^\d]/g, ''), 10)
+  return Number.isFinite(num) ? num : 0
+}
+
 export function parseMesoInput(value: string): number {
   const trimmed = value.trim().toLowerCase().replace(/,/g, '')
   if (!trimmed) return 0

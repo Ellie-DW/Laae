@@ -11,6 +11,7 @@ import type {
   BossResetCycle,
   CharacterBossData,
   DiaryNote,
+  RiceRecord,
 } from '../types'
 
 function mapExpense(row: Record<string, unknown>): Expense {
@@ -94,6 +95,18 @@ function mapDiaryNote(row: Record<string, unknown>): DiaryNote {
   }
 }
 
+function mapRiceRecord(row: Record<string, unknown>): RiceRecord {
+  return {
+    id: row.id as string,
+    characterId: (row.character_id as string) ?? null,
+    amount: Number(row.amount),
+    description: row.description as string,
+    memo: (row.memo as string) ?? null,
+    recordDate: row.record_date as string,
+    createdAt: row.created_at as string,
+  }
+}
+
 function mapSnapshot(row: Record<string, unknown>): BossSnapshot {
   return {
     id: row.id as string,
@@ -108,7 +121,7 @@ function mapSnapshot(row: Record<string, unknown>): BossSnapshot {
 }
 
 export async function fetchLedgerData(userId: string) {
-  const [expenses, hunts, gathers, drops, goals, snapshots, diaryNotes] = await Promise.all([
+  const [expenses, hunts, gathers, drops, goals, snapshots, diaryNotes, riceRecords] = await Promise.all([
     supabase.from('expenses').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
     supabase.from('hunt_records').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
     supabase.from('gather_records').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
@@ -116,6 +129,7 @@ export async function fetchLedgerData(userId: string) {
     supabase.from('goals').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('boss_snapshots').select('*').eq('user_id', userId).order('period_start', { ascending: false }),
     supabase.from('diary_notes').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
+    supabase.from('rice_records').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
   ])
 
   if (expenses.error) throw new Error(expenses.error.message)
@@ -125,6 +139,7 @@ export async function fetchLedgerData(userId: string) {
   if (goals.error) throw new Error(goals.error.message)
   if (snapshots.error) throw new Error(snapshots.error.message)
   if (diaryNotes.error) throw new Error(diaryNotes.error.message)
+  if (riceRecords.error) throw new Error(riceRecords.error.message)
 
   return {
     expenses: expenses.data.map(mapExpense),
@@ -134,6 +149,7 @@ export async function fetchLedgerData(userId: string) {
     goals: goals.data.map(mapGoal),
     snapshots: snapshots.data.map(mapSnapshot),
     diaryNotes: diaryNotes.data.map(mapDiaryNote),
+    riceRecords: riceRecords.data.map(mapRiceRecord),
   }
 }
 
@@ -429,6 +445,37 @@ export async function updateDiaryNote(
 
 export async function deleteDiaryNote(id: string) {
   const { error } = await supabase.from('diary_notes').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function addRiceRecord(
+  userId: string,
+  data: {
+    characterId?: string | null
+    amount: number
+    description: string
+    memo?: string
+    recordDate: string
+  }
+) {
+  const { data: row, error } = await supabase
+    .from('rice_records')
+    .insert({
+      user_id: userId,
+      character_id: data.characterId ?? null,
+      amount: data.amount,
+      description: data.description.trim(),
+      memo: data.memo?.trim() || null,
+      record_date: data.recordDate,
+    })
+    .select('*')
+    .single()
+  if (error) throw error
+  return mapRiceRecord(row)
+}
+
+export async function deleteRiceRecord(id: string) {
+  const { error } = await supabase.from('rice_records').delete().eq('id', id)
   if (error) throw error
 }
 

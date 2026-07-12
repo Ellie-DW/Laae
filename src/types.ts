@@ -149,3 +149,14 @@ export interface DiaryNote {
   createdAt: string
   updatedAt: string
 }
+
+/** 쌀먹(현금 거래) 수익 기록 */
+export interface RiceRecord {
+  id: string
+  characterId: string | null
+  amount: number
+  description: string
+  memo: string | null
+  recordDate: string
+  createdAt: string
+}

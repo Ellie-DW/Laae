@@ -10,6 +10,8 @@ import { SITE_LOGO_SRC } from '../../lib/assetImages'
 import CharacterList from './CharacterList'
 import ThemeSwitcher from './ThemeSwitcher'
 import NexonCharacterPanel from '../character/NexonCharacterPanel'
+import RicePantryButton from './RicePantryButton'
+import type { RiceRecord } from '../../types'
 
 interface MobileHeaderProps {
   characters: Character[]
@@ -20,6 +22,15 @@ interface MobileHeaderProps {
   onReorderCharacters: (orderedIds: string[]) => void
   onSyncNexonProfile: (characterId: string) => Promise<void>
   onClearNexonLink: (characterId: string) => Promise<void>
+  riceRecords: RiceRecord[]
+  onAddRiceRecord: (data: {
+    characterId?: string | null
+    amount: number
+    description: string
+    memo?: string
+    recordDate: string
+  }) => Promise<void>
+  onRemoveRiceRecord: (id: string) => Promise<void>
 }
 
 export default function MobileHeader({
@@ -31,6 +42,9 @@ export default function MobileHeader({
   onReorderCharacters,
   onSyncNexonProfile,
   onClearNexonLink,
+  riceRecords,
+  onAddRiceRecord,
+  onRemoveRiceRecord,
 }: MobileHeaderProps) {
   const { user, signOut } = useAuth()
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -84,15 +98,25 @@ export default function MobileHeader({
             <span className="font-display font-bold text-slate-100 tracking-wide truncate">Laae</span>
           </div>
 
-          <button
-            onClick={() => setPickerOpen(true)}
-            className="flex items-center gap-1.5 min-w-0 max-w-[55%] text-sm text-cyber-300 bg-cyber-500/10 border border-cyber-500/20 px-3 py-1.5 rounded-full hover:bg-cyber-500/15 transition-colors"
-          >
+          <div className="flex items-center gap-2 min-w-0">
+            <RicePantryButton
+              characters={characters}
+              selectedCharacter={selectedCharacter}
+              records={riceRecords}
+              onAdd={onAddRiceRecord}
+              onRemove={onRemoveRiceRecord}
+              compact
+            />
+            <button
+              onClick={() => setPickerOpen(true)}
+              className="flex items-center gap-1.5 min-w-0 max-w-[45%] text-sm text-cyber-300 bg-cyber-500/10 border border-cyber-500/20 px-3 py-1.5 rounded-full hover:bg-cyber-500/15 transition-colors"
+            >
             <span className="truncate font-medium">
               {selectedCharacter?.name ?? '캐릭터 선택'}
             </span>
             <span className="text-[10px] text-cyber-400 shrink-0">▼</span>
           </button>
+          </div>
         </div>
 
         {user && (

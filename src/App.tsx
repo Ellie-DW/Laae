@@ -17,6 +17,7 @@ import AuthCallbackPage from './pages/AuthCallbackPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsPage from './pages/TermsPage'
 import SiteFooter from './components/layout/SiteFooter'
+import RicePantryButton from './components/layout/RicePantryButton'
 import { useAppData } from './hooks/useAppData'
 import { useLedger } from './hooks/useLedger'
 import { getDiaryEntryTargetPage, type DiaryEntry } from './lib/diaryEntries'
@@ -264,9 +265,13 @@ function MainApp() {
           onReorderCharacters={reorderCharacters}
           onSyncNexonProfile={syncNexonProfile}
           onClearNexonLink={clearNexonLink}
+          riceRecords={ledger.riceRecords}
+          onAddRiceRecord={ledger.createRiceRecord}
+          onRemoveRiceRecord={ledger.removeRiceRecord}
         />
 
-        <div className="hidden lg:flex border-b border-dark-border/60 bg-dark-surface/50 backdrop-blur-md px-6 py-2 gap-1">
+        <div className="hidden lg:flex items-center border-b border-dark-border/60 bg-dark-surface/50 backdrop-blur-md px-6 py-2 gap-1">
+          <div className="flex gap-1 flex-1 min-w-0">
           {NAV_ITEMS.map((item) => (
             <button
               key={item.id}
@@ -281,6 +286,15 @@ function MainApp() {
               {item.label}
             </button>
           ))}
+          </div>
+          <RicePantryButton
+            characters={characters}
+            selectedCharacter={selectedCharacter}
+            records={ledger.riceRecords}
+            onAdd={ledger.createRiceRecord}
+            onRemove={ledger.removeRiceRecord}
+            compact
+          />
         </div>
 
         <main className="flex-1 p-4 lg:p-6 max-w-5xl mx-auto w-full">
