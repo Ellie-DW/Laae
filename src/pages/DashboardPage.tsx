@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { Character, Goal, HuntRecord, GatherRecord, Expense, DropRecord, BossSnapshot, CharacterBossData } from '../types'
+import type { Character, Goal, HuntRecord, GatherRecord, Expense, DropRecord, BossSnapshot, CharacterBossData, RiceRecord } from '../types'
 import type { AccountStats } from '../lib/bossStats'
 import type { LedgerSummary, DailyNetEntry, CategoryBreakdown, GoalProgress } from '../lib/ledgerAnalytics'
 import { EXPENSE_CATEGORY_LABEL } from '../lib/ledgerApi'
@@ -46,6 +46,7 @@ interface DashboardPageProps {
   diaryExpenses: Expense[]
   diaryDrops: DropRecord[]
   diarySnapshots: BossSnapshot[]
+  diaryRiceRecords?: RiceRecord[]
 }
 
 export default function DashboardPage({
@@ -75,19 +76,21 @@ export default function DashboardPage({
   diaryExpenses,
   diaryDrops,
   diarySnapshots,
+  diaryRiceRecords,
 }: DashboardPageProps) {
   const recentDiary = useMemo(() => {
     const days = buildDiaryDays(diaryHunts, diaryGathers, diaryExpenses, characters, {
       drops: diaryDrops,
       snapshots: diarySnapshots,
       bossDataMap,
+      riceRecords: diaryRiceRecords,
     })
     const dayLabelByDate = Object.fromEntries(days.map((d) => [d.date, d.label]))
     return getRecentDiaryEntries(days, 6).map((entry) => ({
       ...entry,
       dayLabel: dayLabelByDate[entry.recordDate] ?? entry.recordDate,
     }))
-  }, [diaryHunts, diaryGathers, diaryExpenses, diaryDrops, diarySnapshots, bossDataMap, characters])
+  }, [diaryHunts, diaryGathers, diaryExpenses, diaryDrops, diarySnapshots, diaryRiceRecords, bossDataMap, characters])
 
   const charStatsById = useMemo(
     () => Object.fromEntries(accountStats.perCharacter.map((c) => [c.id, c])),

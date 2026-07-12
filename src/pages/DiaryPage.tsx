@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { Character, Goal, HuntRecord, GatherRecord, Expense, DropRecord, BossSnapshot, CharacterBossData, DiaryNote } from '../types'
+import type { Character, Goal, HuntRecord, GatherRecord, Expense, DropRecord, BossSnapshot, CharacterBossData, DiaryNote, RiceRecord } from '../types'
 import {
   buildDiaryDays,
   filterDiaryDaysByType,
@@ -35,11 +35,13 @@ interface DiaryPageProps {
   drops: DropRecord[]
   snapshots: BossSnapshot[]
   diaryNotes: DiaryNote[]
+  riceRecords?: RiceRecord[]
   onRemoveHunt: (id: string) => Promise<void>
   onRemoveGather: (id: string) => Promise<void>
   onRemoveExpense: (id: string) => Promise<void>
   onRemoveSolErdaPurchase: (expenseId: string, memo: string | null) => Promise<void>
   onRemoveDrop: (id: string) => Promise<void>
+  onRemoveRice?: (id: string) => Promise<void>
   onCreateNote: (data: { characterId?: string | null; recordDate: string; memo: string }) => Promise<void>
   onSaveNote: (id: string, data: { characterId?: string | null; memo: string }) => Promise<void>
   onRemoveNote: (id: string) => Promise<void>
@@ -61,6 +63,7 @@ const TYPE_FILTERS: { id: TypeFilter; label: string }[] = [
   { id: 'drop', label: '드랍' },
   { id: 'expense', label: '지출' },
   { id: 'boss', label: '보스' },
+  { id: 'rice', label: '쌀먹' },
 ]
 
 const PAGE_LABEL: Record<string, string> = {
@@ -69,6 +72,7 @@ const PAGE_LABEL: Record<string, string> = {
   drop: '드랍',
   expense: '지출',
   boss: '보스',
+  rice: '쌀곳간',
 }
 
 export default function DiaryPage({
@@ -80,11 +84,13 @@ export default function DiaryPage({
   drops,
   snapshots,
   diaryNotes,
+  riceRecords,
   onRemoveHunt,
   onRemoveGather,
   onRemoveExpense,
   onRemoveSolErdaPurchase,
   onRemoveDrop,
+  onRemoveRice,
   onCreateNote,
   onSaveNote,
   onRemoveNote,
@@ -109,8 +115,14 @@ export default function DiaryPage({
       snapshots,
       bossDataMap,
       notes: diaryNotes,
+      riceRecords,
     }),
-    [hunts, gathers, expenses, drops, characters, snapshots, bossDataMap, diaryNotes, filterCharacterId]
+    [hunts, gathers, expenses, drops, characters, snapshots, bossDataMap, diaryNotes, riceRecords, filterCharacterId]
+  )
+
+  const typeFilters = useMemo(
+    () => (riceRecords ? TYPE_FILTERS : TYPE_FILTERS.filter((item) => item.id !== 'rice')),
+    [riceRecords]
   )
 
   const days = useMemo(
@@ -194,6 +206,10 @@ export default function DiaryPage({
         return
       }
       await onRemoveExpense(expenseId)
+      return
+    }
+    if (entry.id.startsWith('rice-') && onRemoveRice) {
+      await onRemoveRice(entry.id.slice(5))
     }
   }
 
@@ -239,7 +255,7 @@ export default function DiaryPage({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {TYPE_FILTERS.map((item) => (
+        {typeFilters.map((item) => (
           <button
             key={item.id}
             type="button"
@@ -593,7 +609,9 @@ function DaySection({
           const isNote = entry.type === 'note'
           const isEditing = isNote && editingNoteId === entry.sourceId
           const canDelete = entry.type !== 'boss'
-          const canNavigate = !!targetPage && (entry.characterId || entry.type === 'expense')
+          const canNavigate =
+            !!targetPage &&
+            (entry.characterId || entry.type === 'expense' || entry.type === 'rice')
 
           return (
             <article
@@ -605,7 +623,9 @@ function DaySection({
                 borderLeft: `2px solid ${
                   amountDisplay.tone === 'expense'
                     ? 'rgba(239,68,68,0.35)'
-                    : entry.type === 'boss'
+                    : entry.type === 'rice'
+                      ? 'rgba(245,158,11,0.35)'
+                      : entry.type === 'boss'
                       ? 'rgba(251,191,36,0.35)'
                       : entry.type === 'drop'
                         ? 'rgba(251,191,36,0.25)'

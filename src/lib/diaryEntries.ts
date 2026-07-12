@@ -1,10 +1,11 @@
-import type { HuntRecord, GatherRecord, Expense, DropRecord, BossSnapshot, CharacterBossData, DiaryNote, Page } from '../types'
+import type { HuntRecord, GatherRecord, Expense, DropRecord, BossSnapshot, CharacterBossData, DiaryNote, RiceRecord, Page } from '../types'
 import { EXPENSE_CATEGORY_LABEL } from './ledgerApi'
 import { calculateBossStats, isWeeklyBossCleared, isMonthlyBossCleared } from './bossStats'
 import { isSolErdaSale, isSolErdaSpend, parseSolErdaPurchaseMemo, isSolErdaPurchaseExpense } from './huntStats'
-import { getToday, formatMesoKorean, getWeeklyPeriod, getMonthlyPeriod } from '../utils'
+import { formatWonPerEok } from './riceTrade'
+import { getToday, formatMesoKorean, formatWon, getWeeklyPeriod, getMonthlyPeriod } from '../utils'
 
-export type DiaryEntryType = 'hunt' | 'gather' | 'drop' | 'expense' | 'boss' | 'note'
+export type DiaryEntryType = 'hunt' | 'gather' | 'drop' | 'expense' | 'boss' | 'note' | 'rice'
 
 export interface DiaryEntry {
   id: string
@@ -44,6 +45,7 @@ const TYPE_META: Record<DiaryEntryType, { icon: string; label: string }> = {
   expense: { icon: '💸', label: '지출' },
   boss: { icon: '👹', label: '보스' },
   note: { icon: '📝', label: '메모' },
+  rice: { icon: '🍚', label: '쌀먹' },
 }
 
 const ENTRY_TARGET_PAGE: Record<Exclude<DiaryEntryType, 'note'>, Page> = {
@@ -52,6 +54,7 @@ const ENTRY_TARGET_PAGE: Record<Exclude<DiaryEntryType, 'note'>, Page> = {
   drop: 'drop',
   expense: 'expense',
   boss: 'boss',
+  rice: 'rice',
 }
 
 export function getDiaryEntryTargetPage(entry: DiaryEntry): Page | null {
@@ -71,6 +74,9 @@ export function getDiaryTypeMeta(type: DiaryEntryType) {
 export function formatDiaryEntryAmount(entry: DiaryEntry) {
   if (entry.type === 'note') {
     return { text: '메모', tone: 'neutral' as const }
+  }
+  if (entry.type === 'rice' && entry.amountLabel) {
+    return { text: entry.amountLabel, tone: 'income' as const }
   }
   if (entry.amountLabel) {
     return { text: entry.amountLabel, tone: 'neutral' as const }
@@ -177,6 +183,7 @@ export function buildDiaryDays(
     snapshots?: BossSnapshot[]
     bossDataMap?: Record<string, CharacterBossData>
     notes?: DiaryNote[]
+    riceRecords?: RiceRecord[]
     limitDays?: number
   }
 ): DiaryDay[] {
@@ -313,6 +320,29 @@ export function buildDiaryDays(
     })
   }
 
+  for (const record of options?.riceRecords ?? []) {
+    const title =
+      record.mesoSold != null && record.wonPerEok != null
+        ? `${formatMesoKorean(record.mesoSold)} · ${formatWonPerEok(record.wonPerEok)}`
+        : record.description
+
+    entries.push({
+      id: `rice-${record.id}`,
+      type: 'rice',
+      characterId: '',
+      characterName: '전체',
+      recordDate: record.recordDate,
+      createdAt: record.createdAt,
+      amount: 0,
+      amountLabel: `+${formatWon(record.amount)}`,
+      title,
+      detail: record.mesoSold != null ? `판매 ${formatMesoKorean(record.mesoSold)}` : undefined,
+      memo: record.memo,
+      sourceId: record.id,
+      navigatePage: 'rice',
+    })
+  }
+
   const dayMap = new Map<string, DiaryEntry[]>()
   for (const entry of entries) {
     const list = dayMap.get(entry.recordDate) ?? []
@@ -322,8 +352,12 @@ export function buildDiaryDays(
 
   const days: DiaryDay[] = [...dayMap.entries()].map(([date, dayEntries]) => {
     const sorted = dayEntries.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    const income = sorted.filter((e) => e.amount > 0).reduce((s, e) => s + e.amount, 0)
-    const expense = sorted.filter((e) => e.amount < 0).reduce((s, e) => s + Math.abs(e.amount), 0)
+    const income = sorted
+      .filter((e) => e.amount > 0 && e.type !== 'rice')
+      .reduce((s, e) => s + e.amount, 0)
+    const expense = sorted
+      .filter((e) => e.amount < 0 && e.type !== 'rice')
+      .reduce((s, e) => s + Math.abs(e.amount), 0)
     const { label, weekday } = formatDiaryDayLabel(date)
 
     return {
@@ -362,8 +396,8 @@ export function filterDiaryDaysByType(days: DiaryDay[], type: DiaryEntryType | '
         type === 'solErda' ? isSolErdaDiaryEntry(e) : e.type === type
       )
       if (entries.length === 0) return null
-      const income = entries.filter((e) => e.amount > 0).reduce((s, e) => s + e.amount, 0)
-      const expense = entries.filter((e) => e.amount < 0).reduce((s, e) => s + Math.abs(e.amount), 0)
+      const income = entries.filter((e) => e.amount > 0 && e.type !== 'rice').reduce((s, e) => s + e.amount, 0)
+      const expense = entries.filter((e) => e.amount < 0 && e.type !== 'rice').reduce((s, e) => s + Math.abs(e.amount), 0)
       return { ...day, entries, income, expense, net: income - expense }
     })
     .filter((day): day is DiaryDay => day !== null)

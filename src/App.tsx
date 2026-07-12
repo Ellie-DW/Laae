@@ -23,6 +23,7 @@ import { useLedger } from './hooks/useLedger'
 import { useRiceAccess } from './hooks/useRiceAccess'
 import { getDiaryEntryTargetPage, type DiaryEntry } from './lib/diaryEntries'
 import { computeExpenseByCategory, computeAccountCumulativeNetProfit } from './lib/ledgerAnalytics'
+import { calcRiceHeldMeso } from './lib/riceTrade'
 import { useAuth } from './contexts/AuthContext'
 import { getWeeklyPeriod } from './utils'
 import GridScanBackground from './components/backgrounds/GridScanBackground'
@@ -83,19 +84,27 @@ function MainApp() {
 
   const navItems = getNavItems(riceAccess.hasAccess)
 
-  const riceHeldMeso = useMemo(
-    () =>
-      computeAccountCumulativeNetProfit(
-        ledger.hunts,
-        ledger.gathers,
-        ledger.drops,
-        ledger.expenses,
-        ledger.snapshots,
-        characters,
-        bossDataMap
-      ),
-    [ledger.hunts, ledger.gathers, ledger.drops, ledger.expenses, ledger.snapshots, characters, bossDataMap]
-  )
+  const riceHeldMeso = useMemo(() => {
+    const netProfit = computeAccountCumulativeNetProfit(
+      ledger.hunts,
+      ledger.gathers,
+      ledger.drops,
+      ledger.expenses,
+      ledger.snapshots,
+      characters,
+      bossDataMap
+    )
+    return calcRiceHeldMeso(netProfit, ledger.riceRecords)
+  }, [
+    ledger.hunts,
+    ledger.gathers,
+    ledger.drops,
+    ledger.expenses,
+    ledger.snapshots,
+    ledger.riceRecords,
+    characters,
+    bossDataMap,
+  ])
 
   useEffect(() => {
     if (!riceAccess.loading && currentPage === 'rice' && !riceAccess.hasAccess) {
@@ -174,6 +183,7 @@ function MainApp() {
             diaryExpenses={ledger.expenses}
             diaryDrops={ledger.drops}
             diarySnapshots={ledger.snapshots}
+            diaryRiceRecords={riceAccess.hasAccess ? ledger.riceRecords : undefined}
           />
         )
       case 'diary':
@@ -187,11 +197,13 @@ function MainApp() {
             drops={ledger.drops}
             snapshots={ledger.snapshots}
             diaryNotes={ledger.diaryNotes}
+            riceRecords={riceAccess.hasAccess ? ledger.riceRecords : undefined}
             onRemoveHunt={ledger.removeHunt}
             onRemoveGather={ledger.removeGather}
             onRemoveExpense={ledger.removeExpense}
             onRemoveSolErdaPurchase={ledger.removeSolErdaPurchase}
             onRemoveDrop={ledger.removeDrop}
+            onRemoveRice={riceAccess.hasAccess ? ledger.removeRiceRecord : undefined}
             onCreateNote={ledger.createDiaryNote}
             onSaveNote={ledger.saveDiaryNote}
             onRemoveNote={ledger.removeDiaryNote}

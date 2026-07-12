@@ -2,8 +2,11 @@ import { useMemo, useState } from 'react'
 import type { RiceRecord } from '../types'
 import type { RiceAccessGrant } from '../lib/riceAccessApi'
 import RiceAccessAdmin from '../components/rice/RiceAccessAdmin'
+import RiceRateTrend from '../components/rice/RiceRateTrend'
 import {
+  buildRiceRateHistory,
   calcRiceTradeAmount,
+  formatRiceRateDelta,
   formatWonPerEok,
   parseWonPerEokInput,
 } from '../lib/riceTrade'
@@ -53,6 +56,14 @@ export default function RicePage({
     () => calcRiceTradeAmount(previewMeso, previewRate),
     [previewMeso, previewRate]
   )
+  const lastRate = useMemo(() => {
+    const history = buildRiceRateHistory(records)
+    return history.length > 0 ? history[history.length - 1].wonPerEok : null
+  }, [records])
+  const previewRateDelta = useMemo(() => {
+    if (previewRate <= 0 || lastRate == null) return null
+    return previewRate - lastRate
+  }, [previewRate, lastRate])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -95,7 +106,7 @@ export default function RicePage({
           <p className={`text-2xl font-bold mt-1 ${heldMeso >= 0 ? 'text-maple-400' : 'text-red-400'}`}>
             {formatMesoKorean(heldMeso)}
           </p>
-          <p className="text-xs text-slate-500 mt-1">가계부 누적 순수익</p>
+          <p className="text-xs text-slate-500 mt-1">순수익 − 쌀 판매 메소</p>
         </div>
         <div className="panel-glow p-5">
           <p className="text-sm text-slate-400">누적 쌀먹</p>
@@ -103,6 +114,8 @@ export default function RicePage({
           <p className="text-xs text-slate-500 mt-1">{records.length}건</p>
         </div>
       </div>
+
+      <RiceRateTrend records={records} />
 
       <form onSubmit={handleSubmit} className="panel-light p-4 space-y-3">
         <h2 className="font-semibold text-slate-100">쌀먹 기록</h2>
@@ -125,6 +138,25 @@ export default function RicePage({
             placeholder="예: 1750"
             className="input-field text-sm"
           />
+          {lastRate != null && (
+            <p className="text-[10px] text-slate-600 mt-1">
+              직전 단가 {formatWonPerEok(lastRate)}
+              {previewRateDelta != null && previewRate > 0 && (
+                <span
+                  className={
+                    previewRateDelta > 0
+                      ? 'text-emerald-400'
+                      : previewRateDelta < 0
+                        ? 'text-red-400'
+                        : 'text-slate-500'
+                  }
+                >
+                  {' '}
+                  · 입력 시 {formatRiceRateDelta(previewRateDelta)}
+                </span>
+              )}
+            </p>
+          )}
         </div>
         {previewAmount > 0 && (
           <p className="text-sm text-amber-300/90">
