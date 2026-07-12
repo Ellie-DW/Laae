@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { RiceRecord } from '../../types'
 import {
+  buildRiceMonthlyRateAverages,
   buildRiceRateHistory,
   formatRiceRateDelta,
   formatWonPerEok,
@@ -30,6 +31,7 @@ function DeltaBadge({ delta }: { delta: number | null }) {
 export default function RiceRateTrend({ records }: RiceRateTrendProps) {
   const history = useMemo(() => buildRiceRateHistory(records), [records])
   const summary = useMemo(() => summarizeRiceRateHistory(history), [history])
+  const monthlyRates = useMemo(() => buildRiceMonthlyRateAverages(history), [history])
   const recentHistory = useMemo(() => [...history].reverse(), [history])
 
   if (!summary || history.length === 0) return null
@@ -43,17 +45,32 @@ export default function RiceRateTrend({ records }: RiceRateTrendProps) {
         <p className="text-xs text-slate-500 mt-1">1억당 단가가 어떻게 변했는지 보여줘요</p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatChip label="최근 단가" value={formatWonPerEok(summary.latest)} highlight />
         <StatChip label="평균 단가" value={formatWonPerEok(summary.average)} />
         <StatChip label="최고" value={formatWonPerEok(summary.max)} />
         <StatChip label="최저" value={formatWonPerEok(summary.min)} />
-        <StatChip
-          label="첫 거래 대비"
-          value={formatRiceRateDelta(summary.totalDelta)}
-          tone={summary.totalDelta > 0 ? 'up' : summary.totalDelta < 0 ? 'down' : 'neutral'}
-        />
       </div>
+
+      {monthlyRates.length > 0 && (
+        <div>
+          <p className="text-xs text-slate-500 mb-2">월별 평균 단가</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {monthlyRates.map((month) => (
+              <div
+                key={month.monthKey}
+                className="rounded-lg bg-dark-surface/50 border border-dark-border px-3 py-2.5"
+              >
+                <p className="text-[10px] text-slate-500">{month.label}</p>
+                <p className="text-sm font-semibold text-slate-200 mt-0.5">
+                  {formatWonPerEok(month.average)}
+                </p>
+                <p className="text-[10px] text-slate-600 mt-0.5">{month.tradeCount}건</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-2 max-h-[15.625rem] overflow-y-auto overscroll-contain pr-1">
         {recentHistory.map((point) => {
@@ -93,20 +110,12 @@ function StatChip({
   label,
   value,
   highlight = false,
-  tone = 'neutral',
 }: {
   label: string
   value: string
   highlight?: boolean
-  tone?: 'up' | 'down' | 'neutral'
 }) {
-  const valueClass = highlight
-    ? 'text-amber-300'
-    : tone === 'up'
-      ? 'text-emerald-400'
-      : tone === 'down'
-        ? 'text-red-400'
-        : 'text-slate-200'
+  const valueClass = highlight ? 'text-amber-300' : 'text-slate-200'
 
   return (
     <div className="rounded-lg bg-dark-surface/50 border border-dark-border px-3 py-2.5">

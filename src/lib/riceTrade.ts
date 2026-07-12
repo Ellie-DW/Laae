@@ -39,13 +39,33 @@ export interface RiceRatePoint {
 
 export interface RiceRateSummary {
   latest: number
-  first: number
   min: number
   max: number
   average: number
-  totalDelta: number
-  latestDelta: number | null
   count: number
+}
+
+export interface RiceMonthlyRate {
+  monthKey: string
+  label: string
+  average: number
+  tradeCount: number
+}
+
+function calcWeightedWonPerEok(points: RiceRatePoint[]): number {
+  const weighted = points.filter((p) => p.mesoSold != null && p.mesoSold > 0)
+  if (weighted.length > 0) {
+    return Math.round(
+      weighted.reduce((sum, p) => sum + p.wonPerEok * p.mesoSold!, 0) /
+        weighted.reduce((sum, p) => sum + p.mesoSold!, 0)
+    )
+  }
+  return Math.round(points.reduce((sum, p) => sum + p.wonPerEok, 0) / points.length)
+}
+
+function formatRiceMonthLabel(monthKey: string): string {
+  const [year, month] = monthKey.split('-')
+  return `${year}년 ${Number(month)}월`
 }
 
 export function buildRiceRateHistory(records: RiceRecord[]): RiceRatePoint[] {
@@ -75,26 +95,34 @@ export function summarizeRiceRateHistory(points: RiceRatePoint[]): RiceRateSumma
 
   const rates = points.map((p) => p.wonPerEok)
   const latest = points[points.length - 1]
-  const first = points[0]
-  const weighted = points.filter((p) => p.mesoSold != null && p.mesoSold > 0)
-  const average =
-    weighted.length > 0
-      ? Math.round(
-          weighted.reduce((sum, p) => sum + p.wonPerEok * p.mesoSold!, 0) /
-            weighted.reduce((sum, p) => sum + p.mesoSold!, 0)
-        )
-      : Math.round(rates.reduce((sum, rate) => sum + rate, 0) / rates.length)
 
   return {
     latest: latest.wonPerEok,
-    first: first.wonPerEok,
     min: Math.min(...rates),
     max: Math.max(...rates),
-    average,
-    totalDelta: latest.wonPerEok - first.wonPerEok,
-    latestDelta: latest.delta,
+    average: calcWeightedWonPerEok(points),
     count: points.length,
   }
+}
+
+export function buildRiceMonthlyRateAverages(points: RiceRatePoint[]): RiceMonthlyRate[] {
+  const byMonth = new Map<string, RiceRatePoint[]>()
+
+  for (const point of points) {
+    const monthKey = point.recordDate.slice(0, 7)
+    const monthPoints = byMonth.get(monthKey) ?? []
+    monthPoints.push(point)
+    byMonth.set(monthKey, monthPoints)
+  }
+
+  return [...byMonth.entries()]
+    .map(([monthKey, monthPoints]) => ({
+      monthKey,
+      label: formatRiceMonthLabel(monthKey),
+      average: calcWeightedWonPerEok(monthPoints),
+      tradeCount: monthPoints.length,
+    }))
+    .sort((a, b) => b.monthKey.localeCompare(a.monthKey))
 }
 
 export function formatRiceRateDelta(delta: number): string {
