@@ -54,7 +54,7 @@ export default function RiceRateTrend({ records }: RiceRateTrendProps) {
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 max-h-[15.625rem] overflow-y-auto overscroll-contain pr-1">
         {recentHistory.map((point) => {
           const barWidth = ((point.wonPerEok - summary.min) / range) * 100
           return (
