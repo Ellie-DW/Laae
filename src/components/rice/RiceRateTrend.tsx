@@ -43,8 +43,9 @@ export default function RiceRateTrend({ records }: RiceRateTrendProps) {
         <p className="text-xs text-slate-500 mt-1">1억당 단가가 어떻게 변했는지 보여줘요</p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <StatChip label="최근 단가" value={formatWonPerEok(summary.latest)} highlight />
+        <StatChip label="평균 단가" value={formatWonPerEok(summary.average)} />
         <StatChip label="최고" value={formatWonPerEok(summary.max)} />
         <StatChip label="최저" value={formatWonPerEok(summary.min)} />
         <StatChip

@@ -42,6 +42,7 @@ export interface RiceRateSummary {
   first: number
   min: number
   max: number
+  average: number
   totalDelta: number
   latestDelta: number | null
   count: number
@@ -75,12 +76,21 @@ export function summarizeRiceRateHistory(points: RiceRatePoint[]): RiceRateSumma
   const rates = points.map((p) => p.wonPerEok)
   const latest = points[points.length - 1]
   const first = points[0]
+  const weighted = points.filter((p) => p.mesoSold != null && p.mesoSold > 0)
+  const average =
+    weighted.length > 0
+      ? Math.round(
+          weighted.reduce((sum, p) => sum + p.wonPerEok * p.mesoSold!, 0) /
+            weighted.reduce((sum, p) => sum + p.mesoSold!, 0)
+        )
+      : Math.round(rates.reduce((sum, rate) => sum + rate, 0) / rates.length)
 
   return {
     latest: latest.wonPerEok,
     first: first.wonPerEok,
     min: Math.min(...rates),
     max: Math.max(...rates),
+    average,
     totalDelta: latest.wonPerEok - first.wonPerEok,
     latestDelta: latest.delta,
     count: points.length,
