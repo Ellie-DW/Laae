@@ -20,8 +20,6 @@ import {
   deleteDiaryNote,
   addRiceRecord,
   deleteRiceRecord,
-  fetchRiceMesoBalance,
-  saveRiceMesoBalance,
 } from '../lib/ledgerApi'
 import {
   computeLedgerSummary,
@@ -51,10 +49,6 @@ export function useLedger(
   const [snapshots, setSnapshots] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['snapshots']>([])
   const [diaryNotes, setDiaryNotes] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['diaryNotes']>([])
   const [riceRecords, setRiceRecords] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['riceRecords']>([])
-  const [riceMesoBalance, setRiceMesoBalance] = useState<{ meso: number | null; updatedAt: string | null }>({
-    meso: null,
-    updatedAt: null,
-  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -72,12 +66,9 @@ export function useLedger(
       setSnapshots(data.snapshots)
       setDiaryNotes(data.diaryNotes)
       if (riceEnabled) {
-        const balance = await fetchRiceMesoBalance(user.id)
         setRiceRecords(data.riceRecords)
-        setRiceMesoBalance(balance)
       } else {
         setRiceRecords([])
-        setRiceMesoBalance({ meso: null, updatedAt: null })
       }
     } catch (err) {
       setError(getErrorMessage(err, '기록을 불러오지 못했습니다.'))
@@ -96,7 +87,6 @@ export function useLedger(
       setSnapshots([])
       setDiaryNotes([])
       setRiceRecords([])
-      setRiceMesoBalance({ meso: null, updatedAt: null })
       setLoading(false)
       return
     }
@@ -428,16 +418,6 @@ export function useLedger(
     setRiceRecords((prev) => prev.filter((r) => r.id !== id))
   }, [])
 
-  const updateRiceMesoBalance = useCallback(
-    async (meso: number) => {
-      if (!user || meso < 0) return
-      const balance = await saveRiceMesoBalance(user.id, meso)
-      setRiceMesoBalance(balance)
-      setError(null)
-    },
-    [user]
-  )
-
   return {
     expenses,
     hunts,
@@ -447,7 +427,6 @@ export function useLedger(
     snapshots,
     diaryNotes,
     riceRecords,
-    riceMesoBalance,
     loading,
     error,
     currentMonth,
@@ -481,7 +460,6 @@ export function useLedger(
     removeDiaryNote,
     createRiceRecord,
     removeRiceRecord,
-    updateRiceMesoBalance,
     reload,
     upsertSnapshot,
     removeSnapshot,

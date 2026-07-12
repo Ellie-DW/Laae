@@ -22,7 +22,7 @@ import { useAppData } from './hooks/useAppData'
 import { useLedger } from './hooks/useLedger'
 import { useRiceAccess } from './hooks/useRiceAccess'
 import { getDiaryEntryTargetPage, type DiaryEntry } from './lib/diaryEntries'
-import { computeExpenseByCategory } from './lib/ledgerAnalytics'
+import { computeExpenseByCategory, computeAccountCumulativeNetProfit } from './lib/ledgerAnalytics'
 import { useAuth } from './contexts/AuthContext'
 import { getWeeklyPeriod } from './utils'
 import GridScanBackground from './components/backgrounds/GridScanBackground'
@@ -82,6 +82,20 @@ function MainApp() {
   })
 
   const navItems = getNavItems(riceAccess.hasAccess)
+
+  const riceHeldMeso = useMemo(
+    () =>
+      computeAccountCumulativeNetProfit(
+        ledger.hunts,
+        ledger.gathers,
+        ledger.drops,
+        ledger.expenses,
+        ledger.snapshots,
+        characters,
+        bossDataMap
+      ),
+    [ledger.hunts, ledger.gathers, ledger.drops, ledger.expenses, ledger.snapshots, characters, bossDataMap]
+  )
 
   useEffect(() => {
     if (!riceAccess.loading && currentPage === 'rice' && !riceAccess.hasAccess) {
@@ -259,10 +273,9 @@ function MainApp() {
             characters={characters}
             selectedCharacter={selectedCharacter}
             records={ledger.riceRecords}
-            mesoBalance={ledger.riceMesoBalance}
+            heldMeso={riceHeldMeso}
             onAdd={ledger.createRiceRecord}
             onRemove={ledger.removeRiceRecord}
-            onUpdateMesoBalance={ledger.updateRiceMesoBalance}
             isOwner={riceAccess.isOwner}
             grants={riceAccess.grants}
             onGrantAccess={riceAccess.grantAccess}

@@ -1,6 +1,9 @@
-import type { Expense, HuntRecord, GatherRecord, DropRecord, Goal, ExpenseCategory, BossSnapshot } from '../types'
+import type { Expense, HuntRecord, GatherRecord, DropRecord, Goal, ExpenseCategory, BossSnapshot, Character, CharacterBossData } from '../types'
 import { EXPENSE_CATEGORY_LABEL } from './ledgerApi'
-import { splitHuntIncome } from './huntStats'
+import { splitHuntIncome, getHuntCumulativeStats } from './huntStats'
+import { getDropItemStats, getDropStatsSummary } from '../data/dropItems'
+import { getAccountBossCumulativeStats } from './bossStats'
+import { createDefaultBossData } from './appDataApi'
 import { getToday } from '../utils'
 
 export interface LedgerSummary {
@@ -293,4 +296,34 @@ export function computeGoalProgress(
   const dailyNeeded = remaining > 0 && daysLeft > 0 ? remaining / daysLeft : null
 
   return { netProfit, percent, barPercent, remaining, daysLeft, dailyNeeded, summary } satisfies GoalProgress
+}
+
+/** 계정 전체 누적 순수익 (사냥·드랍·보스·채집 − 지출) */
+export function computeAccountCumulativeNetProfit(
+  hunts: HuntRecord[],
+  gathers: GatherRecord[],
+  drops: DropRecord[],
+  expenses: Expense[],
+  snapshots: BossSnapshot[],
+  characters: Character[],
+  bossDataMap: Record<string, CharacterBossData>
+): number {
+  const huntStats = getHuntCumulativeStats(hunts)
+  const dropSummary = getDropStatsSummary(getDropItemStats(drops))
+  const bossStats = getAccountBossCumulativeStats(
+    snapshots,
+    characters,
+    bossDataMap,
+    createDefaultBossData()
+  )
+  const gatherTotal = gathers.reduce((sum, g) => sum + g.meso, 0)
+  const expenseTotal = expenses.reduce((sum, e) => sum + e.amount, 0)
+  const totalIncome =
+    huntStats.huntMesoTotal +
+    huntStats.saleMesoTotal +
+    dropSummary.saleIncome +
+    bossStats.totalMeso +
+    gatherTotal
+
+  return totalIncome - expenseTotal
 }

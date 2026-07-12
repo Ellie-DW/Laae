@@ -160,9 +160,3 @@ export interface RiceRecord {
   recordDate: string
   createdAt: string
 }
-
-/** 계정 전체 보유 메소 (쌀곳간) */
-export interface RiceMesoBalance {
-  meso: number | null
-  updatedAt: string | null
-}
