@@ -9,4 +9,5 @@ export const NAV_ITEMS: { id: Page; label: string }[] = [
   { id: 'drop', label: '드랍' },
   { id: 'gather', label: '채집' },
   { id: 'goals', label: '목표' },
+  { id: 'rice', label: '쌀곳간' },
 ]

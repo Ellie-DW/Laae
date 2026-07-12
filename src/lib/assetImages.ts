@@ -25,6 +25,7 @@ export const NAV_ICON_SRC: Record<Page, string> = {
   drop: navDrop,
   gather: navGather,
   goals: navGoals,
+  rice: navGoals,
 }
 
 import { normalizeDropItemName } from '../data/dropItems'
