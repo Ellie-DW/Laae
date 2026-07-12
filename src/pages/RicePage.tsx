@@ -1,18 +1,20 @@
 import { useMemo, useState } from 'react'
-import type { Character, RiceRecord } from '../types'
+import type { RiceRecord } from '../types'
 import type { RiceAccessGrant } from '../lib/riceAccessApi'
 import RiceAccessAdmin from '../components/rice/RiceAccessAdmin'
-import { formatMesoKorean, formatWon, getToday, parseWonInput } from '../utils'
+import {
+  calcRiceTradeAmount,
+  formatWonPerEok,
+  parseWonPerEokInput,
+} from '../lib/riceTrade'
+import { formatMesoKorean, formatWon, getToday, parseMesoInput } from '../utils'
 
 interface RicePageProps {
-  characters: Character[]
-  selectedCharacter: Character | null
   records: RiceRecord[]
   heldMeso: number
   onAdd: (data: {
-    characterId?: string | null
-    amount: number
-    description: string
+    mesoSold: number
+    wonPerEok: number
     memo?: string
     recordDate: string
   }) => Promise<void>
@@ -23,9 +25,14 @@ interface RicePageProps {
   onRevokeAccess: (userId: string) => Promise<void>
 }
 
+function formatRiceRecordTitle(record: RiceRecord): string {
+  if (record.mesoSold != null && record.wonPerEok != null) {
+    return `${formatMesoKorean(record.mesoSold)} · ${formatWonPerEok(record.wonPerEok)}`
+  }
+  return record.description
+}
+
 export default function RicePage({
-  characters,
-  selectedCharacter,
   records,
   heldMeso,
   onAdd,
@@ -35,34 +42,36 @@ export default function RicePage({
   onGrantAccess,
   onRevokeAccess,
 }: RicePageProps) {
-  const [description, setDescription] = useState('')
-  const [characterId, setCharacterId] = useState('')
+  const [mesoInput, setMesoInput] = useState('')
+  const [rateInput, setRateInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   const total = useMemo(() => records.reduce((sum, r) => sum + r.amount, 0), [records])
-  const characterNameById = useMemo(
-    () => Object.fromEntries(characters.map((c) => [c.id, c.name])),
-    [characters]
+  const previewMeso = useMemo(() => parseMesoInput(mesoInput), [mesoInput])
+  const previewRate = useMemo(() => parseWonPerEokInput(rateInput), [rateInput])
+  const previewAmount = useMemo(
+    () => calcRiceTradeAmount(previewMeso, previewRate),
+    [previewMeso, previewRate]
   )
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget
     const fd = new FormData(form)
-    const amount = parseWonInput(String(fd.get('amount') ?? ''))
-    const desc = description.trim()
-    if (amount <= 0 || !desc) return
+    const mesoSold = parseMesoInput(mesoInput)
+    const wonPerEok = parseWonPerEokInput(rateInput)
+    if (mesoSold <= 0 || wonPerEok <= 0) return
 
     setSubmitting(true)
     try {
       await onAdd({
-        characterId: characterId || selectedCharacter?.id || null,
-        amount,
-        description: desc,
+        mesoSold,
+        wonPerEok,
         memo: String(fd.get('memo') ?? '').trim() || undefined,
         recordDate: String(fd.get('recordDate') ?? getToday()),
       })
-      setDescription('')
+      setMesoInput('')
+      setRateInput('')
       form.reset()
       const dateInput = form.querySelector<HTMLInputElement>('input[name="recordDate"]')
       if (dateInput) dateInput.value = getToday()
@@ -98,36 +107,35 @@ export default function RicePage({
       <form onSubmit={handleSubmit} className="panel-light p-4 space-y-3">
         <h2 className="font-semibold text-slate-100">쌀먹 기록</h2>
         <div>
-          <label className="text-xs text-slate-500 mb-1 block">거래 내용</label>
+          <label className="text-xs text-slate-500 mb-1 block">판 메소 (억 단위)</label>
           <input
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            value={mesoInput}
+            onChange={(e) => setMesoInput(e.target.value)}
             required
-            placeholder="예: 주문서 판매, 메소 거래"
+            placeholder="예: 1, 3, 1.5억"
             className="input-field text-sm"
           />
         </div>
-        {characters.length > 0 && (
-          <div>
-            <label className="text-xs text-slate-500 mb-1 block">캐릭터 (선택)</label>
-            <select
-              value={characterId || selectedCharacter?.id || ''}
-              onChange={(e) => setCharacterId(e.target.value)}
-              className="input-field text-sm"
-            >
-              <option value="">전체 / 미지정</option>
-              {characters.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
         <div>
-          <label className="text-xs text-slate-500 mb-1 block">수익 (원)</label>
-          <input name="amount" required placeholder="예: 150000" className="input-field text-sm" />
+          <label className="text-xs text-slate-500 mb-1 block">1억당 단가 (원)</label>
+          <input
+            value={rateInput}
+            onChange={(e) => setRateInput(e.target.value)}
+            required
+            placeholder="예: 1750"
+            className="input-field text-sm"
+          />
         </div>
+        {previewAmount > 0 && (
+          <p className="text-sm text-amber-300/90">
+            예상 수익 {formatWon(previewAmount)}
+            {previewMeso > 0 && previewRate > 0 && (
+              <span className="text-slate-500 text-xs ml-2">
+                ({formatMesoKorean(previewMeso)} × {formatWonPerEok(previewRate)})
+              </span>
+            )}
+          </p>
+        )}
         <div>
           <label className="text-xs text-slate-500 mb-1 block">날짜</label>
           <input name="recordDate" type="date" defaultValue={getToday()} className="input-field text-sm" />
@@ -138,7 +146,7 @@ export default function RicePage({
         </div>
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || previewAmount <= 0}
           className="btn-primary text-sm w-full py-2 disabled:opacity-50"
         >
           {submitting ? '저장 중...' : '쌀먹 기록 추가'}
@@ -157,12 +165,11 @@ export default function RicePage({
                 className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50 border border-dark-border"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-200 truncate">{r.description}</p>
+                  <p className="text-sm font-medium text-slate-200 truncate">
+                    {formatRiceRecordTitle(r)}
+                  </p>
                   <p className="text-xs text-slate-500 mt-0.5">
                     {r.recordDate}
-                    {r.characterId && characterNameById[r.characterId]
-                      ? ` · ${characterNameById[r.characterId]}`
-                      : ''}
                     {r.memo ? ` · ${r.memo}` : ''}
                   </p>
                 </div>

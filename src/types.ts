@@ -155,6 +155,8 @@ export interface RiceRecord {
   id: string
   characterId: string | null
   amount: number
+  mesoSold: number | null
+  wonPerEok: number | null
   description: string
   memo: string | null
   recordDate: string

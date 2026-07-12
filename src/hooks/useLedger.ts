@@ -31,6 +31,10 @@ import {
   getCurrentMonth,
 } from '../lib/ledgerAnalytics'
 import { getHeldSolErdaFragments, buildSolErdaPurchaseMemo, parseSolErdaPurchaseMemo } from '../lib/huntStats'
+import {
+  buildRiceTradeDescription,
+  calcRiceTradeAmount,
+} from '../lib/riceTrade'
 import { getWeeklyPeriod, getErrorMessage } from '../utils'
 
 export function useLedger(
@@ -399,14 +403,23 @@ export function useLedger(
 
   const createRiceRecord = useCallback(
     async (data: {
-      characterId?: string | null
-      amount: number
-      description: string
+      mesoSold: number
+      wonPerEok: number
       memo?: string
       recordDate: string
     }) => {
-      if (!user || data.amount <= 0 || !data.description.trim()) return
-      const row = await addRiceRecord(user.id, data)
+      if (!user || data.mesoSold <= 0 || data.wonPerEok <= 0) return
+      const amount = calcRiceTradeAmount(data.mesoSold, data.wonPerEok)
+      if (amount <= 0) return
+      const row = await addRiceRecord(user.id, {
+        characterId: null,
+        amount,
+        mesoSold: data.mesoSold,
+        wonPerEok: data.wonPerEok,
+        description: buildRiceTradeDescription(data.mesoSold, data.wonPerEok),
+        memo: data.memo,
+        recordDate: data.recordDate,
+      })
       setRiceRecords((prev) => [row, ...prev])
       setError(null)
     },

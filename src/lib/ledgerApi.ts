@@ -100,6 +100,8 @@ function mapRiceRecord(row: Record<string, unknown>): RiceRecord {
     id: row.id as string,
     characterId: (row.character_id as string) ?? null,
     amount: Number(row.amount),
+    mesoSold: row.meso_sold != null ? Number(row.meso_sold) : null,
+    wonPerEok: row.won_per_eok != null ? Number(row.won_per_eok) : null,
     description: row.description as string,
     memo: (row.memo as string) ?? null,
     recordDate: row.record_date as string,
@@ -456,6 +458,8 @@ export async function addRiceRecord(
   data: {
     characterId?: string | null
     amount: number
+    mesoSold: number
+    wonPerEok: number
     description: string
     memo?: string
     recordDate: string
@@ -467,6 +471,8 @@ export async function addRiceRecord(
       user_id: userId,
       character_id: data.characterId ?? null,
       amount: data.amount,
+      meso_sold: data.mesoSold,
+      won_per_eok: data.wonPerEok,
       description: data.description.trim(),
       memo: data.memo?.trim() || null,
       record_date: data.recordDate,

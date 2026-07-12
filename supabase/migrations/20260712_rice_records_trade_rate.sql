@@ -1,0 +1,3 @@
+ALTER TABLE public.rice_records
+  ADD COLUMN IF NOT EXISTS meso_sold BIGINT,
+  ADD COLUMN IF NOT EXISTS won_per_eok INTEGER;

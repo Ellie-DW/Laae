@@ -270,8 +270,6 @@ function MainApp() {
         if (!riceAccess.hasAccess) return null
         return (
           <RicePage
-            characters={characters}
-            selectedCharacter={selectedCharacter}
             records={ledger.riceRecords}
             heldMeso={riceHeldMeso}
             onAdd={ledger.createRiceRecord}
