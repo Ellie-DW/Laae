@@ -1,17 +1,20 @@
 import type { Page } from '../../types'
-import { NAV_ITEMS } from './nav'
+import { getNavItems } from './nav'
 import NavIcon from './NavIcon'
 
 interface BottomNavProps {
   currentPage: Page
   onNavigate: (page: Page) => void
+  hasRiceAccess: boolean
 }
 
-export default function BottomNav({ currentPage, onNavigate }: BottomNavProps) {
+export default function BottomNav({ currentPage, onNavigate, hasRiceAccess }: BottomNavProps) {
+  const items = getNavItems(hasRiceAccess)
+
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-dark-surface/90 backdrop-blur-lg border-t border-dark-border/60 z-50 safe-bottom">
       <div className="flex overflow-x-auto scrollbar-hide">
-        {NAV_ITEMS.map((item) => (
+        {items.map((item) => (
           <button
             key={item.id}
             onClick={() => onNavigate(item.id)}

@@ -1,8 +1,8 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import Sidebar from './components/layout/Sidebar'
 import BottomNav from './components/layout/BottomNav'
 import MobileHeader from './components/layout/MobileHeader'
-import { NAV_ITEMS } from './components/layout/nav'
+import { getNavItems } from './components/layout/nav'
 import NavIcon from './components/layout/NavIcon'
 import DashboardPage from './pages/DashboardPage'
 import BossPage from './pages/BossPage'
@@ -20,6 +20,7 @@ import TermsPage from './pages/TermsPage'
 import SiteFooter from './components/layout/SiteFooter'
 import { useAppData } from './hooks/useAppData'
 import { useLedger } from './hooks/useLedger'
+import { useRiceAccess } from './hooks/useRiceAccess'
 import { getDiaryEntryTargetPage, type DiaryEntry } from './lib/diaryEntries'
 import { computeExpenseByCategory } from './lib/ledgerAnalytics'
 import { useAuth } from './contexts/AuthContext'
@@ -64,6 +65,8 @@ function MainApp() {
     toggleMonthlyBossCleared,
   } = useAppData()
 
+  const riceAccess = useRiceAccess()
+
   const bossIncomeByCharacter = useMemo(
     () => Object.fromEntries(accountStats.perCharacter.map((c) => [c.id, c.bossMeso])),
     [accountStats.perCharacter]
@@ -74,11 +77,23 @@ function MainApp() {
     [accountStats.perCharacter]
   )
 
-  const ledger = useLedger(characters, bossIncomeByCharacter, weeklyBossIncomeByCharacter)
+  const ledger = useLedger(characters, bossIncomeByCharacter, weeklyBossIncomeByCharacter, {
+    riceEnabled: riceAccess.hasAccess,
+  })
 
-  if (dataLoading || ledger.loading) return <LoadingScreen message="데이터 불러오는 중..." />
+  const navItems = getNavItems(riceAccess.hasAccess)
 
-  const combinedError = syncError || ledger.error
+  useEffect(() => {
+    if (!riceAccess.loading && currentPage === 'rice' && !riceAccess.hasAccess) {
+      setPage('dashboard')
+    }
+  }, [riceAccess.loading, riceAccess.hasAccess, currentPage, setPage])
+
+  if (dataLoading || ledger.loading || riceAccess.loading) {
+    return <LoadingScreen message="데이터 불러오는 중..." />
+  }
+
+  const combinedError = syncError || ledger.error || riceAccess.error
   const weekPeriod = getWeeklyPeriod()
   const selectedLedgerSummary = selectedCharacter
     ? ledger.getCharacterSummary(selectedCharacter.id)
@@ -238,13 +253,20 @@ function MainApp() {
           />
         )
       case 'rice':
+        if (!riceAccess.hasAccess) return null
         return (
           <RicePage
             characters={characters}
             selectedCharacter={selectedCharacter}
             records={ledger.riceRecords}
+            mesoBalance={ledger.riceMesoBalance}
             onAdd={ledger.createRiceRecord}
             onRemove={ledger.removeRiceRecord}
+            onUpdateMesoBalance={ledger.updateRiceMesoBalance}
+            isOwner={riceAccess.isOwner}
+            grants={riceAccess.grants}
+            onGrantAccess={riceAccess.grantAccess}
+            onRevokeAccess={riceAccess.revokeAccess}
           />
         )
       default:
@@ -278,7 +300,7 @@ function MainApp() {
         />
 
         <div className="hidden lg:flex border-b border-dark-border/60 bg-dark-surface/50 backdrop-blur-md px-6 py-2 gap-1">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setPage(item.id)}
@@ -306,7 +328,7 @@ function MainApp() {
         <SiteFooter />
       </div>
 
-      <BottomNav currentPage={currentPage} onNavigate={setPage} />
+      <BottomNav currentPage={currentPage} onNavigate={setPage} hasRiceAccess={riceAccess.hasAccess} />
     </div>
   )
 }

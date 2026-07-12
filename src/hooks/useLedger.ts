@@ -20,6 +20,8 @@ import {
   deleteDiaryNote,
   addRiceRecord,
   deleteRiceRecord,
+  fetchRiceMesoBalance,
+  saveRiceMesoBalance,
 } from '../lib/ledgerApi'
 import {
   computeLedgerSummary,
@@ -36,8 +38,10 @@ import { getWeeklyPeriod, getErrorMessage } from '../utils'
 export function useLedger(
   characters: { id: string; name: string }[],
   bossIncomeByCharacter: Record<string, number> = {},
-  weeklyBossIncomeByCharacter: Record<string, number> = {}
+  weeklyBossIncomeByCharacter: Record<string, number> = {},
+  options?: { riceEnabled?: boolean }
 ) {
+  const riceEnabled = options?.riceEnabled ?? false
   const { user } = useAuth()
   const [expenses, setExpenses] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['expenses']>([])
   const [hunts, setHunts] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['hunts']>([])
@@ -47,6 +51,10 @@ export function useLedger(
   const [snapshots, setSnapshots] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['snapshots']>([])
   const [diaryNotes, setDiaryNotes] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['diaryNotes']>([])
   const [riceRecords, setRiceRecords] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['riceRecords']>([])
+  const [riceMesoBalance, setRiceMesoBalance] = useState<{ meso: number | null; updatedAt: string | null }>({
+    meso: null,
+    updatedAt: null,
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -55,7 +63,7 @@ export function useLedger(
     setLoading(true)
     setError(null)
     try {
-      const data = await fetchLedgerData(user.id)
+      const data = await fetchLedgerData(user.id, { includeRice: riceEnabled })
       setExpenses(data.expenses)
       setHunts(data.hunts)
       setGathers(data.gathers)
@@ -63,13 +71,20 @@ export function useLedger(
       setGoals(data.goals)
       setSnapshots(data.snapshots)
       setDiaryNotes(data.diaryNotes)
-      setRiceRecords(data.riceRecords)
+      if (riceEnabled) {
+        const balance = await fetchRiceMesoBalance(user.id)
+        setRiceRecords(data.riceRecords)
+        setRiceMesoBalance(balance)
+      } else {
+        setRiceRecords([])
+        setRiceMesoBalance({ meso: null, updatedAt: null })
+      }
     } catch (err) {
       setError(getErrorMessage(err, '기록을 불러오지 못했습니다.'))
     } finally {
       setLoading(false)
     }
-  }, [user])
+  }, [user, riceEnabled])
 
   useEffect(() => {
     if (!user) {
@@ -81,11 +96,12 @@ export function useLedger(
       setSnapshots([])
       setDiaryNotes([])
       setRiceRecords([])
+      setRiceMesoBalance({ meso: null, updatedAt: null })
       setLoading(false)
       return
     }
     reload()
-  }, [user, reload])
+  }, [user, reload, riceEnabled])
 
   const currentMonth = getCurrentMonth()
 
@@ -412,6 +428,16 @@ export function useLedger(
     setRiceRecords((prev) => prev.filter((r) => r.id !== id))
   }, [])
 
+  const updateRiceMesoBalance = useCallback(
+    async (meso: number) => {
+      if (!user || meso < 0) return
+      const balance = await saveRiceMesoBalance(user.id, meso)
+      setRiceMesoBalance(balance)
+      setError(null)
+    },
+    [user]
+  )
+
   return {
     expenses,
     hunts,
@@ -421,6 +447,7 @@ export function useLedger(
     snapshots,
     diaryNotes,
     riceRecords,
+    riceMesoBalance,
     loading,
     error,
     currentMonth,
@@ -454,6 +481,7 @@ export function useLedger(
     removeDiaryNote,
     createRiceRecord,
     removeRiceRecord,
+    updateRiceMesoBalance,
     reload,
     upsertSnapshot,
     removeSnapshot,

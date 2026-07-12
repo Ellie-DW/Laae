@@ -1,11 +1,14 @@
 import { useMemo, useState } from 'react'
-import type { Character, RiceRecord } from '../types'
-import { formatWon, getToday, parseWonInput } from '../utils'
+import type { Character, RiceMesoBalance, RiceRecord } from '../types'
+import type { RiceAccessGrant } from '../lib/riceAccessApi'
+import RiceAccessAdmin from '../components/rice/RiceAccessAdmin'
+import { formatMesoKorean, formatWon, getToday, parseMesoInput, parseWonInput } from '../utils'
 
 interface RicePageProps {
   characters: Character[]
   selectedCharacter: Character | null
   records: RiceRecord[]
+  mesoBalance: RiceMesoBalance
   onAdd: (data: {
     characterId?: string | null
     amount: number
@@ -14,18 +17,31 @@ interface RicePageProps {
     recordDate: string
   }) => Promise<void>
   onRemove: (id: string) => Promise<void>
+  onUpdateMesoBalance: (meso: number) => Promise<void>
+  isOwner: boolean
+  grants: RiceAccessGrant[]
+  onGrantAccess: (email: string) => Promise<void>
+  onRevokeAccess: (userId: string) => Promise<void>
 }
 
 export default function RicePage({
   characters,
   selectedCharacter,
   records,
+  mesoBalance,
   onAdd,
   onRemove,
+  onUpdateMesoBalance,
+  isOwner,
+  grants,
+  onGrantAccess,
+  onRevokeAccess,
 }: RicePageProps) {
   const [description, setDescription] = useState('')
   const [characterId, setCharacterId] = useState('')
+  const [mesoInput, setMesoInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [savingMeso, setSavingMeso] = useState(false)
 
   const total = useMemo(() => records.reduce((sum, r) => sum + r.amount, 0), [records])
   const characterNameById = useMemo(
@@ -59,22 +75,72 @@ export default function RicePage({
     }
   }
 
+  const handleMesoUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const meso = parseMesoInput(mesoInput)
+    if (meso < 0) return
+
+    setSavingMeso(true)
+    try {
+      await onUpdateMesoBalance(meso)
+      setMesoInput('')
+    } finally {
+      setSavingMeso(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
           <span>🍚</span> 쌀곳간
         </h1>
-        <p className="text-sm text-slate-500 mt-1">쌀먹 수익을 기록해요</p>
+        <p className="text-sm text-slate-500 mt-1">보유 메소와 쌀먹 수익을 기록해요</p>
       </div>
 
-      <div className="panel-glow p-5">
-        <p className="text-sm text-slate-400">누적 쌀먹</p>
-        <p className="text-2xl font-bold text-amber-300 mt-1">{formatWon(total)}</p>
-        <p className="text-xs text-slate-500 mt-1">{records.length}건</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="panel-glow p-5">
+          <p className="text-sm text-slate-400">남은 메소 (전체)</p>
+          <p className="text-2xl font-bold text-maple-400 mt-1">
+            {mesoBalance.meso != null ? formatMesoKorean(mesoBalance.meso) : '-'}
+          </p>
+          {mesoBalance.updatedAt && (
+            <p className="text-xs text-slate-500 mt-1">
+              갱신: {mesoBalance.updatedAt.slice(0, 10)}
+            </p>
+          )}
+        </div>
+        <div className="panel-glow p-5">
+          <p className="text-sm text-slate-400">누적 쌀먹</p>
+          <p className="text-2xl font-bold text-amber-300 mt-1">{formatWon(total)}</p>
+          <p className="text-xs text-slate-500 mt-1">{records.length}건</p>
+        </div>
       </div>
+
+      <form onSubmit={handleMesoUpdate} className="panel-light p-4 space-y-3">
+        <div>
+          <label className="text-xs text-slate-500 mb-1 block">보유 메소 갱신 (전체 합계)</label>
+          <input
+            value={mesoInput}
+            onChange={(e) => setMesoInput(e.target.value)}
+            placeholder="예: 42, 1.5억"
+            className="input-field text-sm"
+          />
+          <p className="text-[10px] text-slate-600 mt-1">
+            모든 캐릭터 메소를 합친 금액을 입력해요
+          </p>
+        </div>
+        <button
+          type="submit"
+          disabled={savingMeso || !mesoInput.trim()}
+          className="btn-secondary text-sm w-full py-2 disabled:opacity-50"
+        >
+          {savingMeso ? '저장 중...' : '메소 갱신'}
+        </button>
+      </form>
 
       <form onSubmit={handleSubmit} className="panel-light p-4 space-y-3">
+        <h2 className="font-semibold text-slate-100">쌀먹 기록</h2>
         <div>
           <label className="text-xs text-slate-500 mb-1 block">거래 내용</label>
           <input
@@ -158,6 +224,14 @@ export default function RicePage({
           </div>
         )}
       </div>
+
+      {isOwner && (
+        <RiceAccessAdmin
+          grants={grants}
+          onGrant={onGrantAccess}
+          onRevoke={onRevokeAccess}
+        />
+      )}
     </div>
   )
 }

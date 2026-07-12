@@ -12,6 +12,7 @@ import type {
   CharacterBossData,
   DiaryNote,
   RiceRecord,
+  RiceMesoBalance,
 } from '../types'
 
 function mapExpense(row: Record<string, unknown>): Expense {
@@ -120,7 +121,8 @@ function mapSnapshot(row: Record<string, unknown>): BossSnapshot {
   }
 }
 
-export async function fetchLedgerData(userId: string) {
+export async function fetchLedgerData(userId: string, options?: { includeRice?: boolean }) {
+  const includeRice = options?.includeRice ?? true
   const [expenses, hunts, gathers, drops, goals, snapshots, diaryNotes, riceRecords] = await Promise.all([
     supabase.from('expenses').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
     supabase.from('hunt_records').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
@@ -129,7 +131,9 @@ export async function fetchLedgerData(userId: string) {
     supabase.from('goals').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     supabase.from('boss_snapshots').select('*').eq('user_id', userId).order('period_start', { ascending: false }),
     supabase.from('diary_notes').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
-    supabase.from('rice_records').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
+    includeRice
+      ? supabase.from('rice_records').select('*').eq('user_id', userId).order('record_date', { ascending: false })
+      : Promise.resolve({ data: [], error: null }),
   ])
 
   if (expenses.error) throw new Error(expenses.error.message)
@@ -477,6 +481,50 @@ export async function addRiceRecord(
 export async function deleteRiceRecord(id: string) {
   const { error } = await supabase.from('rice_records').delete().eq('id', id)
   if (error) throw error
+}
+
+export async function fetchRiceMesoBalance(userId: string): Promise<RiceMesoBalance> {
+  const { data, error } = await supabase
+    .from('user_preferences')
+    .select('meso_balance, meso_balance_updated_at')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error) throw error
+
+  return {
+    meso: data?.meso_balance != null ? Number(data.meso_balance) : null,
+    updatedAt: (data?.meso_balance_updated_at as string) ?? null,
+  }
+}
+
+export async function saveRiceMesoBalance(userId: string, meso: number): Promise<RiceMesoBalance> {
+  const updatedAt = new Date().toISOString()
+  const payload = {
+    meso_balance: meso,
+    meso_balance_updated_at: updatedAt,
+    updated_at: updatedAt,
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from('user_preferences')
+    .select('user_id')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (existingError) throw existingError
+
+  const query = existing
+    ? supabase.from('user_preferences').update(payload).eq('user_id', userId)
+    : supabase.from('user_preferences').insert({ user_id: userId, ...payload })
+
+  const { data, error } = await query.select('meso_balance, meso_balance_updated_at').single()
+  if (error) throw error
+
+  return {
+    meso: Number(data.meso_balance),
+    updatedAt: data.meso_balance_updated_at as string,
+  }
 }
 
 export const EXPENSE_CATEGORY_LABEL: Record<ExpenseCategory, string> = {

@@ -11,3 +11,7 @@ export const NAV_ITEMS: { id: Page; label: string }[] = [
   { id: 'goals', label: '목표' },
   { id: 'rice', label: '쌀곳간' },
 ]
+
+export function getNavItems(hasRiceAccess: boolean) {
+  return hasRiceAccess ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.id !== 'rice')
+}
