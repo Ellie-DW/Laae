@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import type { Character } from '../../types'
 import { PREDEFINED_DROP_ITEMS, getDropItemGroups } from '../../data/dropItems'
 import { getToday } from '../../utils'
 import DropItemIcon from './DropItemIcon'
@@ -9,10 +10,18 @@ export interface DropAddItem {
 }
 
 interface DropChecklistSectionProps {
+  characters: Character[]
+  characterId: string
+  onCharacterChange: (id: string) => void
   onAdd: (items: DropAddItem[]) => Promise<void>
 }
 
-export default function DropChecklistSection({ onAdd }: DropChecklistSectionProps) {
+export default function DropChecklistSection({
+  characters,
+  characterId,
+  onCharacterChange,
+  onAdd,
+}: DropChecklistSectionProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [recordDate, setRecordDate] = useState(getToday)
   const [adding, setAdding] = useState(false)
@@ -57,8 +66,23 @@ export default function DropChecklistSection({ onAdd }: DropChecklistSectionProp
   return (
     <div className="panel-light p-5">
       <div className="mb-4">
-        <h2 className="font-semibold text-slate-100">드랍 체크리스트</h2>
-        <p className="text-xs text-slate-500 mt-0.5">획득일만 기록합니다. 판매는 아래 기타 드랍에서 입력하세요.</p>
+        <h2 className="font-semibold text-slate-100">획득 추가</h2>
+        <p className="text-xs text-slate-500 mt-0.5">아이템을 선택하고 획득일을 기록하세요</p>
+      </div>
+
+      <div className="mb-4">
+        <label className="text-xs text-slate-500 mb-1 block">기록 캐릭터</label>
+        <select
+          value={characterId}
+          onChange={(e) => onCharacterChange(e.target.value)}
+          className="input-field text-sm"
+        >
+          {characters.map((char) => (
+            <option key={char.id} value={char.id}>
+              {char.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="space-y-5">

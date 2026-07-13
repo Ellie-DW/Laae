@@ -231,6 +231,7 @@ function MainApp() {
             drops={ledger.drops}
             onAdd={ledger.createDrop}
             onSell={ledger.sellDrops}
+            onUpdate={ledger.updateDrop}
             onRemove={ledger.removeDrop}
           />
         )

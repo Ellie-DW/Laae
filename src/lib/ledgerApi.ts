@@ -276,6 +276,27 @@ export async function deleteDropRecord(id: string) {
   if (error) throw new Error(error.message)
 }
 
+export async function updateDropRecord(
+  id: string,
+  data: { recordDate?: string; memo?: string | null }
+) {
+  const payload: Record<string, unknown> = {}
+  if (data.recordDate != null) {
+    payload.record_date = data.recordDate
+    payload.acquired_date = data.recordDate
+  }
+  if (data.memo !== undefined) payload.memo = data.memo
+
+  const { data: row, error } = await supabase
+    .from('drop_records')
+    .update(payload)
+    .eq('id', id)
+    .select('*')
+    .single()
+  if (error) throw new Error(error.message)
+  return mapDrop(row)
+}
+
 export async function sellDropRecords(
   userId: string,
   items: { itemName: string; meso: number; recordDate: string; memo?: string }[],

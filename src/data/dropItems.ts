@@ -7,6 +7,11 @@ export interface PredefinedDropItem {
 }
 
 export const PREDEFINED_DROP_ITEMS: PredefinedDropItem[] = [
+  { id: 'origin-whisper', name: '근원의 속삭임', group: '광휘' },
+  { id: 'immortal-legacy', name: '불멸의 유산', group: '광휘' },
+  { id: 'arrogance-original-sin', name: '오만의 원죄', group: '광휘' },
+  { id: 'death-oath', name: '죽음의 맹세', group: '광휘' },
+  { id: 'ecstatic-nightmare', name: '황홀한 악몽', group: '광휘' },
   { id: 'genesis-badge', name: '창세의 뱃지', group: '칠흑' },
   { id: 'origin-of-pain', name: '고통의 근원', group: '칠흑' },
   { id: 'great-terror', name: '거대한 공포', group: '칠흑' },
@@ -17,11 +22,6 @@ export const PREDEFINED_DROP_ITEMS: PredefinedDropItem[] = [
   { id: 'mitra-rage-box', name: '미트라의 분노 선택 상자', group: '칠흑' },
   { id: 'commander-force-earring', name: '커맨더 포스 이어링', group: '칠흑' },
   { id: 'complete-undercontrol', name: '컨플리트 언더컨트롤', group: '칠흑' },
-  { id: 'origin-whisper', name: '근원의 속삭임', group: '광휘' },
-  { id: 'immortal-legacy', name: '불멸의 유산', group: '광휘' },
-  { id: 'arrogance-original-sin', name: '오만의 원죄', group: '광휘' },
-  { id: 'death-oath', name: '죽음의 맹세', group: '광휘' },
-  { id: 'ecstatic-nightmare', name: '황홀한 악몽', group: '광휘' },
   { id: 'daybreak-pendant', name: '데이브레이크 펜던트', group: '여명' },
   { id: 'guardian-angel-ring', name: '가디언 엔젤 링', group: '여명' },
   { id: 'estella-earring', name: '에스텔라 이어링', group: '여명' },

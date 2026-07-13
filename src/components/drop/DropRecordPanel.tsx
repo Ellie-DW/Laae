@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Character, DropRecord } from '../../types'
 import { formatMesoKorean } from '../../utils'
+import DropAcquisitionList from './DropAcquisitionList'
 import DropAcquisitionSummary from './DropAcquisitionSummary'
 import DropChecklistSection, { type DropAddItem } from './DropChecklistSection'
 import DropSaleSection, { type DropSaleItem } from './DropSaleSection'
@@ -11,6 +12,7 @@ interface DropRecordPanelProps {
   drops: DropRecord[]
   onAdd: (data: { characterId: string; itemName: string; meso: number; memo?: string; recordDate: string }) => Promise<void>
   onSell: (items: DropSaleItem[]) => Promise<void>
+  onUpdate: (id: string, data: { recordDate?: string; memo?: string | null }) => Promise<void>
   onRemove: (id: string) => Promise<void>
   embedded?: boolean
 }
@@ -20,23 +22,40 @@ export default function DropRecordPanel({
   drops,
   onAdd,
   onSell,
+  onUpdate,
   onRemove,
   embedded,
 }: DropRecordPanelProps) {
   const [filterCharacterId, setFilterCharacterId] = useState<string | null>(null)
+  const [addCharacterId, setAddCharacterId] = useState(() => characters[0]?.id ?? '')
+
+  useEffect(() => {
+    if (characters.length === 0) {
+      setAddCharacterId('')
+      return
+    }
+    if (!characters.some((c) => c.id === addCharacterId)) {
+      setAddCharacterId(characters[0].id)
+    }
+  }, [characters, addCharacterId])
+
+  useEffect(() => {
+    if (filterCharacterId) setAddCharacterId(filterCharacterId)
+  }, [filterCharacterId])
 
   const charNameById = useMemo(
     () => Object.fromEntries(characters.map((c) => [c.id, c.name])),
     [characters]
   )
 
-  const activeCharacter = filterCharacterId
-    ? characters.find((c) => c.id === filterCharacterId) ?? null
-    : null
-
   const visibleDrops = useMemo(
     () => (filterCharacterId ? drops.filter((d) => d.characterId === filterCharacterId) : drops),
     [drops, filterCharacterId]
+  )
+
+  const acquisitionRecords = useMemo(
+    () => visibleDrops.filter((d) => d.meso === 0),
+    [visibleDrops]
   )
 
   const saleRecords = visibleDrops.filter((d) => d.meso > 0)
@@ -44,10 +63,10 @@ export default function DropRecordPanel({
   const showCharacter = filterCharacterId === null
 
   const handleChecklistAdd = async (items: DropAddItem[]) => {
-    if (!activeCharacter) return
+    if (!addCharacterId) return
     for (const item of items) {
       await onAdd({
-        characterId: activeCharacter.id,
+        characterId: addCharacterId,
         itemName: item.itemName,
         meso: 0,
         recordDate: item.recordDate,
@@ -74,8 +93,8 @@ export default function DropRecordPanel({
         <div>
           <h1 className="text-2xl font-bold text-slate-100">보스 드랍</h1>
           <p className="text-sm text-slate-500 mt-1">
-            {activeCharacter
-              ? `${activeCharacter.name} · 획득·판매 기록`
+            {filterCharacterId
+              ? `${charNameById[filterCharacterId]} · 획득·판매 기록`
               : `${characters.length}개 캐릭터 통합 드랍 현황`}
           </p>
         </div>
@@ -102,15 +121,22 @@ export default function DropRecordPanel({
         <p className="text-xs text-slate-500 mt-1">{saleRecords.length}건 판매 기록</p>
       </div>
 
-      <DropAcquisitionSummary drops={visibleDrops} characterId={filterCharacterId ?? undefined} />
+      <DropChecklistSection
+        characters={characters}
+        characterId={addCharacterId}
+        onCharacterChange={setAddCharacterId}
+        onAdd={handleChecklistAdd}
+      />
 
-      {activeCharacter ? (
-        <DropChecklistSection onAdd={handleChecklistAdd} />
-      ) : (
-        <div className="panel-light p-5 text-center">
-          <p className="text-sm text-slate-400">획득 기록은 캐릭터를 선택하면 추가할 수 있어요</p>
-        </div>
-      )}
+      <DropAcquisitionList
+        records={acquisitionRecords}
+        characters={characters}
+        showCharacter={showCharacter}
+        onUpdate={onUpdate}
+        onRemove={onRemove}
+      />
+
+      <DropAcquisitionSummary drops={visibleDrops} characterId={filterCharacterId ?? undefined} />
 
       <DropSaleSection drops={drops} onSell={handleSell} />
 

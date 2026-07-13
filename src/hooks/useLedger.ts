@@ -12,6 +12,7 @@ import {
   deleteGatherRecord,
   addDropRecord,
   deleteDropRecord,
+  updateDropRecord,
   sellDropRecords,
   upsertGoal,
   deleteGoal,
@@ -325,6 +326,15 @@ export function useLedger(
     setDrops((prev) => prev.filter((d) => d.id !== id))
   }, [])
 
+  const updateDrop = useCallback(
+    async (id: string, data: { recordDate?: string; memo?: string | null }) => {
+      const row = await updateDropRecord(id, data)
+      setDrops((prev) => prev.map((d) => (d.id === id ? row : d)))
+      setError(null)
+    },
+    []
+  )
+
   const saveGoal = useCallback(
     async (data: {
       characterId: string | null
@@ -466,6 +476,7 @@ export function useLedger(
     createDrop,
     sellDrops,
     removeDrop,
+    updateDrop,
     saveGoal,
     removeGoal,
     createDiaryNote,
