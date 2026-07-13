@@ -122,7 +122,7 @@ export default function CumulativeDashboardSection({
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-slate-500 font-medium">장비</p>
+            <p className="text-xs text-slate-500 font-medium">보스 드랍</p>
             <span className="text-xs font-bold text-maple-400">
               {dropSummary.acquiredKinds}<span className="font-normal text-slate-500">종</span>
               {' · '}
