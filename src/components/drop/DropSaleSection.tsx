@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import type { DropRecord } from '../../types'
 import { PREDEFINED_DROP_ITEMS, getAcquisitionCounts, getDropItemGroups } from '../../data/dropItems'
-import { buildDropSaleMemo, calcDropSale, type DropSaleFeeRate } from '../../lib/dropSale'
+import { buildDropSaleMemo, calcDropSale, normalizeDropSaleRatios } from '../../lib/dropSale'
 import { formatMesoKorean, getToday, parseMesoInput } from '../../utils'
 import DropItemIcon from './DropItemIcon'
+import DropSaleSplitPanel from './DropSaleSplitPanel'
 
 export interface DropSaleItem {
   itemName: string
@@ -17,15 +18,14 @@ interface DropSaleSectionProps {
   onSell: (items: DropSaleItem[]) => Promise<void>
 }
 
-const FEE_OPTIONS: DropSaleFeeRate[] = [5, 3]
-const PARTY_SIZES = [1, 2, 3, 4, 5, 6] as const
-
 export default function DropSaleSection({ drops, onSell }: DropSaleSectionProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [recordDate, setRecordDate] = useState(getToday())
   const [mesoInput, setMesoInput] = useState('')
-  const [feeRate, setFeeRate] = useState<DropSaleFeeRate>(5)
+  const [feeRate, setFeeRate] = useState<5 | 3>(5)
   const [partySize, setPartySize] = useState(6)
+  const [ratios, setRatios] = useState<number[]>(() => Array(6).fill(1))
+  const [useCustomRatios, setUseCustomRatios] = useState(false)
   const [selling, setSelling] = useState(false)
 
   const stockByName = useMemo(() => getAcquisitionCounts(drops), [drops])
@@ -50,8 +50,14 @@ export default function DropSaleSection({ drops, onSell }: DropSaleSectionProps)
 
   const grossMeso = useMemo(() => parseMesoInput(mesoInput), [mesoInput])
   const saleCalc = useMemo(
-    () => calcDropSale({ grossMeso, feeRate, partySize }),
-    [grossMeso, feeRate, partySize]
+    () =>
+      calcDropSale({
+        grossMeso,
+        feeRate,
+        partySize,
+        ratios: normalizeDropSaleRatios(partySize, useCustomRatios ? ratios : undefined),
+      }),
+    [grossMeso, feeRate, partySize, ratios, useCustomRatios]
   )
 
   const toggleSelect = (id: string) => {
@@ -92,7 +98,7 @@ export default function DropSaleSection({ drops, onSell }: DropSaleSectionProps)
       <div className="mb-4">
         <h2 className="font-semibold text-slate-100">판매 기록</h2>
         <p className="text-xs text-slate-500 mt-0.5">
-          수수료·인원 분배를 반영해 내 몫만 기록합니다. 판매 시 획득 기록에서 1개씩 차감돼요.
+          수수료·인원·비율 분배를 반영해 파티장 몫만 기록합니다.
         </p>
       </div>
 
@@ -166,74 +172,20 @@ export default function DropSaleSection({ drops, onSell }: DropSaleSectionProps)
             </div>
           </div>
 
-          <div>
-            <label className="text-xs text-slate-500 mb-2 block">수수료</label>
-            <div className="flex gap-2">
-              {FEE_OPTIONS.map((rate) => (
-                <button
-                  key={rate}
-                  type="button"
-                  onClick={() => setFeeRate(rate)}
-                  className={`flex-1 py-2 rounded-lg text-sm border transition-colors ${
-                    feeRate === rate
-                      ? 'bg-maple-500/20 border-maple-500/40 text-maple-300'
-                      : 'border-dark-border text-slate-500 hover:text-slate-300'
-                  }`}
-                >
-                  {rate}%
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs text-slate-500 mb-2 block">파티 인원 (분배)</label>
-            <div className="grid grid-cols-6 gap-2">
-              {PARTY_SIZES.map((size) => (
-                <button
-                  key={size}
-                  type="button"
-                  onClick={() => setPartySize(size)}
-                  className={`py-2 rounded-lg text-sm border transition-colors ${
-                    partySize === size
-                      ? 'bg-cyber-500/20 border-cyber-500/40 text-cyber-300'
-                      : 'border-dark-border text-slate-500 hover:text-slate-300'
-                  }`}
-                >
-                  {size}인
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {saleCalc && (
-            <div className="rounded-lg bg-dark-surface/50 border border-dark-border p-4 space-y-2">
-              <p className="text-xs text-slate-500 font-medium">분배 계산</p>
-              <CalcRow label="판매 수수료" value={`-${formatMesoKorean(saleCalc.saleFeeAmount)}`} tone="muted" />
-              <CalcRow label="수수료 차감 후" value={formatMesoKorean(saleCalc.afterSaleFee)} />
-              <CalcRow
-                label={`${saleCalc.partySize}인 1인 몫`}
-                value={formatMesoKorean(saleCalc.sharePerPerson)}
-              />
-              {saleCalc.partySize > 1 && (
-                <CalcRow
-                  label="파티원 1인 실수령"
-                  value={formatMesoKorean(saleCalc.partyMemberReceive)}
-                  hint="지급 시 수수료 반영"
-                />
-              )}
-              <div className="pt-2 border-t border-dark-border/60">
-                <CalcRow
-                  label="내 기록 수익"
-                  value={formatMesoKorean(saleCalc.myIncome)}
-                  tone="highlight"
-                />
-              </div>
-            </div>
-          )}
+          <DropSaleSplitPanel
+            mesoInput={mesoInput}
+            feeRate={feeRate}
+            partySize={partySize}
+            ratios={ratios}
+            useCustomRatios={useCustomRatios}
+            onFeeRateChange={setFeeRate}
+            onPartySizeChange={setPartySize}
+            onRatiosChange={setRatios}
+            onUseCustomRatiosChange={setUseCustomRatios}
+          />
 
           <p className="text-[11px] text-slate-600">
-            여러 항목을 선택하면 각각 같은 조건으로 기록됩니다. 가계부에는 내 몫만 반영돼요.
+            여러 항목을 선택하면 각각 같은 조건으로 기록됩니다.
           </p>
           <button
             type="button"
@@ -245,35 +197,6 @@ export default function DropSaleSection({ drops, onSell }: DropSaleSectionProps)
           </button>
         </div>
       )}
-    </div>
-  )
-}
-
-function CalcRow({
-  label,
-  value,
-  hint,
-  tone = 'default',
-}: {
-  label: string
-  value: string
-  hint?: string
-  tone?: 'default' | 'muted' | 'highlight'
-}) {
-  const valueClass =
-    tone === 'highlight'
-      ? 'text-maple-400 font-bold'
-      : tone === 'muted'
-        ? 'text-red-400/80'
-        : 'text-slate-200 font-medium'
-
-  return (
-    <div className="flex items-center justify-between gap-3 text-sm">
-      <div className="min-w-0">
-        <span className="text-slate-500">{label}</span>
-        {hint && <p className="text-[10px] text-slate-600 mt-0.5">{hint}</p>}
-      </div>
-      <span className={`shrink-0 ${valueClass}`}>{value}</span>
     </div>
   )
 }
