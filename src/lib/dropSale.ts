@@ -1,5 +1,8 @@
 export type DropSaleFeeRate = 5 | 3
 
+/** 0.1억 (1,000만 메소) 단위 내림 */
+export const EOK_TENTH = 10_000_000
+
 export interface DropSaleCalcInput {
   grossMeso: number
   feeRate: DropSaleFeeRate
@@ -43,8 +46,57 @@ export function normalizeDropSaleRatios(partySize: number, ratios?: number[]): n
   return next.map((r) => (r > 0 ? r : 1))
 }
 
-function floor100(amount: number): number {
-  return Math.floor(amount / 100) * 100
+/** 0.1억 단위 내림 (소수점 버림) */
+export function floorTenthEok(amount: number): number {
+  if (amount <= 0) return 0
+  return Math.floor(amount / EOK_TENTH) * EOK_TENTH
+}
+
+function deliveryForReceive(targetReceive: number, fee: number): number {
+  if (targetReceive <= 0) return 0
+
+  let start = floorTenthEok(targetReceive / (1 - fee))
+  if (start < EOK_TENTH) start = EOK_TENTH
+
+  for (let delivery = start; delivery <= targetReceive * 2; delivery += EOK_TENTH) {
+    if (floorTenthEok(delivery * (1 - fee)) === targetReceive) {
+      return delivery
+    }
+  }
+
+  return start
+}
+
+function findSplitBaseUnit(
+  afterSaleFee: number,
+  partySize: number,
+  fee: number,
+  ratios: number[]
+): number | null {
+  if (partySize === 1) return afterSaleFee
+
+  const maxBase = floorTenthEok(afterSaleFee / ratios.reduce((sum, ratio) => sum + ratio, 0))
+  for (let baseUnit = maxBase; baseUnit >= EOK_TENTH; baseUnit -= EOK_TENTH) {
+    const targetReceives = ratios.map((ratio) => floorTenthEok(baseUnit * ratio))
+    const memberDeliveries = ratios.map((_, index) => {
+      if (index === 0) return 0
+      return deliveryForReceive(targetReceives[index], fee)
+    })
+
+    const memberReceives = ratios.map((_, index) => {
+      if (index === 0) return targetReceives[index]
+      return floorTenthEok(memberDeliveries[index] * (1 - fee))
+    })
+
+    if (!memberReceives.every((amount, index) => amount === targetReceives[index])) continue
+
+    const leaderKeep = afterSaleFee - memberDeliveries.slice(1).reduce((sum, amount) => sum + amount, 0)
+    if (leaderKeep === memberReceives[0] && leaderKeep > 0) {
+      return baseUnit
+    }
+  }
+
+  return null
 }
 
 export function calcDropSale(input: DropSaleCalcInput): DropSaleCalcResult | null {
@@ -56,28 +108,48 @@ export function calcDropSale(input: DropSaleCalcInput): DropSaleCalcResult | nul
   if (sumRatios <= 0) return null
 
   const fee = feeRate / 100
-  const saleFeeAmount = Math.round(grossMeso * fee)
-  const afterSaleFee = grossMeso - saleFeeAmount
+  const afterSaleFee = floorTenthEok(grossMeso * (1 - fee))
+  const saleFeeAmount = grossMeso - afterSaleFee
   const labels = getDropSaleMemberLabels(partySize)
-  const netShares = ratios.map((ratio) => (afterSaleFee * ratio) / sumRatios)
-  const actualReceives = netShares.map((share) => floor100(share))
-  const deliveryAmounts = new Array(partySize).fill(0)
 
   if (partySize === 1) {
-    deliveryAmounts[0] = afterSaleFee
-  } else {
-    for (let i = 1; i < partySize; i++) {
-      deliveryAmounts[i] = floor100(actualReceives[i] / (1 - fee))
+    const member: DropSaleMemberResult = {
+      label: labels[0],
+      ratio: ratios[0],
+      ratioPercent: 100,
+      isLeader: true,
+      netShare: afterSaleFee,
+      deliveryAmount: afterSaleFee,
+      actualReceive: afterSaleFee,
+      footerLabel: '실수령',
     }
-    deliveryAmounts[0] = afterSaleFee - deliveryAmounts.slice(1).reduce((sum, amount) => sum + amount, 0)
+
+    return {
+      grossMeso,
+      feeRate,
+      partySize,
+      saleFeeAmount,
+      afterSaleFee,
+      ratioLabel: ratios.join(' : '),
+      members: [member],
+      myIncome: afterSaleFee,
+    }
   }
 
-  if (deliveryAmounts[0] < 0) return null
+  const baseUnit = findSplitBaseUnit(afterSaleFee, partySize, fee, ratios)
+  if (baseUnit == null) return null
+
+  const actualReceives = ratios.map((ratio) => floorTenthEok(baseUnit * ratio))
+  const memberDeliveries = ratios.map((_, index) => {
+    if (index === 0) return 0
+    return deliveryForReceive(actualReceives[index], fee)
+  })
+  const leaderKeep = afterSaleFee - memberDeliveries.slice(1).reduce((sum, amount) => sum + amount, 0)
 
   const members: DropSaleMemberResult[] = labels.map((label, index) => {
     const isLeader = index === 0
     const actualReceive = actualReceives[index]
-    const deliveryAmount = isLeader ? deliveryAmounts[0] : deliveryAmounts[index]
+    const deliveryAmount = isLeader ? leaderKeep : memberDeliveries[index]
 
     return {
       label,
@@ -99,18 +171,15 @@ export function calcDropSale(input: DropSaleCalcInput): DropSaleCalcResult | nul
     afterSaleFee,
     ratioLabel: ratios.join(' : '),
     members,
-    myIncome: deliveryAmounts[0],
+    myIncome: leaderKeep,
   }
 }
 
 export function buildDropSaleMemo(result: DropSaleCalcResult): string {
   const parts = [`${result.feeRate}%`, `${result.partySize}인`, `비율 ${result.ratioLabel}`]
   if (result.partySize > 1) {
-    const memberPreview = result.members
-      .filter((m) => !m.isLeader)
-      .map((m) => `${m.label} ${formatMesoShort(m.deliveryAmount)}`)
-      .join(', ')
-    if (memberPreview) parts.push(memberPreview)
+    const receivePreview = result.members[0]?.actualReceive
+    if (receivePreview) parts.push(`1인 실수령 ${formatMesoShort(receivePreview)}`)
   }
   return parts.join(' · ')
 }
@@ -118,11 +187,25 @@ export function buildDropSaleMemo(result: DropSaleCalcResult): string {
 function formatMesoShort(amount: number): string {
   if (amount >= 100_000_000) {
     const eok = amount / 100_000_000
-    return Number.isInteger(eok) ? `${eok}억` : `${eok.toFixed(1)}억`
+    const floored = Math.floor(eok * 10) / 10
+    return Number.isInteger(floored) ? `${floored}억` : `${floored.toFixed(1)}억`
   }
   return `${amount.toLocaleString('ko-KR')}메소`
 }
 
 export function formatDropSaleAmount(amount: number): string {
-  return amount.toLocaleString('ko-KR')
+  if (amount >= EOK_TENTH) {
+    const eok = amount / 100_000_000
+    const floored = Math.floor(eok * 10) / 10
+    if (floored >= 1) {
+      return Number.isInteger(floored)
+        ? `${floored.toLocaleString('ko-KR')}억`
+        : `${floored.toFixed(1)}억`
+    }
+  }
+  return `${amount.toLocaleString('ko-KR')}메소`
+}
+
+export function formatDropSaleAmountDetail(amount: number): string {
+  return `${formatDropSaleAmount(amount)} (${amount.toLocaleString('ko-KR')}메소)`
 }

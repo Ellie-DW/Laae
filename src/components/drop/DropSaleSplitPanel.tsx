@@ -3,6 +3,7 @@ import {
   buildDropSaleMemo,
   calcDropSale,
   formatDropSaleAmount,
+  formatDropSaleAmountDetail,
   getDropSaleMemberLabels,
   normalizeDropSaleRatios,
   type DropSaleCalcResult,
@@ -138,8 +139,8 @@ export default function DropSaleSplitPanel({
         {useCustomRatios && (
           <div className="p-4 space-y-4 bg-dark-surface/30 border-t border-cyber-500/15">
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              실수령 기준으로 비율을 나눕니다. 파티원에게 보낼 금액은 수수료를 포함해 100메소 단위로
-              내림 계산하고, 파티장은 남은 금액을 가져갑니다.
+              판매 수수료 → 분배 전달 수수료 순으로 차감됩니다. 최종 실수령은 0.1억 단위로 내림하고,
+              균등 분배면 모두 같은 금액을 받습니다.
             </p>
 
             <div className={`grid gap-2 ${partySize <= 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-3'}`}>
@@ -202,7 +203,7 @@ export function DropSaleResultCards({ saleCalc }: { saleCalc: DropSaleCalcResult
       <div className="px-4 py-3 bg-gradient-to-r from-violet-900/40 via-violet-700/20 to-cyber-900/30 border-b border-violet-500/15">
         <p className="text-sm font-semibold text-slate-100">계산 결과</p>
         <p className="text-[11px] text-slate-500 mt-0.5">
-          판매 {formatMesoKorean(saleCalc.grossMeso)} · 수수료 {saleCalc.feeRate}% · 실수령{' '}
+          판매 {formatMesoKorean(saleCalc.grossMeso)} · 수수료 {saleCalc.feeRate}% · 판매 후{' '}
           {formatMesoKorean(saleCalc.afterSaleFee)}
         </p>
       </div>
@@ -233,15 +234,13 @@ export function DropSaleResultCards({ saleCalc }: { saleCalc: DropSaleCalcResult
               <p className="text-2xl font-bold text-slate-100 tracking-tight">
                 {formatDropSaleAmount(member.actualReceive)}
               </p>
+              <p className="text-[10px] text-slate-600 mt-1">
+                {formatDropSaleAmountDetail(member.actualReceive)}
+              </p>
               <p className="text-[11px] text-slate-500 mt-2">{member.footerLabel}</p>
               {!member.isLeader && saleCalc.partySize > 1 && (
                 <p className="text-[10px] text-slate-600 mt-1">
-                  전달 금액 {formatDropSaleAmount(member.deliveryAmount)}
-                </p>
-              )}
-              {member.isLeader && saleCalc.partySize > 1 && (
-                <p className="text-[10px] text-slate-600 mt-1">
-                  보유 {formatDropSaleAmount(member.deliveryAmount)}
+                  전달 {formatDropSaleAmount(member.deliveryAmount)}
                 </p>
               )}
             </div>
@@ -249,7 +248,7 @@ export function DropSaleResultCards({ saleCalc }: { saleCalc: DropSaleCalcResult
         </div>
 
         <p className="text-[10px] text-slate-600 leading-relaxed">
-          파티원 전달 금액을 먼저 계산한 뒤, 파티장이 남은 금액을 가져갑니다. 가계부에는 파티장 몫{' '}
+          판매 수수료와 분배 수수료를 모두 반영한 최종 실수령입니다. 가계부에는 파티장 몫{' '}
           <span className="text-maple-400">{formatMesoKorean(saleCalc.myIncome)}</span>만 기록돼요.
         </p>
       </div>
