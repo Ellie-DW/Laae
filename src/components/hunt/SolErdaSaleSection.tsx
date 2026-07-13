@@ -1,8 +1,11 @@
 import { useMemo, useState } from 'react'
 import type { HuntRecord } from '../../types'
 import { getHeldSolErdaFragments } from '../../lib/huntStats'
+import { calcDropSale, type DropSaleFeeRate } from '../../lib/dropSale'
 import { formatMesoKorean, getToday, parseMesoInput } from '../../utils'
 import { HeldSolErdaStat, SolErdaSectionTitle } from './SolErdaIcon'
+
+const FEE_OPTIONS: DropSaleFeeRate[] = [5, 3]
 
 interface SolErdaSaleSectionProps {
   hunts: HuntRecord[]
@@ -13,19 +16,25 @@ interface SolErdaSaleSectionProps {
 export default function SolErdaSaleSection({ hunts, characterId, onSell }: SolErdaSaleSectionProps) {
   const [quantityInput, setQuantityInput] = useState('')
   const [mesoInput, setMesoInput] = useState('')
+  const [feeRate, setFeeRate] = useState<DropSaleFeeRate>(5)
   const [recordDate, setRecordDate] = useState(getToday())
   const [selling, setSelling] = useState(false)
 
   const held = useMemo(() => getHeldSolErdaFragments(hunts, characterId), [hunts, characterId])
   const quantity = quantityInput.trim() ? Math.max(0, parseInt(quantityInput, 10) || 0) : 0
-  const meso = parseMesoInput(mesoInput)
-  const canSell = held > 0 && quantity > 0 && quantity <= held && meso > 0 && !selling
+  const grossMeso = parseMesoInput(mesoInput)
+  const saleCalc = useMemo(
+    () => calcDropSale({ grossMeso, feeRate, partySize: 1 }),
+    [grossMeso, feeRate]
+  )
+  const netMeso = saleCalc?.myIncome ?? 0
+  const canSell = held > 0 && quantity > 0 && quantity <= held && netMeso > 0 && !selling
 
   const handleSell = async () => {
-    if (!canSell) return
+    if (!canSell || !saleCalc) return
     setSelling(true)
     try {
-      await onSell({ quantity, meso, recordDate })
+      await onSell({ quantity, meso: saleCalc.myIncome, recordDate })
       setQuantityInput('')
       setMesoInput('')
     } finally {
@@ -37,7 +46,7 @@ export default function SolErdaSaleSection({ hunts, characterId, onSell }: SolEr
     <div className="panel-light p-5">
       <SolErdaSectionTitle
         title="솔 에르다 조각 판매"
-        description="판매 시 보유 조각이 차감되고 솔 에르다 조각 판매 수익에 반영됩니다."
+        description="판매 수수료를 반영한 실수령 금액이 기록되고, 보유 조각이 차감됩니다."
       />
 
       <div className="mb-4">
@@ -61,17 +70,43 @@ export default function SolErdaSaleSection({ hunts, characterId, onSell }: SolEr
             />
           </div>
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">판매 금액 (억 단위)</label>
+            <label className="text-xs text-slate-500 mb-1 block">총 판매가 (억 단위)</label>
             <input
               value={mesoInput}
               onChange={(e) => setMesoInput(e.target.value)}
               placeholder="예: 1, 0.5, 1.5억"
               className="input-field text-sm"
             />
-            {meso > 0 && (
-              <p className="text-[11px] text-slate-600 mt-1">{formatMesoKorean(meso)}</p>
-            )}
           </div>
+          <div>
+            <label className="text-xs text-slate-500 mb-2 block">수수료</label>
+            <div className="flex gap-2">
+              {FEE_OPTIONS.map((rate) => (
+                <button
+                  key={rate}
+                  type="button"
+                  onClick={() => setFeeRate(rate)}
+                  className={`flex-1 py-2 rounded-lg text-sm border transition-colors ${
+                    feeRate === rate
+                      ? 'bg-maple-500/20 border-maple-500/40 text-maple-300'
+                      : 'border-dark-border text-slate-500 hover:text-slate-300'
+                  }`}
+                >
+                  {rate}%
+                </button>
+              ))}
+            </div>
+          </div>
+          {saleCalc && grossMeso > 0 && (
+            <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3">
+              <p className="text-[11px] text-slate-500">
+                판매 {formatMesoKorean(saleCalc.grossMeso)} · 수수료 {saleCalc.feeRate}% · 실수령{' '}
+                <span className="text-violet-300 font-semibold">
+                  {formatMesoKorean(saleCalc.myIncome)}
+                </span>
+              </p>
+            </div>
+          )}
           <div>
             <label className="text-xs text-slate-500 mb-1 block">판매일</label>
             <input
