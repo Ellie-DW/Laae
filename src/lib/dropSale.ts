@@ -71,10 +71,39 @@ interface SplitPlan {
   receives: number[]
   deliveries: number[]
   leaderKeep: number
+}
+
+interface SplitCandidate extends SplitPlan {
   diff: number
 }
 
-function trySplitBaseUnit(
+function tryEqualSplitBaseUnit(
+  afterSaleFee: number,
+  partySize: number,
+  feeRate: DropSaleFeeRate,
+  baseUnit: number
+): SplitPlan | null {
+  if (baseUnit <= 0) return null
+
+  const receives = Array(partySize).fill(baseUnit)
+  const deliveries: number[] = []
+
+  for (let index = 1; index < partySize; index++) {
+    const delivery = deliveryForReceive(baseUnit, feeRate)
+    if (actualReceiveFromDelivery(delivery, feeRate) !== baseUnit) {
+      return null
+    }
+    deliveries.push(delivery)
+  }
+
+  const totalDelivery = deliveries.reduce((sum, amount) => sum + amount, 0)
+  const leaderKeep = afterSaleFee - totalDelivery
+  if (leaderKeep <= 0) return null
+
+  return { receives, deliveries, leaderKeep }
+}
+
+function tryRatioSplitBaseUnit(
   afterSaleFee: number,
   partySize: number,
   feeRate: DropSaleFeeRate,
@@ -87,9 +116,8 @@ function trySplitBaseUnit(
   const deliveries: number[] = []
 
   for (let index = 1; index < partySize; index++) {
-    const targetReceive = receives[index]
-    const delivery = deliveryForReceive(targetReceive, feeRate)
-    if (actualReceiveFromDelivery(delivery, feeRate) !== targetReceive) {
+    const delivery = deliveryForReceive(receives[index], feeRate)
+    if (actualReceiveFromDelivery(delivery, feeRate) !== receives[index]) {
       return null
     }
     deliveries.push(delivery)
@@ -99,12 +127,7 @@ function trySplitBaseUnit(
   const leaderKeep = afterSaleFee - totalDelivery
   if (leaderKeep <= 0) return null
 
-  return {
-    receives,
-    deliveries,
-    leaderKeep,
-    diff: Math.abs(leaderKeep - receives[0]),
-  }
+  return { receives, deliveries, leaderKeep }
 }
 
 function estimateEqualBaseUnit(afterSaleFee: number, partySize: number, feeRate: DropSaleFeeRate): number {
@@ -112,26 +135,17 @@ function estimateEqualBaseUnit(afterSaleFee: number, partySize: number, feeRate:
   return Math.floor((afterSaleFee * (100 - feeRate)) / ((partySize - 1) * 100 + (100 - feeRate)))
 }
 
-function estimateRatioBaseUnit(
-  afterSaleFee: number,
-  feeRate: DropSaleFeeRate,
-  ratios: number[]
-): number {
-  const sumRatios = ratios.reduce((sum, ratio) => sum + ratio, 0)
-  if (sumRatios <= 0) return 0
-
+function estimateRatioBaseUnit(afterSaleFee: number, feeRate: DropSaleFeeRate, ratios: number[]): number {
   const memberRatioSum = ratios.slice(1).reduce((sum, ratio) => sum + ratio, 0)
-  const deliveryFactor = memberRatioSum / (100 - feeRate)
-  const denominator = sumRatios + deliveryFactor
+  const denominator = ratios[0] + (100 * memberRatioSum) / (100 - feeRate)
   if (denominator <= 0) return 0
-
   return Math.floor(afterSaleFee / denominator)
 }
 
-function pickBestPlan(plans: SplitPlan[]): SplitPlan | null {
-  if (plans.length === 0) return null
+function pickBestSplitCandidate(candidates: SplitCandidate[]): SplitPlan | null {
+  if (candidates.length === 0) return null
 
-  return plans.reduce((best, plan) => {
+  return candidates.reduce((best, plan) => {
     if (plan.diff < best.diff) return plan
     if (plan.diff > best.diff) return best
     if (plan.leaderKeep >= plan.receives[0] && best.leaderKeep < best.receives[0]) return plan
@@ -141,46 +155,34 @@ function pickBestPlan(plans: SplitPlan[]): SplitPlan | null {
   })
 }
 
-function findSplitPlan(
+function collectSplitCandidates(
   afterSaleFee: number,
-  partySize: number,
-  feeRate: DropSaleFeeRate,
-  ratios: number[]
-): SplitPlan | null {
-  if (partySize === 1) {
-    return {
-      receives: [afterSaleFee],
-      deliveries: [],
-      leaderKeep: afterSaleFee,
-      diff: 0,
-    }
+  tryBaseUnit: (baseUnit: number) => SplitPlan | null,
+  estimate: number,
+  searchRadius: number
+): SplitCandidate[] {
+  const candidates: SplitCandidate[] = []
+
+  const addCandidate = (plan: SplitPlan | null) => {
+    if (!plan) return
+    candidates.push({ ...plan, diff: Math.abs(plan.leaderKeep - plan.receives[0]) })
   }
 
-  const sumRatios = ratios.reduce((sum, ratio) => sum + ratio, 0)
-  const isEqualSplit = ratios.every((ratio) => ratio === ratios[0])
-  const estimate = isEqualSplit
-    ? estimateEqualBaseUnit(afterSaleFee, partySize, feeRate)
-    : estimateRatioBaseUnit(afterSaleFee, feeRate, ratios)
-
-  const maxBase = Math.floor(afterSaleFee / sumRatios)
-  const searchRadius = isEqualSplit ? 5000 : 20000
-  const candidates: SplitPlan[] = []
-
-  for (let baseUnit = Math.min(maxBase, estimate + searchRadius); baseUnit >= Math.max(1, estimate - searchRadius); baseUnit--) {
-    const plan = trySplitBaseUnit(afterSaleFee, partySize, feeRate, ratios, baseUnit)
-    if (plan) candidates.push(plan)
+  for (
+    let baseUnit = estimate + searchRadius;
+    baseUnit >= Math.max(1, estimate - searchRadius);
+    baseUnit--
+  ) {
+    addCandidate(tryBaseUnit(baseUnit))
   }
-
-  let best = pickBestPlan(candidates)
-  if (best?.diff === 0) return best
 
   let lo = 1
-  let hi = maxBase
+  let hi = afterSaleFee
   let maxValidBase = 0
 
   while (lo <= hi) {
     const mid = Math.floor((lo + hi) / 2)
-    const plan = trySplitBaseUnit(afterSaleFee, partySize, feeRate, ratios, mid)
+    const plan = tryBaseUnit(mid)
     if (plan) {
       maxValidBase = mid
       lo = mid + 1
@@ -195,13 +197,76 @@ function findSplitPlan(
       baseUnit >= Math.max(1, maxValidBase - searchRadius);
       baseUnit--
     ) {
-      const plan = trySplitBaseUnit(afterSaleFee, partySize, feeRate, ratios, baseUnit)
-      if (plan) candidates.push(plan)
+      addCandidate(tryBaseUnit(baseUnit))
     }
-    best = pickBestPlan(candidates)
   }
 
-  return best
+  return candidates
+}
+
+function findBestSplitPlan(
+  afterSaleFee: number,
+  tryBaseUnit: (baseUnit: number) => SplitPlan | null,
+  estimate: number,
+  searchRadius: number
+): SplitPlan | null {
+  const candidates = collectSplitCandidates(afterSaleFee, tryBaseUnit, estimate, searchRadius)
+  const exactMatch = candidates.find((plan) => plan.diff === 0)
+  if (exactMatch) return exactMatch
+  return pickBestSplitCandidate(candidates)
+}
+
+/** 균등 분배: 모든 파티원이 같은 실수령을 받도록 계산 */
+function findEqualSplitPlan(
+  afterSaleFee: number,
+  partySize: number,
+  feeRate: DropSaleFeeRate
+): SplitPlan | null {
+  const estimate = estimateEqualBaseUnit(afterSaleFee, partySize, feeRate)
+  return findBestSplitPlan(
+    afterSaleFee,
+    (baseUnit) => tryEqualSplitBaseUnit(afterSaleFee, partySize, feeRate, baseUnit),
+    estimate,
+    5000
+  )
+}
+
+/** 비율 분배: 실수령이 입력 비율(예: 2:1:1)이 되도록 baseUnit을 찾아 계산 */
+function findRatioSplitPlan(
+  afterSaleFee: number,
+  partySize: number,
+  feeRate: DropSaleFeeRate,
+  ratios: number[]
+): SplitPlan | null {
+  const estimate = estimateRatioBaseUnit(afterSaleFee, feeRate, ratios)
+  return findBestSplitPlan(
+    afterSaleFee,
+    (baseUnit) => tryRatioSplitBaseUnit(afterSaleFee, partySize, feeRate, ratios, baseUnit),
+    estimate,
+    20000
+  )
+}
+
+function findSplitPlan(
+  afterSaleFee: number,
+  partySize: number,
+  feeRate: DropSaleFeeRate,
+  ratios: number[]
+): SplitPlan | null {
+  if (partySize === 1) {
+    return {
+      receives: [afterSaleFee],
+      deliveries: [],
+      leaderKeep: afterSaleFee,
+    }
+  }
+
+  const isEqualSplit = ratios.every((ratio) => ratio === ratios[0])
+  if (isEqualSplit) {
+    return findEqualSplitPlan(afterSaleFee, partySize, feeRate)
+  }
+
+  return findRatioSplitPlan(afterSaleFee, partySize, feeRate, ratios)
 }
 
 export function calcDropSale(input: DropSaleCalcInput): DropSaleCalcResult | null {
@@ -231,7 +296,7 @@ export function calcDropSale(input: DropSaleCalcInput): DropSaleCalcResult | nul
       netShare: actualReceive,
       deliveryAmount,
       actualReceive,
-      footerLabel: isLeader ? '실수령' : '실수령',
+      footerLabel: '실수령',
     }
   })
 

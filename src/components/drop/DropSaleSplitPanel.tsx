@@ -137,8 +137,9 @@ export default function DropSaleSplitPanel({
         {useCustomRatios && (
           <div className="p-4 space-y-4 bg-dark-surface/30 border-t border-cyber-500/15">
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              판매 수수료 → 분배 전달 수수료 순으로 차감됩니다. 파티원 실수령 기준으로 전달 금액을
-              계산하고, 파티장은 남은 금액을 보유합니다.
+              판매 수수료 → 분배 전달 수수료 순으로 차감됩니다. 입력 비율은 최종 실수령 기준(예:
+              2:1:1)이며, 파티원 전달금액은 수수료를 포함해 역산합니다. 파티장은 전달 후 남은
+              금액을 보유합니다.
             </p>
 
             <div className={`grid gap-2 ${partySize <= 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-3'}`}>
@@ -254,7 +255,7 @@ export function DropSaleResultCards({ saleCalc }: { saleCalc: DropSaleCalcResult
 
         <p className="text-[10px] text-slate-600 leading-relaxed">
           판매 수수료와 분배 수수료를 모두 반영한 최종 실수령입니다. 가계부에는 파티장 몫{' '}
-          <span className="text-maple-400">{formatMesoKorean(saleCalc.myIncome)}</span>만 기록돼요.
+          <span className="text-maple-400">{formatMesoKorean(saleCalc.myIncome)}</span>이 기록돼요.
         </p>
       </div>
     </div>
