@@ -1,8 +1,5 @@
 export type DropSaleFeeRate = 5 | 3
 
-/** 0.1억 (1,000만 메소) 단위 내림 */
-export const EOK_TENTH = 10_000_000
-
 export interface DropSaleCalcInput {
   grossMeso: number
   feeRate: DropSaleFeeRate
@@ -46,57 +43,165 @@ export function normalizeDropSaleRatios(partySize: number, ratios?: number[]): n
   return next.map((r) => (r > 0 ? r : 1))
 }
 
-/** 0.1억 단위 내림 (소수점 버림) */
-export function floorTenthEok(amount: number): number {
+function floorMeso(amount: number): number {
   if (amount <= 0) return 0
-  return Math.floor(amount / EOK_TENTH) * EOK_TENTH
+  return Math.floor(amount)
 }
 
-function deliveryForReceive(targetReceive: number, fee: number): number {
+function actualReceiveFromDelivery(delivery: number, feeRate: DropSaleFeeRate): number {
+  return Math.floor((delivery * (100 - feeRate)) / 100)
+}
+
+/** 파티원이 targetReceive를 실수령하도록 전달할 최소 금액 */
+export function deliveryForReceive(targetReceive: number, feeRate: DropSaleFeeRate): number {
   if (targetReceive <= 0) return 0
 
-  let start = floorTenthEok(targetReceive / (1 - fee))
-  if (start < EOK_TENTH) start = EOK_TENTH
-
-  for (let delivery = start; delivery <= targetReceive * 2; delivery += EOK_TENTH) {
-    if (floorTenthEok(delivery * (1 - fee)) === targetReceive) {
+  let delivery = Math.ceil((targetReceive * 100) / (100 - feeRate))
+  for (let i = 0; i < 1000; i++) {
+    if (actualReceiveFromDelivery(delivery, feeRate) === targetReceive) {
       return delivery
     }
+    delivery += 1
   }
 
-  return start
+  return Math.ceil((targetReceive * 100) / (100 - feeRate))
 }
 
-function findSplitBaseUnit(
+interface SplitPlan {
+  receives: number[]
+  deliveries: number[]
+  leaderKeep: number
+  diff: number
+}
+
+function trySplitBaseUnit(
   afterSaleFee: number,
   partySize: number,
-  fee: number,
+  feeRate: DropSaleFeeRate,
+  ratios: number[],
+  baseUnit: number
+): SplitPlan | null {
+  if (baseUnit <= 0) return null
+
+  const receives = ratios.map((ratio) => Math.floor(baseUnit * ratio))
+  const deliveries: number[] = []
+
+  for (let index = 1; index < partySize; index++) {
+    const targetReceive = receives[index]
+    const delivery = deliveryForReceive(targetReceive, feeRate)
+    if (actualReceiveFromDelivery(delivery, feeRate) !== targetReceive) {
+      return null
+    }
+    deliveries.push(delivery)
+  }
+
+  const totalDelivery = deliveries.reduce((sum, amount) => sum + amount, 0)
+  const leaderKeep = afterSaleFee - totalDelivery
+  if (leaderKeep <= 0) return null
+
+  return {
+    receives,
+    deliveries,
+    leaderKeep,
+    diff: Math.abs(leaderKeep - receives[0]),
+  }
+}
+
+function estimateEqualBaseUnit(afterSaleFee: number, partySize: number, feeRate: DropSaleFeeRate): number {
+  if (partySize <= 1) return afterSaleFee
+  return Math.floor((afterSaleFee * (100 - feeRate)) / ((partySize - 1) * 100 + (100 - feeRate)))
+}
+
+function estimateRatioBaseUnit(
+  afterSaleFee: number,
+  feeRate: DropSaleFeeRate,
   ratios: number[]
-): number | null {
-  if (partySize === 1) return afterSaleFee
+): number {
+  const sumRatios = ratios.reduce((sum, ratio) => sum + ratio, 0)
+  if (sumRatios <= 0) return 0
 
-  const maxBase = floorTenthEok(afterSaleFee / ratios.reduce((sum, ratio) => sum + ratio, 0))
-  for (let baseUnit = maxBase; baseUnit >= EOK_TENTH; baseUnit -= EOK_TENTH) {
-    const targetReceives = ratios.map((ratio) => floorTenthEok(baseUnit * ratio))
-    const memberDeliveries = ratios.map((_, index) => {
-      if (index === 0) return 0
-      return deliveryForReceive(targetReceives[index], fee)
-    })
+  const memberRatioSum = ratios.slice(1).reduce((sum, ratio) => sum + ratio, 0)
+  const deliveryFactor = memberRatioSum / (100 - feeRate)
+  const denominator = sumRatios + deliveryFactor
+  if (denominator <= 0) return 0
 
-    const memberReceives = ratios.map((_, index) => {
-      if (index === 0) return targetReceives[index]
-      return floorTenthEok(memberDeliveries[index] * (1 - fee))
-    })
+  return Math.floor(afterSaleFee / denominator)
+}
 
-    if (!memberReceives.every((amount, index) => amount === targetReceives[index])) continue
+function pickBestPlan(plans: SplitPlan[]): SplitPlan | null {
+  if (plans.length === 0) return null
 
-    const leaderKeep = afterSaleFee - memberDeliveries.slice(1).reduce((sum, amount) => sum + amount, 0)
-    if (leaderKeep === memberReceives[0] && leaderKeep > 0) {
-      return baseUnit
+  return plans.reduce((best, plan) => {
+    if (plan.diff < best.diff) return plan
+    if (plan.diff > best.diff) return best
+    if (plan.leaderKeep >= plan.receives[0] && best.leaderKeep < best.receives[0]) return plan
+    if (plan.leaderKeep < plan.receives[0] && best.leaderKeep >= best.receives[0]) return best
+    if (plan.receives[0] > best.receives[0]) return plan
+    return best
+  })
+}
+
+function findSplitPlan(
+  afterSaleFee: number,
+  partySize: number,
+  feeRate: DropSaleFeeRate,
+  ratios: number[]
+): SplitPlan | null {
+  if (partySize === 1) {
+    return {
+      receives: [afterSaleFee],
+      deliveries: [],
+      leaderKeep: afterSaleFee,
+      diff: 0,
     }
   }
 
-  return null
+  const sumRatios = ratios.reduce((sum, ratio) => sum + ratio, 0)
+  const isEqualSplit = ratios.every((ratio) => ratio === ratios[0])
+  const estimate = isEqualSplit
+    ? estimateEqualBaseUnit(afterSaleFee, partySize, feeRate)
+    : estimateRatioBaseUnit(afterSaleFee, feeRate, ratios)
+
+  const maxBase = Math.floor(afterSaleFee / sumRatios)
+  const searchRadius = isEqualSplit ? 5000 : 20000
+  const candidates: SplitPlan[] = []
+
+  for (let baseUnit = Math.min(maxBase, estimate + searchRadius); baseUnit >= Math.max(1, estimate - searchRadius); baseUnit--) {
+    const plan = trySplitBaseUnit(afterSaleFee, partySize, feeRate, ratios, baseUnit)
+    if (plan) candidates.push(plan)
+  }
+
+  let best = pickBestPlan(candidates)
+  if (best?.diff === 0) return best
+
+  let lo = 1
+  let hi = maxBase
+  let maxValidBase = 0
+
+  while (lo <= hi) {
+    const mid = Math.floor((lo + hi) / 2)
+    const plan = trySplitBaseUnit(afterSaleFee, partySize, feeRate, ratios, mid)
+    if (plan) {
+      maxValidBase = mid
+      lo = mid + 1
+    } else {
+      hi = mid - 1
+    }
+  }
+
+  if (maxValidBase > 0) {
+    for (
+      let baseUnit = maxValidBase;
+      baseUnit >= Math.max(1, maxValidBase - searchRadius);
+      baseUnit--
+    ) {
+      const plan = trySplitBaseUnit(afterSaleFee, partySize, feeRate, ratios, baseUnit)
+      if (plan) candidates.push(plan)
+    }
+    best = pickBestPlan(candidates)
+  }
+
+  return best
 }
 
 export function calcDropSale(input: DropSaleCalcInput): DropSaleCalcResult | null {
@@ -107,49 +212,16 @@ export function calcDropSale(input: DropSaleCalcInput): DropSaleCalcResult | nul
   const sumRatios = ratios.reduce((sum, ratio) => sum + ratio, 0)
   if (sumRatios <= 0) return null
 
-  const fee = feeRate / 100
-  const afterSaleFee = floorTenthEok(grossMeso * (1 - fee))
+  const afterSaleFee = floorMeso((grossMeso * (100 - feeRate)) / 100)
   const saleFeeAmount = grossMeso - afterSaleFee
   const labels = getDropSaleMemberLabels(partySize)
-
-  if (partySize === 1) {
-    const member: DropSaleMemberResult = {
-      label: labels[0],
-      ratio: ratios[0],
-      ratioPercent: 100,
-      isLeader: true,
-      netShare: afterSaleFee,
-      deliveryAmount: afterSaleFee,
-      actualReceive: afterSaleFee,
-      footerLabel: '실수령',
-    }
-
-    return {
-      grossMeso,
-      feeRate,
-      partySize,
-      saleFeeAmount,
-      afterSaleFee,
-      ratioLabel: ratios.join(' : '),
-      members: [member],
-      myIncome: afterSaleFee,
-    }
-  }
-
-  const baseUnit = findSplitBaseUnit(afterSaleFee, partySize, fee, ratios)
-  if (baseUnit == null) return null
-
-  const actualReceives = ratios.map((ratio) => floorTenthEok(baseUnit * ratio))
-  const memberDeliveries = ratios.map((_, index) => {
-    if (index === 0) return 0
-    return deliveryForReceive(actualReceives[index], fee)
-  })
-  const leaderKeep = afterSaleFee - memberDeliveries.slice(1).reduce((sum, amount) => sum + amount, 0)
+  const plan = findSplitPlan(afterSaleFee, partySize, feeRate, ratios)
+  if (!plan) return null
 
   const members: DropSaleMemberResult[] = labels.map((label, index) => {
     const isLeader = index === 0
-    const actualReceive = actualReceives[index]
-    const deliveryAmount = isLeader ? leaderKeep : memberDeliveries[index]
+    const actualReceive = isLeader ? plan.leaderKeep : plan.receives[index]
+    const deliveryAmount = isLeader ? plan.leaderKeep : plan.deliveries[index - 1]
 
     return {
       label,
@@ -159,7 +231,7 @@ export function calcDropSale(input: DropSaleCalcInput): DropSaleCalcResult | nul
       netShare: actualReceive,
       deliveryAmount,
       actualReceive,
-      footerLabel: '실수령',
+      footerLabel: isLeader ? '실수령' : '실수령',
     }
   })
 
@@ -171,41 +243,15 @@ export function calcDropSale(input: DropSaleCalcInput): DropSaleCalcResult | nul
     afterSaleFee,
     ratioLabel: ratios.join(' : '),
     members,
-    myIncome: leaderKeep,
+    myIncome: plan.leaderKeep,
   }
 }
 
 export function buildDropSaleMemo(result: DropSaleCalcResult): string {
   const parts = [`${result.feeRate}%`, `${result.partySize}인`, `비율 ${result.ratioLabel}`]
   if (result.partySize > 1) {
-    const receivePreview = result.members[0]?.actualReceive
-    if (receivePreview) parts.push(`1인 실수령 ${formatMesoShort(receivePreview)}`)
+    const receivePreview = result.members.find((member) => !member.isLeader)?.actualReceive
+    if (receivePreview) parts.push(`1인 실수령 ${receivePreview.toLocaleString('ko-KR')}메소`)
   }
   return parts.join(' · ')
-}
-
-function formatMesoShort(amount: number): string {
-  if (amount >= 100_000_000) {
-    const eok = amount / 100_000_000
-    const floored = Math.floor(eok * 10) / 10
-    return Number.isInteger(floored) ? `${floored}억` : `${floored.toFixed(1)}억`
-  }
-  return `${amount.toLocaleString('ko-KR')}메소`
-}
-
-export function formatDropSaleAmount(amount: number): string {
-  if (amount >= EOK_TENTH) {
-    const eok = amount / 100_000_000
-    const floored = Math.floor(eok * 10) / 10
-    if (floored >= 1) {
-      return Number.isInteger(floored)
-        ? `${floored.toLocaleString('ko-KR')}억`
-        : `${floored.toFixed(1)}억`
-    }
-  }
-  return `${amount.toLocaleString('ko-KR')}메소`
-}
-
-export function formatDropSaleAmountDetail(amount: number): string {
-  return `${formatDropSaleAmount(amount)} (${amount.toLocaleString('ko-KR')}메소)`
 }

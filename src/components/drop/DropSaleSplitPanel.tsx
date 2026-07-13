@@ -2,8 +2,6 @@ import { useMemo } from 'react'
 import {
   buildDropSaleMemo,
   calcDropSale,
-  formatDropSaleAmount,
-  formatDropSaleAmountDetail,
   getDropSaleMemberLabels,
   normalizeDropSaleRatios,
   type DropSaleCalcResult,
@@ -139,8 +137,8 @@ export default function DropSaleSplitPanel({
         {useCustomRatios && (
           <div className="p-4 space-y-4 bg-dark-surface/30 border-t border-cyber-500/15">
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              판매 수수료 → 분배 전달 수수료 순으로 차감됩니다. 최종 실수령은 0.1억 단위로 내림하고,
-              균등 분배면 모두 같은 금액을 받습니다.
+              판매 수수료 → 분배 전달 수수료 순으로 차감됩니다. 파티원 실수령 기준으로 전달 금액을
+              계산하고, 파티장은 남은 금액을 보유합니다.
             </p>
 
             <div className={`grid gap-2 ${partySize <= 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-3'}`}>
@@ -231,17 +229,24 @@ export function DropSaleResultCards({ saleCalc }: { saleCalc: DropSaleCalcResult
                 </span>
                 <span className="text-[10px] text-slate-500">{member.ratioPercent.toFixed(1)}%</span>
               </div>
-              <p className="text-2xl font-bold text-slate-100 tracking-tight">
-                {formatDropSaleAmount(member.actualReceive)}
-              </p>
-              <p className="text-[10px] text-slate-600 mt-1">
-                {formatDropSaleAmountDetail(member.actualReceive)}
-              </p>
-              <p className="text-[11px] text-slate-500 mt-2">{member.footerLabel}</p>
-              {!member.isLeader && saleCalc.partySize > 1 && (
-                <p className="text-[10px] text-slate-600 mt-1">
-                  전달 {formatDropSaleAmount(member.deliveryAmount)}
-                </p>
+              {member.isLeader ? (
+                <>
+                  <p className="text-2xl font-bold text-slate-100 tracking-tight">
+                    {formatMesoKorean(member.actualReceive)}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-2">{member.footerLabel}</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-2xl font-bold text-slate-100 tracking-tight">
+                    {formatMesoKorean(member.deliveryAmount)}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-2">전달금액</p>
+                  <p className="text-lg font-semibold text-cyber-300 mt-3">
+                    {formatMesoKorean(member.actualReceive)}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-1">{member.footerLabel}</p>
+                </>
               )}
             </div>
           ))}
