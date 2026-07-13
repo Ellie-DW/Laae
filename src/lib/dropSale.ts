@@ -60,14 +60,14 @@ export function calcDropSale(input: DropSaleCalcInput): DropSaleCalcResult | nul
   const afterSaleFee = grossMeso - saleFeeAmount
   const labels = getDropSaleMemberLabels(partySize)
   const netShares = ratios.map((ratio) => (afterSaleFee * ratio) / sumRatios)
-
+  const actualReceives = netShares.map((share) => floor100(share))
   const deliveryAmounts = new Array(partySize).fill(0)
 
   if (partySize === 1) {
     deliveryAmounts[0] = afterSaleFee
   } else {
     for (let i = 1; i < partySize; i++) {
-      deliveryAmounts[i] = floor100(netShares[i] / (1 - fee))
+      deliveryAmounts[i] = floor100(actualReceives[i] / (1 - fee))
     }
     deliveryAmounts[0] = afterSaleFee - deliveryAmounts.slice(1).reduce((sum, amount) => sum + amount, 0)
   }
@@ -76,20 +76,18 @@ export function calcDropSale(input: DropSaleCalcInput): DropSaleCalcResult | nul
 
   const members: DropSaleMemberResult[] = labels.map((label, index) => {
     const isLeader = index === 0
-    const deliveryAmount = deliveryAmounts[index]
-    const actualReceive = isLeader
-      ? deliveryAmount
-      : Math.round(deliveryAmount * (1 - fee))
+    const actualReceive = actualReceives[index]
+    const deliveryAmount = isLeader ? deliveryAmounts[0] : deliveryAmounts[index]
 
     return {
       label,
       ratio: ratios[index],
       ratioPercent: (ratios[index] / sumRatios) * 100,
       isLeader,
-      netShare: Math.round(netShares[index]),
+      netShare: actualReceive,
       deliveryAmount,
       actualReceive,
-      footerLabel: isLeader ? '실수령 기준 잔여' : '전달 금액 (수수료 포함)',
+      footerLabel: '실수령',
     }
   })
 

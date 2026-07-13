@@ -113,28 +113,35 @@ export default function DropSaleSplitPanel({
       </div>
 
       <div className="rounded-xl border border-cyber-500/20 overflow-hidden">
-        <div className="flex items-center justify-between gap-3 px-4 py-3 bg-cyber-500/10 border-b border-cyber-500/15">
-          <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={useCustomRatios}
-              onChange={(e) => onUseCustomRatiosChange(e.target.checked)}
-              className="rounded border-dark-border bg-dark-surface text-cyber-500 focus:ring-cyber-500/40"
-            />
+        <button
+          type="button"
+          onClick={() => onUseCustomRatiosChange(!useCustomRatios)}
+          className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-cyber-500/10 hover:bg-cyber-500/15 transition-colors"
+        >
+          <span className="flex items-center gap-2 text-sm text-slate-200">
+            <span
+              className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] ${
+                useCustomRatios
+                  ? 'bg-cyber-500 border-cyber-400 text-white'
+                  : 'border-slate-600 text-transparent'
+              }`}
+            >
+              ✓
+            </span>
             상세 비율 설정
-          </label>
-          <span className="text-[10px] px-2 py-1 rounded-full bg-cyber-500/15 text-cyber-300 border border-cyber-500/20">
-            비율 분배
           </span>
-        </div>
+          <span className="text-[10px] px-2 py-1 rounded-full bg-cyber-500/15 text-cyber-300 border border-cyber-500/20">
+            {useCustomRatios ? normalizedRatios.join(' : ') : '균등 분배'}
+          </span>
+        </button>
 
-        <div className="p-4 space-y-4 bg-dark-surface/30">
-          <p className="text-[11px] text-slate-500 leading-relaxed">
-            실수령 기준으로 비율을 나눕니다. 파티원에게 보낼 금액은 수수료를 포함해 100메소 단위로
-            내림 계산하고, 파티장은 남은 금액을 가져갑니다.
-          </p>
+        {useCustomRatios && (
+          <div className="p-4 space-y-4 bg-dark-surface/30 border-t border-cyber-500/15">
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              실수령 기준으로 비율을 나눕니다. 파티원에게 보낼 금액은 수수료를 포함해 100메소 단위로
+              내림 계산하고, 파티장은 남은 금액을 가져갑니다.
+            </p>
 
-          {useCustomRatios ? (
             <div className={`grid gap-2 ${partySize <= 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-3'}`}>
               {labels.map((label, index) => (
                 <div key={label}>
@@ -149,49 +156,37 @@ export default function DropSaleSplitPanel({
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="grid gap-2 grid-cols-3 sm:grid-cols-6">
-              {labels.map((label) => (
-                <div
-                  key={label}
-                  className="rounded-lg border border-dark-border bg-dark-surface/50 px-3 py-2 text-center"
-                >
-                  <p className="text-[10px] text-slate-500">{label}</p>
-                  <p className="text-sm font-semibold text-slate-300 mt-0.5">1</p>
-                </div>
-              ))}
-            </div>
-          )}
 
-          <div>
-            <p className="text-xs text-slate-400 mb-2">
-              입력 비율 <span className="text-cyber-300">{normalizedRatios.join(' : ')}</span>
-            </p>
-            <div className="space-y-2">
-              {labels.map((label, index) => {
-                const percent = saleCalc?.members[index]?.ratioPercent ?? (100 / partySize)
-                return (
-                  <div key={label}>
-                    <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
-                      <span>{label}</span>
-                      <span>{percent.toFixed(1)}%</span>
+            <div>
+              <p className="text-xs text-slate-400 mb-2">
+                입력 비율 <span className="text-cyber-300">{normalizedRatios.join(' : ')}</span>
+              </p>
+              <div className="space-y-2">
+                {labels.map((label, index) => {
+                  const percent = saleCalc?.members[index]?.ratioPercent ?? (100 / partySize)
+                  return (
+                    <div key={label}>
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                        <span>{label}</span>
+                        <span>{percent.toFixed(1)}%</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-dark-bg overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${
+                            index === 0
+                              ? 'bg-gradient-to-r from-maple-600/80 to-maple-300/90'
+                              : 'bg-gradient-to-r from-cyber-700/80 to-cyber-400/90'
+                          }`}
+                          style={{ width: `${Math.max(percent, 4)}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2 rounded-full bg-dark-bg overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${
-                          index === 0
-                            ? 'bg-gradient-to-r from-maple-600/80 to-maple-300/90'
-                            : 'bg-gradient-to-r from-cyber-700/80 to-cyber-400/90'
-                        }`}
-                        style={{ width: `${Math.max(percent, 4)}%` }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {saleCalc && (
@@ -236,12 +231,17 @@ export function DropSaleResultCards({ saleCalc }: { saleCalc: DropSaleCalcResult
                 <span className="text-[10px] text-slate-500">{member.ratioPercent.toFixed(1)}%</span>
               </div>
               <p className="text-2xl font-bold text-slate-100 tracking-tight">
-                {formatDropSaleAmount(member.deliveryAmount)}
+                {formatDropSaleAmount(member.actualReceive)}
               </p>
               <p className="text-[11px] text-slate-500 mt-2">{member.footerLabel}</p>
-              {!member.isLeader && (
+              {!member.isLeader && saleCalc.partySize > 1 && (
                 <p className="text-[10px] text-slate-600 mt-1">
-                  실수령 {formatDropSaleAmount(member.actualReceive)}
+                  전달 금액 {formatDropSaleAmount(member.deliveryAmount)}
+                </p>
+              )}
+              {member.isLeader && saleCalc.partySize > 1 && (
+                <p className="text-[10px] text-slate-600 mt-1">
+                  보유 {formatDropSaleAmount(member.deliveryAmount)}
                 </p>
               )}
             </div>
