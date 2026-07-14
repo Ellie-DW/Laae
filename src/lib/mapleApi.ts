@@ -12,9 +12,15 @@ interface MapleApiError {
 
 async function invokeMapleApi<T>(body: Record<string, string>): Promise<T> {
   const { data, error } = await supabase.functions.invoke('maple-api', { body })
-  if (error) throw new Error(error.message)
-
   const payload = data as T | MapleApiError | null
+
+  if (error) {
+    if (payload && typeof payload === 'object' && 'error' in payload && payload.error) {
+      throw new Error(payload.error)
+    }
+    throw new Error(error.message)
+  }
+
   if (payload && typeof payload === 'object' && 'error' in payload && payload.error) {
     throw new Error(payload.error)
   }
