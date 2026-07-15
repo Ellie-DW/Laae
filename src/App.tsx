@@ -68,18 +68,14 @@ function MainApp() {
 
   const riceAccess = useRiceAccess()
 
-  const bossIncomeByCharacter = useMemo(
-    () => Object.fromEntries(accountStats.perCharacter.map((c) => [c.id, c.bossMeso])),
-    [accountStats.perCharacter]
-  )
-
   const weeklyBossIncomeByCharacter = useMemo(
     () => Object.fromEntries(accountStats.perCharacter.map((c) => [c.id, c.weeklyBossMeso])),
     [accountStats.perCharacter]
   )
 
-  const ledger = useLedger(characters, bossIncomeByCharacter, weeklyBossIncomeByCharacter, {
+  const ledger = useLedger(characters, weeklyBossIncomeByCharacter, {
     riceEnabled: riceAccess.hasAccess,
+    bossDataMap,
   })
 
   const navItems = getNavItems(riceAccess.hasAccess)

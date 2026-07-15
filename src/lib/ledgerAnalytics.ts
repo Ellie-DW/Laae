@@ -2,9 +2,11 @@ import type { Expense, HuntRecord, GatherRecord, DropRecord, Goal, ExpenseCatego
 import { EXPENSE_CATEGORY_LABEL } from './ledgerApi'
 import { splitHuntIncome, getHuntCumulativeStats } from './huntStats'
 import { getDropItemStats, getDropStatsSummary } from '../data/dropItems'
-import { getAccountBossCumulativeStats } from './bossStats'
+import { calculateBossStats, getAccountBossCumulativeStats, isMonthlyBossCleared, isWeeklyBossCleared } from './bossStats'
 import { createDefaultBossData } from './appDataApi'
-import { getToday } from '../utils'
+import { getCurrentMonth, getMonthlyPeriod, getToday, getWeeklyPeriod } from '../utils'
+
+export { getCurrentMonth }
 
 export interface LedgerSummary {
   huntIncome: number
@@ -60,9 +62,7 @@ function inDateRange(date: string, start?: string, end?: string) {
 function monthPrefix(date: string) {
   return date.slice(0, 7)
 }
-import { getCurrentMonth } from '../utils'
 
-export { getCurrentMonth }
 export function enrichLedgerWithBoss(
   summary: Omit<LedgerSummary, 'bossIncome' | 'recordedIncome' | 'netProfit'> & Partial<Pick<LedgerSummary, 'bossIncome'>>,
   bossIncome: number
@@ -234,7 +234,7 @@ export function getDaysLeftUntil(endDate: string, today = getToday()): number {
   return Math.max(0, diff)
 }
 
-function computeBossIncomeForRange(
+export function computeBossIncomeForRange(
   snapshots: BossSnapshot[],
   characterId: string | null,
   startDate: string,
@@ -245,6 +245,53 @@ function computeBossIncomeForRange(
     if (snapshot.periodEnd < startDate || snapshot.periodStart > endDate) return sum
     return sum + snapshot.totalMeso
   }, 0)
+}
+
+/** 스냅샷에 아직 없는 이번 주·달 보스 잡음 수익 */
+export function computeLiveBossIncome(
+  bossData: CharacterBossData,
+  snapshots: BossSnapshot[],
+  characterId: string
+): number {
+  const stats = calculateBossStats(bossData)
+  const weekStart = getWeeklyPeriod().start
+  const monthStart = getMonthlyPeriod().start
+  const weeklySnapshotted = snapshots.some(
+    (s) => s.characterId === characterId && s.cycle === 'weekly' && s.periodStart === weekStart
+  )
+  const monthlySnapshotted = snapshots.some(
+    (s) => s.characterId === characterId && s.cycle === 'monthly' && s.periodStart === monthStart
+  )
+
+  let total = 0
+  if (isWeeklyBossCleared(bossData) && stats.weeklyBossMeso > 0 && !weeklySnapshotted) {
+    total += stats.weeklyBossMeso
+  }
+  if (isMonthlyBossCleared(bossData) && stats.monthlyBossMeso > 0 && !monthlySnapshotted) {
+    total += stats.monthlyBossMeso
+  }
+  return total
+}
+
+/** 이번 달 보스 수익 — 주간 스냅샷 누적 + 미저장 잡음 */
+export function computeMonthlyBossIncomeByCharacter(
+  snapshots: BossSnapshot[],
+  characters: { id: string }[],
+  bossDataMap: Record<string, CharacterBossData>,
+  month: string,
+  defaultBossData: CharacterBossData = createDefaultBossData()
+): Record<string, number> {
+  const start = `${month}-01`
+  const end = `${month}-31`
+
+  return Object.fromEntries(
+    characters.map((character) => {
+      const bossData = bossDataMap[character.id] ?? defaultBossData
+      const fromSnapshots = computeBossIncomeForRange(snapshots, character.id, start, end)
+      const live = computeLiveBossIncome(bossData, snapshots, character.id)
+      return [character.id, fromSnapshots + live]
+    })
+  )
 }
 
 export function computeGoalProgress(

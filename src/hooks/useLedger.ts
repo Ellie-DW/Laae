@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import type { ExpenseCategory, BossResetCycle, BossSnapshot } from '../types'
+import type { ExpenseCategory, BossResetCycle, BossSnapshot, CharacterBossData } from '../types'
 import { useAuth } from '../contexts/AuthContext'
 import {
   fetchLedgerData,
@@ -28,9 +28,11 @@ import {
   computeExpenseByCategory,
   computeCharacterSummaries,
   computeGoalProgress,
+  computeMonthlyBossIncomeByCharacter,
   enrichLedgerWithBoss,
   getCurrentMonth,
 } from '../lib/ledgerAnalytics'
+import { createDefaultBossData } from '../lib/appDataApi'
 import { getHeldSolErdaFragments, buildSolErdaPurchaseMemo, parseSolErdaPurchaseMemo } from '../lib/huntStats'
 import {
   buildRiceTradeDescription,
@@ -40,9 +42,8 @@ import { getWeeklyPeriod, getErrorMessage } from '../utils'
 
 export function useLedger(
   characters: { id: string; name: string }[],
-  bossIncomeByCharacter: Record<string, number> = {},
   weeklyBossIncomeByCharacter: Record<string, number> = {},
-  options?: { riceEnabled?: boolean }
+  options?: { riceEnabled?: boolean; bossDataMap?: Record<string, CharacterBossData> }
 ) {
   const riceEnabled = options?.riceEnabled ?? false
   const { user } = useAuth()
@@ -99,10 +100,23 @@ export function useLedger(
   }, [user, reload, riceEnabled])
 
   const currentMonth = getCurrentMonth()
+  const bossDataMap = options?.bossDataMap ?? {}
 
-  const totalBossIncome = useMemo(
-    () => Object.values(bossIncomeByCharacter).reduce((sum, v) => sum + v, 0),
-    [bossIncomeByCharacter]
+  const monthlyBossIncomeByCharacter = useMemo(
+    () =>
+      computeMonthlyBossIncomeByCharacter(
+        snapshots,
+        characters,
+        bossDataMap,
+        currentMonth,
+        createDefaultBossData()
+      ),
+    [snapshots, characters, bossDataMap, currentMonth]
+  )
+
+  const totalMonthlyBossIncome = useMemo(
+    () => Object.values(monthlyBossIncomeByCharacter).reduce((sum, v) => sum + v, 0),
+    [monthlyBossIncomeByCharacter]
   )
 
   const totalWeeklyBossIncome = useMemo(
@@ -113,9 +127,9 @@ export function useLedger(
   const accountSummary = useMemo(
     () => enrichLedgerWithBoss(
       computeLedgerSummary(hunts, gathers, expenses, drops, { startDate: `${currentMonth}-01`, endDate: `${currentMonth}-31` }),
-      totalBossIncome
+      totalMonthlyBossIncome
     ),
-    [hunts, gathers, expenses, drops, currentMonth, totalBossIncome]
+    [hunts, gathers, expenses, drops, currentMonth, totalMonthlyBossIncome]
   )
 
   const accountWeekSummary = useMemo(() => {
@@ -139,8 +153,8 @@ export function useLedger(
   )
 
   const characterSummaries = useMemo(
-    () => computeCharacterSummaries(characters, hunts, gathers, expenses, drops, currentMonth, bossIncomeByCharacter),
-    [characters, hunts, gathers, expenses, drops, currentMonth, bossIncomeByCharacter]
+    () => computeCharacterSummaries(characters, hunts, gathers, expenses, drops, currentMonth, monthlyBossIncomeByCharacter),
+    [characters, hunts, gathers, expenses, drops, currentMonth, monthlyBossIncomeByCharacter]
   )
 
   const getCharacterSummary = useCallback(
@@ -151,9 +165,9 @@ export function useLedger(
           startDate: `${currentMonth}-01`,
           endDate: `${currentMonth}-31`,
         }),
-        bossIncomeByCharacter[characterId] ?? 0
+        monthlyBossIncomeByCharacter[characterId] ?? 0
       ),
-    [hunts, gathers, expenses, drops, currentMonth, bossIncomeByCharacter]
+    [hunts, gathers, expenses, drops, currentMonth, monthlyBossIncomeByCharacter]
   )
 
   const getCharacterWeekSummary = useCallback(
