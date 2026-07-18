@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import type { Character, HuntRecord, GatherRecord, DropRecord, Expense, Income, BossSnapshot, CharacterBossData } from '../../types'
 import { getDropItemStats, getDropStatsSummary, PREDEFINED_DROP_ITEMS } from '../../data/dropItems'
 import DropItemIcon from '../drop/DropItemIcon'
@@ -28,6 +28,12 @@ interface StatCard {
   icon?: ReactNode
 }
 
+interface CategorySummary {
+  label: string
+  value: number
+  tone: 'cyber' | 'maple' | 'violet' | 'emerald'
+}
+
 export default function CumulativeDashboardSection({
   characters,
   hunts,
@@ -38,19 +44,25 @@ export default function CumulativeDashboardSection({
   snapshots,
   bossDataMap,
 }: CumulativeDashboardSectionProps) {
+  const [expanded, setExpanded] = useState(false)
+
   const huntStats = useMemo(() => getHuntCumulativeStats(hunts, undefined, expenses), [hunts, expenses])
   const dropStats = useMemo(() => getDropItemStats(drops), [drops])
   const dropSummary = useMemo(() => getDropStatsSummary(dropStats), [dropStats])
   const dropGroups = useMemo(() => {
     const statsById = new Map(dropStats.map((s) => [s.id, s]))
     const groupOrder = [...new Set(PREDEFINED_DROP_ITEMS.map((i) => i.group))]
-    return groupOrder.map((group) => ({
-      group,
-      items: PREDEFINED_DROP_ITEMS.filter((i) => i.group === group).map((item) => ({
-        ...item,
-        count: statsById.get(item.id)?.totalAcquired ?? 0,
-      })),
-    }))
+    return groupOrder
+      .map((group) => ({
+        group,
+        items: PREDEFINED_DROP_ITEMS.filter((i) => i.group === group)
+          .map((item) => ({
+            ...item,
+            count: statsById.get(item.id)?.totalAcquired ?? 0,
+          }))
+          .filter((item) => item.count > 0),
+      }))
+      .filter(({ items }) => items.length > 0)
   }, [dropStats])
   const bossStats = useMemo(
     () => getAccountBossCumulativeStats(snapshots, characters, bossDataMap, createDefaultBossData()),
@@ -60,15 +72,24 @@ export default function CumulativeDashboardSection({
   const manualIncomeTotal = useMemo(() => incomes.reduce((s, i) => s + i.amount, 0), [incomes])
   const expenseTotal = useMemo(() => expenses.reduce((s, e) => s + e.amount, 0), [expenses])
 
+  const huntIncomeTotal = huntStats.huntMesoTotal + huntStats.saleMesoTotal
+
   const totalIncome =
-    huntStats.huntMesoTotal +
-    huntStats.saleMesoTotal +
+    huntIncomeTotal +
     dropSummary.saleIncome +
     bossStats.totalMeso +
     gatherTotal +
     manualIncomeTotal
 
   const netProfit = totalIncome - expenseTotal
+
+  const categorySummaries: CategorySummary[] = [
+    { label: '보스', value: bossStats.totalMeso, tone: 'maple' },
+    { label: '사냥', value: huntIncomeTotal, tone: 'cyber' },
+    { label: '드랍', value: dropSummary.saleIncome, tone: 'maple' },
+    { label: '채집', value: gatherTotal, tone: 'emerald' },
+    { label: '장부', value: manualIncomeTotal, tone: 'emerald' },
+  ]
 
   const huntItems: StatCard[] = [
     { label: '사냥 수익', value: formatMesoKorean(huntStats.huntMesoTotal), active: huntStats.huntMesoTotal > 0, tone: 'cyber', icon: <MesoIcon size="xs" /> },
@@ -96,106 +117,146 @@ export default function CumulativeDashboardSection({
     { label: '지출 기록', value: `${expenses.length}건`, active: expenses.length > 0, tone: 'expense' },
   ]
 
+  const netColor = netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'
+
   return (
     <div className="panel-glow p-5 border-cyber-500/20">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
-        <div>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <h2 className="font-semibold text-slate-100">총 누적 현황</h2>
           <p className="text-xs text-slate-500 mt-0.5">모든 캐릭터 · 그동안 기록 전체</p>
         </div>
-        <div className="grid grid-cols-3 gap-2 sm:gap-3 shrink-0 sm:min-w-[280px]">
-          <HeaderStat label="누적 수익" value={formatMesoKorean(totalIncome)} tone="income" />
-          <HeaderStat label="누적 지출" value={formatMesoKorean(expenseTotal)} tone="expense" />
-          <HeaderStat label="누적 순수익" value={formatMesoKorean(netProfit)} tone="net" positive={netProfit >= 0} />
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="text-xs text-cyber-400 hover:text-cyber-300 border border-cyber-700/40 px-3 py-1.5 rounded-lg hover:bg-cyber-500/10 transition-colors shrink-0"
+        >
+          {expanded ? '접기' : '상세 펼치기'}
+        </button>
+      </div>
+
+      <div className="mt-4">
+        <p className="text-sm text-slate-400">누적 순수익</p>
+        <p className={`text-3xl md:text-4xl font-bold mt-1 font-display tracking-wide ${netColor}`}>
+          {formatMesoKorean(netProfit)}
+        </p>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-sm">
+          <span className="text-cyber-400">수익 {formatMesoKorean(totalIncome)}</span>
+          <span className="text-red-400">지출 {formatMesoKorean(expenseTotal)}</span>
         </div>
       </div>
 
-      <div className="space-y-4">
-        <div>
-          <p className="text-xs text-slate-500 font-medium mb-2">보스</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {bossItems.map((item) => (
-              <StatCard key={item.label} {...item} />
-            ))}
-          </div>
-        </div>
+      <p className="mt-4 pt-4 border-t border-dark-border/40 text-xs leading-relaxed">
+        {categorySummaries.map((cat, index) => (
+          <span key={cat.label}>
+            {index > 0 && <span className="text-slate-600"> · </span>}
+            <span className="text-slate-500">{cat.label} </span>
+            <span className={categoryToneClass(cat.tone)}>{formatMesoKorean(cat.value)}</span>
+          </span>
+        ))}
+      </p>
 
-        <div>
-          <p className="text-xs text-slate-500 font-medium mb-2">사냥</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {huntItems.map((item) => (
-              <StatCard key={item.label} {...item} />
-            ))}
+      {expanded && (
+        <div className="space-y-4 mt-5 pt-5 border-t border-dark-border/40">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <HeaderStat label="누적 수익" value={formatMesoKorean(totalIncome)} tone="income" />
+            <HeaderStat label="누적 지출" value={formatMesoKorean(expenseTotal)} tone="expense" />
+            <HeaderStat label="누적 순수익" value={formatMesoKorean(netProfit)} tone="net" positive={netProfit >= 0} />
           </div>
-        </div>
 
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-slate-500 font-medium">보스 드랍</p>
-            <span className="text-xs font-bold text-maple-400">
-              {dropSummary.acquiredKinds}<span className="font-normal text-slate-500">종</span>
-              {' · '}
-              {dropSummary.acquiredTotal}<span className="font-normal text-slate-500">개</span>
-            </span>
+          <div>
+            <p className="text-xs text-slate-500 font-medium mb-2">보스</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {bossItems.map((item) => (
+                <StatCard key={item.label} {...item} />
+              ))}
+            </div>
           </div>
-          <div className="space-y-3">
-            {dropGroups.map(({ group, items }) => (
-              <div key={group}>
-                <p className="text-[10px] text-slate-600 mb-1.5">{group}</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {items.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`px-3 py-2 rounded-lg border text-sm ${
-                        item.count > 0
-                          ? 'bg-maple-500/10 border-maple-500/30 text-maple-200'
-                          : 'bg-dark-surface/40 border-dark-border text-slate-500'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <DropItemIcon name={item.name} size="xs" />
-                        <p className="truncate text-xs flex-1">{item.name}</p>
-                      </div>
-                      <p className={`text-lg font-bold mt-1 ${item.count > 0 ? 'text-maple-400' : 'text-slate-600'}`}>
-                        {item.count}
-                      </p>
+
+          <div>
+            <p className="text-xs text-slate-500 font-medium mb-2">사냥</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {huntItems.map((item) => (
+                <StatCard key={item.label} {...item} />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-slate-500 font-medium">보스 드랍</p>
+              <span className="text-xs font-bold text-maple-400">
+                {dropSummary.acquiredKinds}<span className="font-normal text-slate-500">종</span>
+                {' · '}
+                {dropSummary.acquiredTotal}<span className="font-normal text-slate-500">개</span>
+              </span>
+            </div>
+            {dropGroups.length === 0 ? (
+              <p className="text-sm text-slate-500 py-3 text-center border border-dashed border-dark-border rounded-lg bg-dark-surface/30">
+                아직 드랍 기록이 없어요
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {dropGroups.map(({ group, items }) => (
+                  <div key={group}>
+                    <p className="text-[10px] text-slate-600 mb-1.5">{group}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {items.map((item) => (
+                        <div
+                          key={item.id}
+                          className="px-3 py-2 rounded-lg border text-sm bg-maple-500/10 border-maple-500/30 text-maple-200"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <DropItemIcon name={item.name} size="xs" />
+                            <p className="truncate text-xs flex-1">{item.name}</p>
+                          </div>
+                          <p className="text-lg font-bold mt-1 text-maple-400">{item.count}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        </div>
 
-        <div>
-          <p className="text-xs text-slate-500 font-medium mb-2">채집</p>
-          <div className="grid grid-cols-1 max-w-xs gap-2">
-            {gatherItems.map((item) => (
-              <StatCard key={item.label} {...item} />
-            ))}
+          <div>
+            <p className="text-xs text-slate-500 font-medium mb-2">채집</p>
+            <div className="grid grid-cols-1 max-w-xs gap-2">
+              {gatherItems.map((item) => (
+                <StatCard key={item.label} {...item} />
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <p className="text-xs text-slate-500 font-medium mb-2">장부</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 max-w-md gap-2">
-            {ledgerItems.map((item) => (
-              <StatCard key={item.label} {...item} />
-            ))}
+          <div>
+            <p className="text-xs text-slate-500 font-medium mb-2">장부</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 max-w-md gap-2">
+              {ledgerItems.map((item) => (
+                <StatCard key={item.label} {...item} />
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <p className="text-xs text-slate-500 font-medium mb-2">지출</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 max-w-md gap-2">
-            {expenseItems.map((item) => (
-              <StatCard key={item.label} {...item} />
-            ))}
+          <div>
+            <p className="text-xs text-slate-500 font-medium mb-2">지출</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 max-w-md gap-2">
+              {expenseItems.map((item) => (
+                <StatCard key={item.label} {...item} />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
+}
+
+function categoryToneClass(tone: CategorySummary['tone']) {
+  if (tone === 'cyber') return 'text-cyber-400 font-medium'
+  if (tone === 'maple') return 'text-maple-400 font-medium'
+  if (tone === 'violet') return 'text-violet-400 font-medium'
+  return 'text-emerald-400 font-medium'
 }
 
 function HeaderStat({
