@@ -3,6 +3,13 @@ export const SITE_TAGLINE = '메이플 가게부'
 export const OPEN_KAKAO_URL = 'https://open.kakao.com/o/sJPHfCDi'
 export const LEGAL_EFFECTIVE_DATE = '2026-07-12'
 
+/** 푸터 하단 커뮤니티·길드 표기 (href 있으면 링크) */
+export const FOOTER_COMMUNITY_ENTRIES: { label: string; href?: string }[] = [
+  { label: '스카니아@라애길드' },
+  { label: '스카니아@렌우기땅' },
+  { label: '스카니아@Neige렌' },
+]
+
 export const LEGAL_PATHS = {
   privacy: '/privacy',
   terms: '/terms',
