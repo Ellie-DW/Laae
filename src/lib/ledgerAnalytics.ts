@@ -1,5 +1,5 @@
-import type { Expense, HuntRecord, GatherRecord, DropRecord, Goal, ExpenseCategory, BossSnapshot, Character, CharacterBossData } from '../types'
-import { EXPENSE_CATEGORY_LABEL } from './ledgerApi'
+import type { Expense, Income, HuntRecord, GatherRecord, DropRecord, Goal, ExpenseCategory, IncomeCategory, BossSnapshot, Character, CharacterBossData } from '../types'
+import { EXPENSE_CATEGORY_LABEL, INCOME_CATEGORY_LABEL } from './ledgerApi'
 import { splitHuntIncome, getHuntCumulativeStats } from './huntStats'
 import { getDropItemStats, getDropStatsSummary } from '../data/dropItems'
 import { calculateBossStats, getAccountBossCumulativeStats, isMonthlyBossCleared, isWeeklyBossCleared } from './bossStats'
@@ -14,6 +14,7 @@ export interface LedgerSummary {
   solErdaSaleIncome: number
   gatherIncome: number
   dropIncome: number
+  manualIncome: number
   bossIncome: number
   recordedIncome: number
   expenseTotal: number
@@ -21,6 +22,7 @@ export interface LedgerSummary {
   huntCount: number
   gatherCount: number
   dropCount: number
+  incomeCount: number
   expenseCount: number
 }
 
@@ -37,6 +39,12 @@ export interface CategoryBreakdown {
   amount: number
 }
 
+export interface IncomeCategoryBreakdown {
+  category: IncomeCategory
+  label: string
+  amount: number
+}
+
 export interface CharacterLedgerSummary {
   characterId: string
   huntIncome: number
@@ -44,12 +52,14 @@ export interface CharacterLedgerSummary {
   solErdaSaleIncome: number
   gatherIncome: number
   dropIncome: number
+  manualIncome: number
   bossIncome: number
   expenseTotal: number
   netProfit: number
   huntCount: number
   gatherCount: number
   dropCount: number
+  incomeCount: number
   expenseCount: number
 }
 
@@ -70,8 +80,8 @@ export function enrichLedgerWithBoss(
   return {
     ...summary,
     bossIncome,
-    recordedIncome: summary.huntIncome + summary.gatherIncome + summary.dropIncome + bossIncome,
-    netProfit: summary.huntIncome + summary.gatherIncome + summary.dropIncome + bossIncome - summary.expenseTotal,
+    recordedIncome: summary.huntIncome + summary.gatherIncome + summary.dropIncome + summary.manualIncome + bossIncome,
+    netProfit: summary.huntIncome + summary.gatherIncome + summary.dropIncome + summary.manualIncome + bossIncome - summary.expenseTotal,
   }
 }
 
@@ -80,6 +90,7 @@ export function computeLedgerSummary(
   gathers: GatherRecord[],
   expenses: Expense[],
   drops: DropRecord[] = [],
+  incomes: Income[] = [],
   filter?: { characterId?: string; startDate?: string; endDate?: string }
 ): LedgerSummary {
   const charId = filter?.characterId
@@ -95,11 +106,15 @@ export function computeLedgerSummary(
   const filteredExpenses = expenses.filter(
     (e) => (!charId || e.characterId === charId) && inDateRange(e.recordDate, filter?.startDate, filter?.endDate)
   )
+  const filteredIncomes = incomes.filter(
+    (i) => (!charId || i.characterId === charId) && inDateRange(i.recordDate, filter?.startDate, filter?.endDate)
+  )
 
   const { huntMesoIncome, solErdaSaleIncome } = splitHuntIncome(filteredHunts)
   const huntIncome = huntMesoIncome + solErdaSaleIncome
   const gatherIncome = filteredGathers.reduce((s, g) => s + g.meso, 0)
   const dropIncome = filteredDrops.reduce((s, d) => s + d.meso, 0)
+  const manualIncome = filteredIncomes.reduce((s, i) => s + i.amount, 0)
   const expenseTotal = filteredExpenses.reduce((s, e) => s + e.amount, 0)
 
   return enrichLedgerWithBoss({
@@ -108,10 +123,12 @@ export function computeLedgerSummary(
     solErdaSaleIncome,
     gatherIncome,
     dropIncome,
+    manualIncome,
     expenseTotal,
     huntCount: filteredHunts.length,
     gatherCount: filteredGathers.length,
     dropCount: filteredDrops.length,
+    incomeCount: filteredIncomes.length,
     expenseCount: filteredExpenses.length,
   }, 0)
 }
@@ -121,6 +138,7 @@ export function computeDailyNet(
   gathers: GatherRecord[],
   expenses: Expense[],
   drops: DropRecord[] = [],
+  incomes: Income[] = [],
   days = 7,
   characterId?: string
 ): DailyNetEntry[] {
@@ -141,11 +159,14 @@ export function computeDailyNet(
     const dropIncome = drops
       .filter((dr) => dr.recordDate === date && (!characterId || dr.characterId === characterId))
       .reduce((s, dr) => s + dr.meso, 0)
+    const manualIncome = incomes
+      .filter((i) => i.recordDate === date && (!characterId || i.characterId === characterId))
+      .reduce((s, i) => s + i.amount, 0)
     const expenseTotal = expenses
       .filter((e) => e.recordDate === date && (!characterId || e.characterId === characterId))
       .reduce((s, e) => s + e.amount, 0)
 
-    const income = huntIncome + gatherIncome + dropIncome
+    const income = huntIncome + gatherIncome + dropIncome + manualIncome
     result.push({ date, income, expense: expenseTotal, net: income - expenseTotal })
   }
 
@@ -192,18 +213,59 @@ export function computeExpenseTotal(
   }
 }
 
+export function computeIncomeByCategory(
+  incomes: Income[],
+  filter?: { characterId?: string; month?: string }
+): IncomeCategoryBreakdown[] {
+  const filtered = incomes.filter((i) => {
+    if (filter?.characterId && i.characterId !== filter.characterId) return false
+    if (filter?.month && monthPrefix(i.recordDate) !== filter.month) return false
+    return true
+  })
+
+  const totals = new Map<IncomeCategory, number>()
+  for (const i of filtered) {
+    totals.set(i.category, (totals.get(i.category) ?? 0) + i.amount)
+  }
+
+  return (Object.keys(INCOME_CATEGORY_LABEL) as IncomeCategory[]).map((category) => ({
+    category,
+    label: INCOME_CATEGORY_LABEL[category],
+    amount: totals.get(category) ?? 0,
+  }))
+}
+
+export function computeIncomeTotal(
+  incomes: Income[],
+  filter?: { characterId?: string; month?: string; startDate?: string; endDate?: string }
+) {
+  const filtered = incomes.filter((i) => {
+    if (filter?.characterId && i.characterId !== filter.characterId) return false
+    if (filter?.month && monthPrefix(i.recordDate) !== filter.month) return false
+    if (filter?.startDate && i.recordDate < filter.startDate) return false
+    if (filter?.endDate && i.recordDate > filter.endDate) return false
+    return true
+  })
+
+  return {
+    total: filtered.reduce((s, i) => s + i.amount, 0),
+    count: filtered.length,
+  }
+}
+
 export function computeCharacterSummaries(
   characterIds: { id: string; name: string }[],
   hunts: HuntRecord[],
   gathers: GatherRecord[],
   expenses: Expense[],
   drops: DropRecord[],
+  incomes: Income[] = [],
   month?: string,
   bossIncomeByCharacter: Record<string, number> = {}
 ): (CharacterLedgerSummary & { name: string })[] {
   return characterIds.map((char) => {
     const filter = month ? { characterId: char.id, startDate: `${month}-01`, endDate: `${month}-31` } : { characterId: char.id }
-    const summary = computeLedgerSummary(hunts, gathers, expenses, drops, filter)
+    const summary = computeLedgerSummary(hunts, gathers, expenses, drops, incomes, filter)
     const enriched = enrichLedgerWithBoss(summary, bossIncomeByCharacter[char.id] ?? 0)
     return {
       characterId: char.id,
@@ -300,7 +362,8 @@ export function computeGoalProgress(
   gathers: GatherRecord[],
   expenses: Expense[],
   drops: DropRecord[],
-  snapshots: BossSnapshot[] = []
+  snapshots: BossSnapshot[] = [],
+  incomes: Income[] = []
 ) {
   const today = getToday()
   const charId = goal.characterId
@@ -308,7 +371,7 @@ export function computeGoalProgress(
   if (today < goal.startDate) {
     const daysLeft = getDaysLeftUntil(goal.endDate, today)
     const dailyNeeded = goal.targetMeso > 0 && daysLeft > 0 ? goal.targetMeso / daysLeft : null
-    const empty = computeLedgerSummary(hunts, gathers, expenses, drops, {
+    const empty = computeLedgerSummary(hunts, gathers, expenses, drops, incomes, {
       characterId: charId ?? undefined,
       startDate: goal.startDate,
       endDate: goal.startDate,
@@ -326,7 +389,7 @@ export function computeGoalProgress(
 
   const progressEnd = today <= goal.endDate ? today : goal.endDate
   const summary = enrichLedgerWithBoss(
-    computeLedgerSummary(hunts, gathers, expenses, drops, {
+    computeLedgerSummary(hunts, gathers, expenses, drops, incomes, {
       characterId: charId ?? undefined,
       startDate: goal.startDate,
       endDate: progressEnd,
@@ -345,7 +408,7 @@ export function computeGoalProgress(
   return { netProfit, percent, barPercent, remaining, daysLeft, dailyNeeded, summary } satisfies GoalProgress
 }
 
-/** 계정 전체 누적 순수익 (사냥·드랍·보스·채집 − 지출) */
+/** 계정 전체 누적 순수익 (사냥·드랍·보스·채집·장부 수입 − 지출) */
 export function computeAccountCumulativeNetProfit(
   hunts: HuntRecord[],
   gathers: GatherRecord[],
@@ -353,7 +416,8 @@ export function computeAccountCumulativeNetProfit(
   expenses: Expense[],
   snapshots: BossSnapshot[],
   characters: Character[],
-  bossDataMap: Record<string, CharacterBossData>
+  bossDataMap: Record<string, CharacterBossData>,
+  incomes: Income[] = []
 ): number {
   const huntStats = getHuntCumulativeStats(hunts)
   const dropSummary = getDropStatsSummary(getDropItemStats(drops))
@@ -364,13 +428,15 @@ export function computeAccountCumulativeNetProfit(
     createDefaultBossData()
   )
   const gatherTotal = gathers.reduce((sum, g) => sum + g.meso, 0)
+  const manualIncomeTotal = incomes.reduce((sum, i) => sum + i.amount, 0)
   const expenseTotal = expenses.reduce((sum, e) => sum + e.amount, 0)
   const totalIncome =
     huntStats.huntMesoTotal +
     huntStats.saleMesoTotal +
     dropSummary.saleIncome +
     bossStats.totalMeso +
-    gatherTotal
+    gatherTotal +
+    manualIncomeTotal
 
   return totalIncome - expenseTotal
 }

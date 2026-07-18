@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import type { ExpenseCategory, BossResetCycle, BossSnapshot, CharacterBossData } from '../types'
+import type { ExpenseCategory, IncomeCategory, BossResetCycle, BossSnapshot, CharacterBossData } from '../types'
 import { useAuth } from '../contexts/AuthContext'
 import {
   fetchLedgerData,
   addExpense,
   deleteExpense,
   updateExpense,
+  addIncome,
+  deleteIncome,
+  updateIncome,
   addHuntRecord,
   deleteHuntRecord,
   addGatherRecord,
@@ -26,6 +29,7 @@ import {
   computeLedgerSummary,
   computeDailyNet,
   computeExpenseByCategory,
+  computeIncomeByCategory,
   computeCharacterSummaries,
   computeGoalProgress,
   computeMonthlyBossIncomeByCharacter,
@@ -48,6 +52,7 @@ export function useLedger(
   const riceEnabled = options?.riceEnabled ?? false
   const { user } = useAuth()
   const [expenses, setExpenses] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['expenses']>([])
+  const [incomes, setIncomes] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['incomes']>([])
   const [hunts, setHunts] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['hunts']>([])
   const [gathers, setGathers] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['gathers']>([])
   const [drops, setDrops] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['drops']>([])
@@ -65,6 +70,7 @@ export function useLedger(
     try {
       const data = await fetchLedgerData(user.id, { includeRice: riceEnabled })
       setExpenses(data.expenses)
+      setIncomes(data.incomes)
       setHunts(data.hunts)
       setGathers(data.gathers)
       setDrops(data.drops)
@@ -86,6 +92,7 @@ export function useLedger(
   useEffect(() => {
     if (!user) {
       setExpenses([])
+      setIncomes([])
       setHunts([])
       setGathers([])
       setDrops([])
@@ -126,26 +133,26 @@ export function useLedger(
 
   const accountSummary = useMemo(
     () => enrichLedgerWithBoss(
-      computeLedgerSummary(hunts, gathers, expenses, drops, { startDate: `${currentMonth}-01`, endDate: `${currentMonth}-31` }),
+      computeLedgerSummary(hunts, gathers, expenses, drops, incomes, { startDate: `${currentMonth}-01`, endDate: `${currentMonth}-31` }),
       totalMonthlyBossIncome
     ),
-    [hunts, gathers, expenses, drops, currentMonth, totalMonthlyBossIncome]
+    [hunts, gathers, expenses, drops, incomes, currentMonth, totalMonthlyBossIncome]
   )
 
   const accountWeekSummary = useMemo(() => {
     const { start, end } = getWeeklyPeriod()
     return enrichLedgerWithBoss(
-      computeLedgerSummary(hunts, gathers, expenses, drops, { startDate: start, endDate: end }),
+      computeLedgerSummary(hunts, gathers, expenses, drops, incomes, { startDate: start, endDate: end }),
       totalWeeklyBossIncome
     )
-  }, [hunts, gathers, expenses, drops, totalWeeklyBossIncome])
+  }, [hunts, gathers, expenses, drops, incomes, totalWeeklyBossIncome])
 
   const accountSummaryAll = useMemo(
-    () => computeLedgerSummary(hunts, gathers, expenses, drops),
-    [hunts, gathers, expenses, drops]
+    () => computeLedgerSummary(hunts, gathers, expenses, drops, incomes),
+    [hunts, gathers, expenses, drops, incomes]
   )
 
-  const dailyNet = useMemo(() => computeDailyNet(hunts, gathers, expenses, drops, 7), [hunts, gathers, expenses, drops])
+  const dailyNet = useMemo(() => computeDailyNet(hunts, gathers, expenses, drops, incomes, 7), [hunts, gathers, expenses, drops, incomes])
 
   const expenseByCategory = useMemo(
     () => computeExpenseByCategory(expenses, { month: currentMonth }),
@@ -153,28 +160,28 @@ export function useLedger(
   )
 
   const characterSummaries = useMemo(
-    () => computeCharacterSummaries(characters, hunts, gathers, expenses, drops, currentMonth, monthlyBossIncomeByCharacter),
-    [characters, hunts, gathers, expenses, drops, currentMonth, monthlyBossIncomeByCharacter]
+    () => computeCharacterSummaries(characters, hunts, gathers, expenses, drops, incomes, currentMonth, monthlyBossIncomeByCharacter),
+    [characters, hunts, gathers, expenses, drops, incomes, currentMonth, monthlyBossIncomeByCharacter]
   )
 
   const getCharacterSummary = useCallback(
     (characterId: string) =>
       enrichLedgerWithBoss(
-        computeLedgerSummary(hunts, gathers, expenses, drops, {
+        computeLedgerSummary(hunts, gathers, expenses, drops, incomes, {
           characterId,
           startDate: `${currentMonth}-01`,
           endDate: `${currentMonth}-31`,
         }),
         monthlyBossIncomeByCharacter[characterId] ?? 0
       ),
-    [hunts, gathers, expenses, drops, currentMonth, monthlyBossIncomeByCharacter]
+    [hunts, gathers, expenses, drops, incomes, currentMonth, monthlyBossIncomeByCharacter]
   )
 
   const getCharacterWeekSummary = useCallback(
     (characterId: string) => {
       const { start, end } = getWeeklyPeriod()
       return enrichLedgerWithBoss(
-        computeLedgerSummary(hunts, gathers, expenses, drops, {
+        computeLedgerSummary(hunts, gathers, expenses, drops, incomes, {
           characterId,
           startDate: start,
           endDate: end,
@@ -182,13 +189,13 @@ export function useLedger(
         weeklyBossIncomeByCharacter[characterId] ?? 0
       )
     },
-    [hunts, gathers, expenses, drops, weeklyBossIncomeByCharacter]
+    [hunts, gathers, expenses, drops, incomes, weeklyBossIncomeByCharacter]
   )
 
   const getGoalProgress = useCallback(
     (goal: (typeof goals)[0]) =>
-      computeGoalProgress(goal, hunts, gathers, expenses, drops, snapshots),
-    [hunts, gathers, expenses, drops, snapshots]
+      computeGoalProgress(goal, hunts, gathers, expenses, drops, snapshots, incomes),
+    [hunts, gathers, expenses, drops, snapshots, incomes]
   )
 
   const createExpense = useCallback(
@@ -209,6 +216,27 @@ export function useLedger(
   const saveExpenseMemo = useCallback(async (id: string, memo: string | null) => {
     const row = await updateExpense(id, { memo: memo?.trim() || null })
     setExpenses((prev) => prev.map((e) => (e.id === id ? row : e)))
+    setError(null)
+  }, [])
+
+  const createIncome = useCallback(
+    async (data: { characterId: string; category: IncomeCategory; amount: number; memo?: string; recordDate: string }) => {
+      if (!user) return
+      const row = await addIncome(user.id, data)
+      setIncomes((prev) => [row, ...prev])
+      setError(null)
+    },
+    [user]
+  )
+
+  const removeIncome = useCallback(async (id: string) => {
+    await deleteIncome(id)
+    setIncomes((prev) => prev.filter((i) => i.id !== id))
+  }, [])
+
+  const saveIncomeMemo = useCallback(async (id: string, memo: string | null) => {
+    const row = await updateIncome(id, { memo: memo?.trim() || null })
+    setIncomes((prev) => prev.map((i) => (i.id === id ? row : i)))
     setError(null)
   }, [])
 
@@ -457,6 +485,7 @@ export function useLedger(
 
   return {
     expenses,
+    incomes,
     hunts,
     gathers,
     drops,
@@ -472,6 +501,10 @@ export function useLedger(
     accountSummaryAll,
     dailyNet,
     expenseByCategory,
+    incomeByCategory: useMemo(
+      () => computeIncomeByCategory(incomes, { month: currentMonth }),
+      [incomes, currentMonth]
+    ),
     characterSummaries,
     getCharacterSummary,
     getCharacterWeekSummary,
@@ -479,6 +512,9 @@ export function useLedger(
     createExpense,
     removeExpense,
     saveExpenseMemo,
+    createIncome,
+    removeIncome,
+    saveIncomeMemo,
     createHunt,
     sellSolErda,
     spendSolErda,

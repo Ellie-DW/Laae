@@ -37,6 +37,15 @@ export function isSolErdaPurchaseExpense(memo: string | null) {
   return parseSolErdaPurchaseMemo(memo) !== null
 }
 
+export function collectSolErdaPurchaseHuntIds(expenses: Expense[]) {
+  const ids = new Set<string>()
+  for (const e of expenses) {
+    const parsed = parseSolErdaPurchaseMemo(e.memo)
+    if (parsed?.huntId) ids.add(parsed.huntId)
+  }
+  return ids
+}
+
 export interface SolErdaMonthStats {
   acquired: number
   purchased: number
@@ -57,11 +66,7 @@ export function summarizeSolErdaMonth(
   const inMonth = (date: string) => date.startsWith(monthPrefix)
   const matchChar = (id: string) => !characterId || id === characterId
 
-  const purchaseHuntIds = new Set<string>()
-  for (const e of expenses) {
-    const parsed = parseSolErdaPurchaseMemo(e.memo)
-    if (parsed?.huntId) purchaseHuntIds.add(parsed.huntId)
-  }
+  const purchaseHuntIds = collectSolErdaPurchaseHuntIds(expenses)
 
   let acquired = 0
   let purchased = 0
@@ -120,8 +125,13 @@ export interface HuntCumulativeStats {
   saleCount: number
 }
 
-export function getHuntCumulativeStats(hunts: HuntRecord[], characterId?: string): HuntCumulativeStats {
+export function getHuntCumulativeStats(
+  hunts: HuntRecord[],
+  characterId?: string,
+  expenses: Expense[] = []
+): HuntCumulativeStats {
   const filtered = hunts.filter((h) => !characterId || h.characterId === characterId)
+  const purchaseHuntIds = collectSolErdaPurchaseHuntIds(expenses)
 
   let huntMesoTotal = 0
   let saleMesoTotal = 0
@@ -137,7 +147,9 @@ export function getHuntCumulativeStats(hunts: HuntRecord[], characterId?: string
       saleCount += 1
     } else if (!isSolErdaSpend(h)) {
       huntMesoTotal += h.meso
-      acquiredSolErda += Math.max(0, h.solErdaFragments)
+      if (h.solErdaFragments > 0 && !purchaseHuntIds.has(h.id)) {
+        acquiredSolErda += h.solErdaFragments
+      }
       huntCount += 1
     }
   }

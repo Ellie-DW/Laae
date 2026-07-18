@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { Character, Goal, HuntRecord, GatherRecord, Expense, DropRecord, BossSnapshot, CharacterBossData, DiaryNote, RiceRecord } from '../types'
+import type { Character, Goal, HuntRecord, GatherRecord, Expense, Income, DropRecord, BossSnapshot, CharacterBossData, DiaryNote, RiceRecord } from '../types'
 import {
   buildDiaryDays,
   filterDiaryDaysByType,
@@ -33,6 +33,7 @@ interface DiaryPageProps {
   hunts: HuntRecord[]
   gathers: GatherRecord[]
   expenses: Expense[]
+  incomes: Income[]
   drops: DropRecord[]
   snapshots: BossSnapshot[]
   diaryNotes: DiaryNote[]
@@ -40,6 +41,7 @@ interface DiaryPageProps {
   onRemoveHunt: (id: string) => Promise<void>
   onRemoveGather: (id: string) => Promise<void>
   onRemoveExpense: (id: string) => Promise<void>
+  onRemoveIncome: (id: string) => Promise<void>
   onRemoveSolErdaPurchase: (expenseId: string, memo: string | null) => Promise<void>
   onRemoveDrop: (id: string) => Promise<void>
   onRemoveRice?: (id: string) => Promise<void>
@@ -62,6 +64,7 @@ const TYPE_FILTERS: { id: TypeFilter; label: string }[] = [
   { id: 'hunt', label: '사냥' },
   { id: 'gather', label: '채집' },
   { id: 'drop', label: '드랍' },
+  { id: 'income', label: '수입' },
   { id: 'expense', label: '지출' },
   { id: 'boss', label: '보스' },
   { id: 'rice', label: '쌀먹' },
@@ -71,7 +74,7 @@ const PAGE_LABEL: Record<string, string> = {
   hunt: '사냥',
   gather: '채집',
   drop: '드랍',
-  expense: '지출',
+  expense: '장부',
   boss: '보스',
   rice: '쌀곳간',
 }
@@ -82,6 +85,7 @@ export default function DiaryPage({
   hunts,
   gathers,
   expenses,
+  incomes,
   drops,
   snapshots,
   diaryNotes,
@@ -89,6 +93,7 @@ export default function DiaryPage({
   onRemoveHunt,
   onRemoveGather,
   onRemoveExpense,
+  onRemoveIncome,
   onRemoveSolErdaPurchase,
   onRemoveDrop,
   onRemoveRice,
@@ -112,13 +117,14 @@ export default function DiaryPage({
   const allDays = useMemo(
     () => buildDiaryDays(hunts, gathers, expenses, characters, {
       characterId: charFilter,
+      incomes,
       drops,
       snapshots,
       bossDataMap,
       notes: diaryNotes,
       riceRecords,
     }),
-    [hunts, gathers, expenses, drops, characters, snapshots, bossDataMap, diaryNotes, riceRecords, filterCharacterId]
+    [hunts, gathers, expenses, incomes, drops, characters, snapshots, bossDataMap, diaryNotes, riceRecords, filterCharacterId]
   )
 
   const typeFilters = useMemo(
@@ -197,6 +203,10 @@ export default function DiaryPage({
     }
     if (entry.id.startsWith('drop-')) {
       await onRemoveDrop(entry.id.slice(5))
+      return
+    }
+    if (entry.id.startsWith('income-')) {
+      await onRemoveIncome(entry.id.slice(7))
       return
     }
     if (entry.id.startsWith('expense-')) {
