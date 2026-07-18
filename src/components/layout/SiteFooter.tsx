@@ -1,5 +1,5 @@
 import { SITE_LOGO_SRC } from '../../lib/assetImages'
-import { LEGAL_PATHS, OPEN_KAKAO_URL, SITE_NAME, SITE_TAGLINE } from '../../lib/site'
+import { FOOTER_COMMUNITY_ENTRIES, LEGAL_PATHS, OPEN_KAKAO_URL, SITE_NAME, SITE_TAGLINE } from '../../lib/site'
 
 interface SiteFooterProps {
   compact?: boolean
@@ -64,6 +64,28 @@ export default function SiteFooter({ compact = false }: SiteFooterProps) {
             </p>
             {compact && <span className="text-xs text-slate-600 sm:hidden">© {year} {SITE_NAME}</span>}
           </div>
+        </div>
+
+        <div className={`mt-6 pt-4 border-t border-dark-border/30 ${compact ? 'text-center' : ''}`}>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            {FOOTER_COMMUNITY_ENTRIES.map((entry, index) => (
+              <span key={entry.label}>
+                {index > 0 && <span className="text-slate-600 mx-2">|</span>}
+                {entry.href ? (
+                  <a
+                    href={entry.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-cyber-400 transition-colors"
+                  >
+                    {entry.label}
+                  </a>
+                ) : (
+                  <span>{entry.label}</span>
+                )}
+              </span>
+            ))}
+          </p>
         </div>
       </div>
     </footer>
