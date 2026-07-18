@@ -1,11 +1,11 @@
-import type { HuntRecord, GatherRecord, Expense, DropRecord, BossSnapshot, CharacterBossData, DiaryNote, RiceRecord, Page } from '../types'
-import { EXPENSE_CATEGORY_LABEL } from './ledgerApi'
+import type { HuntRecord, GatherRecord, Expense, Income, DropRecord, BossSnapshot, CharacterBossData, DiaryNote, RiceRecord, Page } from '../types'
+import { EXPENSE_CATEGORY_LABEL, INCOME_CATEGORY_LABEL } from './ledgerApi'
 import { calculateBossStats, isWeeklyBossCleared, isMonthlyBossCleared } from './bossStats'
 import { isSolErdaSale, isSolErdaSpend, parseSolErdaPurchaseMemo, isSolErdaPurchaseExpense } from './huntStats'
 import { formatWonPerEok } from './riceTrade'
 import { getToday, formatMesoKorean, formatWon, getWeeklyPeriod, getMonthlyPeriod } from '../utils'
 
-export type DiaryEntryType = 'hunt' | 'gather' | 'drop' | 'expense' | 'boss' | 'note' | 'rice'
+export type DiaryEntryType = 'hunt' | 'gather' | 'drop' | 'income' | 'expense' | 'boss' | 'note' | 'rice'
 
 export interface DiaryEntry {
   id: string
@@ -42,6 +42,7 @@ const TYPE_META: Record<DiaryEntryType, { icon: string; label: string }> = {
   hunt: { icon: '⚔️', label: '사냥' },
   gather: { icon: '🌿', label: '채집' },
   drop: { icon: '💎', label: '드랍' },
+  income: { icon: '💰', label: '수입' },
   expense: { icon: '💸', label: '지출' },
   boss: { icon: '👹', label: '보스' },
   note: { icon: '📝', label: '메모' },
@@ -52,6 +53,7 @@ const ENTRY_TARGET_PAGE: Record<Exclude<DiaryEntryType, 'note'>, Page> = {
   hunt: 'hunt',
   gather: 'gather',
   drop: 'drop',
+  income: 'expense',
   expense: 'expense',
   boss: 'boss',
   rice: 'rice',
@@ -179,6 +181,7 @@ export function buildDiaryDays(
   characters: { id: string; name: string }[],
   options?: {
     characterId?: string
+    incomes?: Income[]
     drops?: DropRecord[]
     snapshots?: BossSnapshot[]
     bossDataMap?: Record<string, CharacterBossData>
@@ -256,6 +259,21 @@ export function buildDiaryDays(
       amount: d.meso,
       title: d.itemName,
       memo: d.memo,
+    })
+  }
+
+  for (const i of options?.incomes ?? []) {
+    if (charId && i.characterId !== charId) continue
+    entries.push({
+      id: `income-${i.id}`,
+      type: 'income',
+      characterId: i.characterId,
+      characterName: charName(characters, i.characterId),
+      recordDate: i.recordDate,
+      createdAt: i.createdAt,
+      amount: i.amount,
+      title: INCOME_CATEGORY_LABEL[i.category],
+      memo: i.memo,
     })
   }
 

@@ -81,10 +81,22 @@ export interface CharacterBossData {
 
 export type ExpenseCategory = 'purchase' | 'enhancement' | 'consumable' | 'other'
 
+export type IncomeCategory = 'trade' | 'sale' | 'reward' | 'other'
+
 export interface Expense {
   id: string
   characterId: string
   category: ExpenseCategory
+  amount: number
+  memo: string | null
+  recordDate: string
+  createdAt: string
+}
+
+export interface Income {
+  id: string
+  characterId: string
+  category: IncomeCategory
   amount: number
   memo: string | null
   recordDate: string

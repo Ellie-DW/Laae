@@ -3,6 +3,8 @@ import { normalizeDropItemName } from '../data/dropItems'
 import type {
   Expense,
   ExpenseCategory,
+  Income,
+  IncomeCategory,
   HuntRecord,
   GatherRecord,
   DropRecord,
@@ -19,6 +21,18 @@ function mapExpense(row: Record<string, unknown>): Expense {
     id: row.id as string,
     characterId: row.character_id as string,
     category: row.category as ExpenseCategory,
+    amount: Number(row.amount),
+    memo: (row.memo as string) ?? null,
+    recordDate: row.record_date as string,
+    createdAt: row.created_at as string,
+  }
+}
+
+function mapIncome(row: Record<string, unknown>): Income {
+  return {
+    id: row.id as string,
+    characterId: row.character_id as string,
+    category: row.category as IncomeCategory,
     amount: Number(row.amount),
     memo: (row.memo as string) ?? null,
     recordDate: row.record_date as string,
@@ -124,8 +138,9 @@ function mapSnapshot(row: Record<string, unknown>): BossSnapshot {
 
 export async function fetchLedgerData(userId: string, options?: { includeRice?: boolean }) {
   const includeRice = options?.includeRice ?? true
-  const [expenses, hunts, gathers, drops, goals, snapshots, diaryNotes, riceRecords] = await Promise.all([
+  const [expenses, incomes, hunts, gathers, drops, goals, snapshots, diaryNotes, riceRecords] = await Promise.all([
     supabase.from('expenses').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
+    supabase.from('income_records').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
     supabase.from('hunt_records').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
     supabase.from('gather_records').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
     supabase.from('drop_records').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
@@ -138,6 +153,7 @@ export async function fetchLedgerData(userId: string, options?: { includeRice?: 
   ])
 
   if (expenses.error) throw new Error(expenses.error.message)
+  if (incomes.error) throw new Error(incomes.error.message)
   if (hunts.error) throw new Error(hunts.error.message)
   if (gathers.error) throw new Error(gathers.error.message)
   if (drops.error) throw new Error(drops.error.message)
@@ -148,6 +164,7 @@ export async function fetchLedgerData(userId: string, options?: { includeRice?: 
 
   return {
     expenses: expenses.data.map(mapExpense),
+    incomes: incomes.data.map(mapIncome),
     hunts: hunts.data.map(mapHunt),
     gathers: gathers.data.map(mapGather),
     drops: drops.data.map(mapDrop),
@@ -156,6 +173,45 @@ export async function fetchLedgerData(userId: string, options?: { includeRice?: 
     diaryNotes: diaryNotes.data.map(mapDiaryNote),
     riceRecords: riceRecords.data.map(mapRiceRecord),
   }
+}
+
+export async function addIncome(
+  userId: string,
+  data: { characterId: string; category: IncomeCategory; amount: number; memo?: string; recordDate: string }
+) {
+  const { data: row, error } = await supabase
+    .from('income_records')
+    .insert({
+      user_id: userId,
+      character_id: data.characterId,
+      category: data.category,
+      amount: data.amount,
+      memo: data.memo ?? null,
+      record_date: data.recordDate,
+    })
+    .select('*')
+    .single()
+  if (error) throw error
+  return mapIncome(row)
+}
+
+export async function deleteIncome(id: string) {
+  const { error } = await supabase.from('income_records').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function updateIncome(
+  id: string,
+  data: { memo?: string | null }
+) {
+  const { data: row, error } = await supabase
+    .from('income_records')
+    .update({ memo: data.memo ?? null })
+    .eq('id', id)
+    .select('*')
+    .single()
+  if (error) throw error
+  return mapIncome(row)
 }
 
 export async function addExpense(
@@ -507,6 +563,13 @@ export async function addRiceRecord(
 export async function deleteRiceRecord(id: string) {
   const { error } = await supabase.from('rice_records').delete().eq('id', id)
   if (error) throw error
+}
+
+export const INCOME_CATEGORY_LABEL: Record<IncomeCategory, string> = {
+  trade: '거래',
+  sale: '판매',
+  reward: '보상',
+  other: '기타',
 }
 
 export const EXPENSE_CATEGORY_LABEL: Record<ExpenseCategory, string> = {

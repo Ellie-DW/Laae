@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { Character, Goal, HuntRecord, GatherRecord, Expense, DropRecord, BossSnapshot, CharacterBossData, RiceRecord } from '../types'
+import type { Character, Goal, HuntRecord, GatherRecord, Expense, Income, DropRecord, BossSnapshot, CharacterBossData, RiceRecord } from '../types'
 import type { AccountStats } from '../lib/bossStats'
 import type { LedgerSummary, DailyNetEntry, CategoryBreakdown, GoalProgress } from '../lib/ledgerAnalytics'
 import { EXPENSE_CATEGORY_LABEL } from '../lib/ledgerApi'
@@ -45,6 +45,7 @@ interface DashboardPageProps {
   diaryHunts: HuntRecord[]
   diaryGathers: GatherRecord[]
   diaryExpenses: Expense[]
+  diaryIncomes: Income[]
   diaryDrops: DropRecord[]
   diarySnapshots: BossSnapshot[]
   diaryRiceRecords?: RiceRecord[]
@@ -75,12 +76,14 @@ export default function DashboardPage({
   diaryHunts,
   diaryGathers,
   diaryExpenses,
+  diaryIncomes,
   diaryDrops,
   diarySnapshots,
   diaryRiceRecords,
 }: DashboardPageProps) {
   const recentDiary = useMemo(() => {
     const days = buildDiaryDays(diaryHunts, diaryGathers, diaryExpenses, characters, {
+      incomes: diaryIncomes,
       drops: diaryDrops,
       snapshots: diarySnapshots,
       bossDataMap,
@@ -91,7 +94,7 @@ export default function DashboardPage({
       ...entry,
       dayLabel: dayLabelByDate[entry.recordDate] ?? entry.recordDate,
     }))
-  }, [diaryHunts, diaryGathers, diaryExpenses, diaryDrops, diarySnapshots, diaryRiceRecords, bossDataMap, characters])
+  }, [diaryHunts, diaryGathers, diaryExpenses, diaryIncomes, diaryDrops, diarySnapshots, diaryRiceRecords, bossDataMap, characters])
 
   const charStatsById = useMemo(
     () => Object.fromEntries(accountStats.perCharacter.map((c) => [c.id, c])),
@@ -191,6 +194,7 @@ export default function DashboardPage({
         gathers={diaryGathers}
         drops={diaryDrops}
         expenses={diaryExpenses}
+        incomes={diaryIncomes}
         snapshots={diarySnapshots}
         bossDataMap={bossDataMap}
       />

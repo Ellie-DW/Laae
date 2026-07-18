@@ -7,7 +7,7 @@ import NavIcon from './components/layout/NavIcon'
 import DashboardPage from './pages/DashboardPage'
 import BossPage from './pages/BossPage'
 import HuntPage from './pages/HuntPage'
-import ExpensePage from './pages/ExpensePage'
+import LedgerPage from './pages/LedgerPage'
 import GatherPage from './pages/GatherPage'
 import GoalsPage from './pages/GoalsPage'
 import RicePage from './pages/RicePage'
@@ -88,7 +88,8 @@ function MainApp() {
       ledger.expenses,
       ledger.snapshots,
       characters,
-      bossDataMap
+      bossDataMap,
+      ledger.incomes
     )
     return calcRiceHeldMeso(netProfit, ledger.riceRecords)
   }, [
@@ -96,6 +97,7 @@ function MainApp() {
     ledger.gathers,
     ledger.drops,
     ledger.expenses,
+    ledger.incomes,
     ledger.snapshots,
     ledger.riceRecords,
     characters,
@@ -177,6 +179,7 @@ function MainApp() {
             diaryHunts={ledger.hunts}
             diaryGathers={ledger.gathers}
             diaryExpenses={ledger.expenses}
+            diaryIncomes={ledger.incomes}
             diaryDrops={ledger.drops}
             diarySnapshots={ledger.snapshots}
             diaryRiceRecords={riceAccess.hasAccess ? ledger.riceRecords : undefined}
@@ -190,6 +193,7 @@ function MainApp() {
             hunts={ledger.hunts}
             gathers={ledger.gathers}
             expenses={ledger.expenses}
+            incomes={ledger.incomes}
             drops={ledger.drops}
             snapshots={ledger.snapshots}
             diaryNotes={ledger.diaryNotes}
@@ -197,6 +201,7 @@ function MainApp() {
             onRemoveHunt={ledger.removeHunt}
             onRemoveGather={ledger.removeGather}
             onRemoveExpense={ledger.removeExpense}
+            onRemoveIncome={ledger.removeIncome}
             onRemoveSolErdaPurchase={ledger.removeSolErdaPurchase}
             onRemoveDrop={ledger.removeDrop}
             onRemoveRice={riceAccess.hasAccess ? ledger.removeRiceRecord : undefined}
@@ -243,13 +248,17 @@ function MainApp() {
         )
       case 'expense':
         return (
-          <ExpensePage
+          <LedgerPage
             characters={characters}
+            incomes={ledger.incomes}
             expenses={ledger.expenses}
             hunts={ledger.hunts}
-            onAdd={ledger.createExpense}
-            onSaveMemo={ledger.saveExpenseMemo}
-            onRemove={ledger.removeExpense}
+            onAddIncome={ledger.createIncome}
+            onSaveIncomeMemo={ledger.saveIncomeMemo}
+            onRemoveIncome={ledger.removeIncome}
+            onAddExpense={ledger.createExpense}
+            onSaveExpenseMemo={ledger.saveExpenseMemo}
+            onRemoveExpense={ledger.removeExpense}
             onSpendSolErda={ledger.spendSolErda}
             onPurchaseSolErda={ledger.purchaseSolErda}
             onRemoveSolErdaPurchase={ledger.removeSolErdaPurchase}

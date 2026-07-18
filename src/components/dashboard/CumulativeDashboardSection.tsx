@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react'
-import type { Character, HuntRecord, GatherRecord, DropRecord, Expense, BossSnapshot, CharacterBossData } from '../../types'
+import type { Character, HuntRecord, GatherRecord, DropRecord, Expense, Income, BossSnapshot, CharacterBossData } from '../../types'
 import { getDropItemStats, getDropStatsSummary, PREDEFINED_DROP_ITEMS } from '../../data/dropItems'
 import DropItemIcon from '../drop/DropItemIcon'
 import SolErdaIcon from '../hunt/SolErdaIcon'
@@ -15,6 +15,7 @@ interface CumulativeDashboardSectionProps {
   gathers: GatherRecord[]
   drops: DropRecord[]
   expenses: Expense[]
+  incomes?: Income[]
   snapshots: BossSnapshot[]
   bossDataMap: Record<string, CharacterBossData>
 }
@@ -33,10 +34,11 @@ export default function CumulativeDashboardSection({
   gathers,
   drops,
   expenses,
+  incomes = [],
   snapshots,
   bossDataMap,
 }: CumulativeDashboardSectionProps) {
-  const huntStats = useMemo(() => getHuntCumulativeStats(hunts), [hunts])
+  const huntStats = useMemo(() => getHuntCumulativeStats(hunts, undefined, expenses), [hunts, expenses])
   const dropStats = useMemo(() => getDropItemStats(drops), [drops])
   const dropSummary = useMemo(() => getDropStatsSummary(dropStats), [dropStats])
   const dropGroups = useMemo(() => {
@@ -55,6 +57,7 @@ export default function CumulativeDashboardSection({
     [snapshots, characters, bossDataMap]
   )
   const gatherTotal = useMemo(() => gathers.reduce((s, g) => s + g.meso, 0), [gathers])
+  const manualIncomeTotal = useMemo(() => incomes.reduce((s, i) => s + i.amount, 0), [incomes])
   const expenseTotal = useMemo(() => expenses.reduce((s, e) => s + e.amount, 0), [expenses])
 
   const totalIncome =
@@ -62,7 +65,8 @@ export default function CumulativeDashboardSection({
     huntStats.saleMesoTotal +
     dropSummary.saleIncome +
     bossStats.totalMeso +
-    gatherTotal
+    gatherTotal +
+    manualIncomeTotal
 
   const netProfit = totalIncome - expenseTotal
 
@@ -80,6 +84,11 @@ export default function CumulativeDashboardSection({
 
   const gatherItems: StatCard[] = [
     { label: '총 채집 수익', value: formatMesoKorean(gatherTotal), active: gatherTotal > 0, tone: 'emerald' },
+  ]
+
+  const ledgerItems: StatCard[] = [
+    { label: '장부 수입', value: formatMesoKorean(manualIncomeTotal), active: manualIncomeTotal > 0, tone: 'emerald' },
+    { label: '수입 기록', value: `${incomes.length}건`, active: incomes.length > 0, tone: 'emerald' },
   ]
 
   const expenseItems: StatCard[] = [
@@ -162,6 +171,15 @@ export default function CumulativeDashboardSection({
           <p className="text-xs text-slate-500 font-medium mb-2">채집</p>
           <div className="grid grid-cols-1 max-w-xs gap-2">
             {gatherItems.map((item) => (
+              <StatCard key={item.label} {...item} />
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs text-slate-500 font-medium mb-2">장부</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 max-w-md gap-2">
+            {ledgerItems.map((item) => (
               <StatCard key={item.label} {...item} />
             ))}
           </div>
