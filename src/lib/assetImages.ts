@@ -9,12 +9,14 @@ import navDrop from '../assets/images/nav/drop.png'
 import navGather from '../assets/images/nav/gather.png'
 import navGoals from '../assets/images/nav/goals.png'
 import navRice from '../assets/images/nav/rice.png'
+import navPremium from '../assets/images/nav/premium.png'
 import navLogo from '../assets/images/nav/logo.png'
 import huntMeso from '../assets/images/hunt/meso.png'
 import huntSolErda from '../assets/images/hunt/sol-erda.png'
 
 export const SITE_LOGO_SRC = navLogo
 export const RICE_ICON_SRC = navRice
+export const PREMIUM_ICON_SRC = navPremium
 export const HUNT_MESO_ICON_SRC = huntMeso
 export const HUNT_SOL_ERDA_ICON_SRC = huntSolErda
 
@@ -28,6 +30,7 @@ export const NAV_ICON_SRC: Record<Page, string> = {
   gather: navGather,
   goals: navGoals,
   rice: navRice,
+  premium: navPremium,
 }
 
 import { normalizeDropItemName } from '../data/dropItems'

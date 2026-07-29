@@ -1,4 +1,4 @@
-export type Page = 'dashboard' | 'diary' | 'hunt' | 'expense' | 'boss' | 'drop' | 'gather' | 'goals' | 'rice'
+export type Page = 'dashboard' | 'diary' | 'hunt' | 'expense' | 'boss' | 'drop' | 'gather' | 'goals' | 'rice' | 'premium'
 
 export type BossTab = 'grandis' | 'belowSword' | 'normal'
 
@@ -17,6 +17,7 @@ export interface Character {
   nexonOcid?: string | null
   nexonProfile?: NexonCharacterProfile | null
   nexonSyncedAt?: string | null
+  premiumGroupId?: string | null
 }
 
 /** Nexon Open API 캐릭터 기본 정보 (maplestory/v1/character/basic) */
@@ -164,6 +165,19 @@ export interface DiaryNote {
 
 /** 쌀먹(현금 거래) 수익 기록 */
 export interface RiceRecord {
+  id: string
+  characterId: string | null
+  amount: number
+  mesoSold: number | null
+  wonPerEok: number | null
+  description: string
+  memo: string | null
+  recordDate: string
+  createdAt: string
+}
+
+/** 프리미엄(현금 거래) 수익 기록 */
+export interface PremiumRecord {
   id: string
   characterId: string | null
   amount: number

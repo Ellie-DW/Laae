@@ -15,6 +15,10 @@ export function buildRiceTradeDescription(_mesoSold: number, wonPerEok: number):
   return `메소 거래 · ${formatWonPerEok(wonPerEok)}`
 }
 
+export function buildPremiumTradeDescription(_mesoSold: number, wonPerEok: number): string {
+  return `프리미엄 거래 · ${formatWonPerEok(wonPerEok)}`
+}
+
 export function parseWonPerEokInput(value: string): number {
   const num = parseInt(value.replace(/[^\d]/g, ''), 10)
   return Number.isFinite(num) ? num : 0

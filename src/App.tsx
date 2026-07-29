@@ -11,6 +11,7 @@ import LedgerPage from './pages/LedgerPage'
 import GatherPage from './pages/GatherPage'
 import GoalsPage from './pages/GoalsPage'
 import RicePage from './pages/RicePage'
+import PremiumPage from './pages/PremiumPage'
 import DiaryPage from './pages/DiaryPage'
 import DropPage from './pages/DropPage'
 import LoginPage from './pages/LoginPage'
@@ -21,6 +22,8 @@ import SiteFooter from './components/layout/SiteFooter'
 import { useAppData } from './hooks/useAppData'
 import { useLedger } from './hooks/useLedger'
 import { useRiceAccess } from './hooks/useRiceAccess'
+import { usePremiumAccess } from './hooks/usePremiumAccess'
+import { usePremiumGroups } from './hooks/usePremiumGroups'
 import { getDiaryEntryTargetPage, type DiaryEntry } from './lib/diaryEntries'
 import { computeExpenseByCategory, computeAccountCumulativeNetProfit } from './lib/ledgerAnalytics'
 import { calcRiceHeldMeso } from './lib/riceTrade'
@@ -64,9 +67,12 @@ function MainApp() {
     selectBossRunnerPreset,
     toggleWeeklyBossCleared,
     toggleMonthlyBossCleared,
+    updateCharacterPremiumGroup,
   } = useAppData()
 
   const riceAccess = useRiceAccess()
+  const premiumAccess = usePremiumAccess()
+  const premiumGroups = usePremiumGroups(premiumAccess.hasAccess)
 
   const weeklyBossIncomeByCharacter = useMemo(
     () => Object.fromEntries(accountStats.perCharacter.map((c) => [c.id, c.weeklyBossMeso])),
@@ -75,10 +81,14 @@ function MainApp() {
 
   const ledger = useLedger(characters, weeklyBossIncomeByCharacter, {
     riceEnabled: riceAccess.hasAccess,
+    premiumEnabled: false,
     bossDataMap,
   })
 
-  const navItems = getNavItems(riceAccess.hasAccess)
+  const navItems = getNavItems({
+    hasRiceAccess: riceAccess.hasAccess,
+    hasPremiumAccess: premiumAccess.hasAccess,
+  })
 
   const riceHeldMeso = useMemo(() => {
     const netProfit = computeAccountCumulativeNetProfit(
@@ -110,11 +120,18 @@ function MainApp() {
     }
   }, [riceAccess.loading, riceAccess.hasAccess, currentPage, setPage])
 
-  if (dataLoading || ledger.loading || riceAccess.loading) {
+  useEffect(() => {
+    if (!premiumAccess.loading && currentPage === 'premium' && !premiumAccess.hasAccess) {
+      setPage('dashboard')
+    }
+  }, [premiumAccess.loading, premiumAccess.hasAccess, currentPage, setPage])
+
+  if (dataLoading || ledger.loading || riceAccess.loading || premiumAccess.loading) {
     return <LoadingScreen message="데이터 불러오는 중..." />
   }
 
-  const combinedError = syncError || ledger.error || riceAccess.error
+  const combinedError =
+    syncError || ledger.error || riceAccess.error || premiumAccess.error || premiumGroups.error
   const weekPeriod = getWeeklyPeriod()
   const selectedLedgerSummary = selectedCharacter
     ? ledger.getCharacterSummary(selectedCharacter.id)
@@ -298,6 +315,35 @@ function MainApp() {
             onRevokeAccess={riceAccess.revokeAccess}
           />
         )
+      case 'premium':
+        if (!premiumAccess.hasAccess) return null
+        return (
+          <PremiumPage
+            characters={characters}
+            groups={premiumGroups.groups}
+            groupsLoading={premiumGroups.loading}
+            getCharacterSummary={ledger.getCharacterSummary}
+            onSelectCharacter={selectCharacter}
+            onCreateGroup={async (name) => {
+              await premiumGroups.createGroup(name)
+            }}
+            onRenameGroup={premiumGroups.renameGroup}
+            onDeleteGroup={async (groupId) => {
+              await premiumGroups.removeGroup(groupId)
+              characters
+                .filter((character) => character.premiumGroupId === groupId)
+                .forEach((character) => updateCharacterPremiumGroup(character.id, null))
+            }}
+            onAssignCharacterGroup={async (characterId, groupId) => {
+              await premiumGroups.assignCharacterGroup(characterId, groupId)
+              updateCharacterPremiumGroup(characterId, groupId)
+            }}
+            isOwner={premiumAccess.isOwner}
+            grants={premiumAccess.grants}
+            onGrantAccess={premiumAccess.grantAccess}
+            onRevokeAccess={premiumAccess.revokeAccess}
+          />
+        )
       default:
         return null
     }
@@ -345,7 +391,11 @@ function MainApp() {
           ))}
         </div>
 
-        <main className="flex-1 p-4 lg:p-6 max-w-5xl mx-auto w-full">
+        <main
+          className={`flex-1 p-4 lg:p-6 mx-auto w-full ${
+            currentPage === 'premium' ? 'max-w-7xl' : 'max-w-5xl'
+          }`}
+        >
           {combinedError && (
             <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
               저장 오류: {combinedError}
@@ -357,7 +407,12 @@ function MainApp() {
         <SiteFooter />
       </div>
 
-      <BottomNav currentPage={currentPage} onNavigate={setPage} hasRiceAccess={riceAccess.hasAccess} />
+      <BottomNav
+        currentPage={currentPage}
+        onNavigate={setPage}
+        hasRiceAccess={riceAccess.hasAccess}
+        hasPremiumAccess={premiumAccess.hasAccess}
+      />
     </div>
   )
 }
