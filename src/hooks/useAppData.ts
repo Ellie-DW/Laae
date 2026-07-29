@@ -249,6 +249,15 @@ export function useAppData() {
     [user, data.characters]
   )
 
+  const updateCharacterPremiumGroup = useCallback((characterId: string, groupId: string | null) => {
+    setData((prev) => ({
+      ...prev,
+      characters: prev.characters.map((character) =>
+        character.id === characterId ? { ...character, premiumGroupId: groupId } : character
+      ),
+    }))
+  }, [])
+
   const selectCharacter = useCallback(
     (id: string) => {
       setData((prev) => ({ ...prev, selectedCharacterId: id }))
@@ -468,5 +477,6 @@ export function useAppData() {
     toggleMonthlyBossCleared,
     syncNexonProfile,
     clearNexonLink,
+    updateCharacterPremiumGroup,
   }
 }

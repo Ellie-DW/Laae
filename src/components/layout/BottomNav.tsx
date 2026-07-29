@@ -6,10 +6,16 @@ interface BottomNavProps {
   currentPage: Page
   onNavigate: (page: Page) => void
   hasRiceAccess: boolean
+  hasPremiumAccess: boolean
 }
 
-export default function BottomNav({ currentPage, onNavigate, hasRiceAccess }: BottomNavProps) {
-  const items = getNavItems(hasRiceAccess)
+export default function BottomNav({
+  currentPage,
+  onNavigate,
+  hasRiceAccess,
+  hasPremiumAccess,
+}: BottomNavProps) {
+  const items = getNavItems({ hasRiceAccess, hasPremiumAccess })
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-dark-surface/90 backdrop-blur-lg border-t border-dark-border/60 z-50 safe-bottom">

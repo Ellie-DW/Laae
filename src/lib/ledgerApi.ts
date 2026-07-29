@@ -14,6 +14,7 @@ import type {
   CharacterBossData,
   DiaryNote,
   RiceRecord,
+  PremiumRecord,
 } from '../types'
 
 function mapExpense(row: Record<string, unknown>): Expense {
@@ -123,6 +124,10 @@ function mapRiceRecord(row: Record<string, unknown>): RiceRecord {
   }
 }
 
+function mapPremiumRecord(row: Record<string, unknown>): PremiumRecord {
+  return mapRiceRecord(row) as PremiumRecord
+}
+
 function mapSnapshot(row: Record<string, unknown>): BossSnapshot {
   return {
     id: row.id as string,
@@ -136,9 +141,14 @@ function mapSnapshot(row: Record<string, unknown>): BossSnapshot {
   }
 }
 
-export async function fetchLedgerData(userId: string, options?: { includeRice?: boolean }) {
+export async function fetchLedgerData(
+  userId: string,
+  options?: { includeRice?: boolean; includePremium?: boolean }
+) {
   const includeRice = options?.includeRice ?? true
-  const [expenses, incomes, hunts, gathers, drops, goals, snapshots, diaryNotes, riceRecords] = await Promise.all([
+  const includePremium = options?.includePremium ?? true
+  const [expenses, incomes, hunts, gathers, drops, goals, snapshots, diaryNotes, riceRecords, premiumRecords] =
+    await Promise.all([
     supabase.from('expenses').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
     supabase.from('income_records').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
     supabase.from('hunt_records').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
@@ -149,6 +159,9 @@ export async function fetchLedgerData(userId: string, options?: { includeRice?: 
     supabase.from('diary_notes').select('*').eq('user_id', userId).order('record_date', { ascending: false }),
     includeRice
       ? supabase.from('rice_records').select('*').eq('user_id', userId).order('record_date', { ascending: false })
+      : Promise.resolve({ data: [], error: null }),
+    includePremium
+      ? supabase.from('premium_records').select('*').eq('user_id', userId).order('record_date', { ascending: false })
       : Promise.resolve({ data: [], error: null }),
   ])
 
@@ -161,6 +174,7 @@ export async function fetchLedgerData(userId: string, options?: { includeRice?: 
   if (snapshots.error) throw new Error(snapshots.error.message)
   if (diaryNotes.error) throw new Error(diaryNotes.error.message)
   if (riceRecords.error) throw new Error(riceRecords.error.message)
+  if (premiumRecords.error) throw new Error(premiumRecords.error.message)
 
   return {
     expenses: expenses.data.map(mapExpense),
@@ -172,6 +186,7 @@ export async function fetchLedgerData(userId: string, options?: { includeRice?: 
     snapshots: snapshots.data.map(mapSnapshot),
     diaryNotes: diaryNotes.data.map(mapDiaryNote),
     riceRecords: riceRecords.data.map(mapRiceRecord),
+    premiumRecords: premiumRecords.data.map(mapPremiumRecord),
   }
 }
 
@@ -562,6 +577,41 @@ export async function addRiceRecord(
 
 export async function deleteRiceRecord(id: string) {
   const { error } = await supabase.from('rice_records').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function addPremiumRecord(
+  userId: string,
+  data: {
+    characterId?: string | null
+    amount: number
+    mesoSold: number
+    wonPerEok: number
+    description: string
+    memo?: string
+    recordDate: string
+  }
+) {
+  const { data: row, error } = await supabase
+    .from('premium_records')
+    .insert({
+      user_id: userId,
+      character_id: data.characterId ?? null,
+      amount: data.amount,
+      meso_sold: data.mesoSold,
+      won_per_eok: data.wonPerEok,
+      description: data.description.trim(),
+      memo: data.memo?.trim() || null,
+      record_date: data.recordDate,
+    })
+    .select('*')
+    .single()
+  if (error) throw error
+  return mapPremiumRecord(row)
+}
+
+export async function deletePremiumRecord(id: string) {
+  const { error } = await supabase.from('premium_records').delete().eq('id', id)
   if (error) throw error
 }
 

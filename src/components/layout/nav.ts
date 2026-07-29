@@ -10,8 +10,14 @@ export const NAV_ITEMS: { id: Page; label: string }[] = [
   { id: 'gather', label: '채집' },
   { id: 'goals', label: '목표' },
   { id: 'rice', label: '쌀곳간' },
+  { id: 'premium', label: '프리미엄' },
 ]
 
-export function getNavItems(hasRiceAccess: boolean) {
-  return hasRiceAccess ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.id !== 'rice')
+export function getNavItems(access: { hasRiceAccess?: boolean; hasPremiumAccess?: boolean } = {}) {
+  const { hasRiceAccess = false, hasPremiumAccess = false } = access
+  return NAV_ITEMS.filter((item) => {
+    if (item.id === 'rice') return hasRiceAccess
+    if (item.id === 'premium') return hasPremiumAccess
+    return true
+  })
 }

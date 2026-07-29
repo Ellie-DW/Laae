@@ -34,6 +34,7 @@ interface CharacterRow {
   nexon_ocid?: string | null
   nexon_profile?: NexonCharacterProfile | null
   nexon_synced_at?: string | null
+  premium_group_id?: string | null
 }
 
 interface PreferencesRow {
@@ -117,6 +118,7 @@ function rowToCharacter(row: CharacterRow): Character {
     nexonOcid: row.nexon_ocid ?? null,
     nexonProfile: row.nexon_profile ?? null,
     nexonSyncedAt: row.nexon_synced_at ?? null,
+    premiumGroupId: row.premium_group_id ?? null,
   }
 }
 
@@ -141,7 +143,7 @@ export async function fetchUserAppData(userId: string): Promise<AppData> {
   const [charsResult, prefsResult] = await Promise.all([
     supabase
       .from('characters')
-      .select('id, user_id, name, boss_data, sort_order, created_at, nexon_ocid, nexon_profile, nexon_synced_at')
+      .select('id, user_id, name, boss_data, sort_order, created_at, nexon_ocid, nexon_profile, nexon_synced_at, premium_group_id')
       .eq('user_id', userId)
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true }),
@@ -202,7 +204,7 @@ export async function createCharacter(
   const { data, error } = await supabase
     .from('characters')
     .insert({ user_id: userId, name: trimmed, boss_data: bossData, sort_order: nextSortOrder })
-    .select('id, name, sort_order, created_at, nexon_ocid, nexon_profile, nexon_synced_at')
+    .select('id, name, sort_order, created_at, nexon_ocid, nexon_profile, nexon_synced_at, premium_group_id')
     .single()
 
   if (error) {
@@ -226,7 +228,7 @@ export async function saveNexonCharacterLink(
       nexon_synced_at: syncedAt,
     })
     .eq('id', characterId)
-    .select('id, name, sort_order, created_at, nexon_ocid, nexon_profile, nexon_synced_at')
+    .select('id, name, sort_order, created_at, nexon_ocid, nexon_profile, nexon_synced_at, premium_group_id')
     .single()
 
   if (error) throw error
@@ -242,7 +244,7 @@ export async function clearNexonCharacterLink(characterId: string): Promise<Char
       nexon_synced_at: null,
     })
     .eq('id', characterId)
-    .select('id, name, sort_order, created_at, nexon_ocid, nexon_profile, nexon_synced_at')
+    .select('id, name, sort_order, created_at, nexon_ocid, nexon_profile, nexon_synced_at, premium_group_id')
     .single()
 
   if (error) throw error

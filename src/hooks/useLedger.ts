@@ -24,6 +24,8 @@ import {
   deleteDiaryNote,
   addRiceRecord,
   deleteRiceRecord,
+  addPremiumRecord,
+  deletePremiumRecord,
 } from '../lib/ledgerApi'
 import {
   computeLedgerSummary,
@@ -40,6 +42,7 @@ import { createDefaultBossData } from '../lib/appDataApi'
 import { getHeldSolErdaFragments, buildSolErdaPurchaseMemo, parseSolErdaPurchaseMemo } from '../lib/huntStats'
 import {
   buildRiceTradeDescription,
+  buildPremiumTradeDescription,
   calcRiceTradeAmount,
 } from '../lib/riceTrade'
 import { getWeeklyPeriod, getErrorMessage } from '../utils'
@@ -47,9 +50,10 @@ import { getWeeklyPeriod, getErrorMessage } from '../utils'
 export function useLedger(
   characters: { id: string; name: string }[],
   weeklyBossIncomeByCharacter: Record<string, number> = {},
-  options?: { riceEnabled?: boolean; bossDataMap?: Record<string, CharacterBossData> }
+  options?: { riceEnabled?: boolean; premiumEnabled?: boolean; bossDataMap?: Record<string, CharacterBossData> }
 ) {
   const riceEnabled = options?.riceEnabled ?? false
+  const premiumEnabled = options?.premiumEnabled ?? false
   const { user } = useAuth()
   const [expenses, setExpenses] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['expenses']>([])
   const [incomes, setIncomes] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['incomes']>([])
@@ -60,6 +64,9 @@ export function useLedger(
   const [snapshots, setSnapshots] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['snapshots']>([])
   const [diaryNotes, setDiaryNotes] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['diaryNotes']>([])
   const [riceRecords, setRiceRecords] = useState<Awaited<ReturnType<typeof fetchLedgerData>>['riceRecords']>([])
+  const [premiumRecords, setPremiumRecords] = useState<
+    Awaited<ReturnType<typeof fetchLedgerData>>['premiumRecords']
+  >([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -68,7 +75,10 @@ export function useLedger(
     setLoading(true)
     setError(null)
     try {
-      const data = await fetchLedgerData(user.id, { includeRice: riceEnabled })
+      const data = await fetchLedgerData(user.id, {
+        includeRice: riceEnabled,
+        includePremium: premiumEnabled,
+      })
       setExpenses(data.expenses)
       setIncomes(data.incomes)
       setHunts(data.hunts)
@@ -82,12 +92,17 @@ export function useLedger(
       } else {
         setRiceRecords([])
       }
+      if (premiumEnabled) {
+        setPremiumRecords(data.premiumRecords)
+      } else {
+        setPremiumRecords([])
+      }
     } catch (err) {
       setError(getErrorMessage(err, '기록을 불러오지 못했습니다.'))
     } finally {
       setLoading(false)
     }
-  }, [user, riceEnabled])
+  }, [user, riceEnabled, premiumEnabled])
 
   useEffect(() => {
     if (!user) {
@@ -100,11 +115,12 @@ export function useLedger(
       setSnapshots([])
       setDiaryNotes([])
       setRiceRecords([])
+      setPremiumRecords([])
       setLoading(false)
       return
     }
     reload()
-  }, [user, reload, riceEnabled])
+  }, [user, reload, riceEnabled, premiumEnabled])
 
   const currentMonth = getCurrentMonth()
   const bossDataMap = options?.bossDataMap ?? {}
@@ -483,6 +499,36 @@ export function useLedger(
     setRiceRecords((prev) => prev.filter((r) => r.id !== id))
   }, [])
 
+  const createPremiumRecord = useCallback(
+    async (data: {
+      mesoSold: number
+      wonPerEok: number
+      memo?: string
+      recordDate: string
+    }) => {
+      if (!user || data.mesoSold <= 0 || data.wonPerEok <= 0) return
+      const amount = calcRiceTradeAmount(data.mesoSold, data.wonPerEok)
+      if (amount <= 0) return
+      const row = await addPremiumRecord(user.id, {
+        characterId: null,
+        amount,
+        mesoSold: data.mesoSold,
+        wonPerEok: data.wonPerEok,
+        description: buildPremiumTradeDescription(data.mesoSold, data.wonPerEok),
+        memo: data.memo,
+        recordDate: data.recordDate,
+      })
+      setPremiumRecords((prev) => [row, ...prev])
+      setError(null)
+    },
+    [user]
+  )
+
+  const removePremiumRecord = useCallback(async (id: string) => {
+    await deletePremiumRecord(id)
+    setPremiumRecords((prev) => prev.filter((r) => r.id !== id))
+  }, [])
+
   return {
     expenses,
     incomes,
@@ -493,6 +539,7 @@ export function useLedger(
     snapshots,
     diaryNotes,
     riceRecords,
+    premiumRecords,
     loading,
     error,
     currentMonth,
@@ -534,6 +581,8 @@ export function useLedger(
     removeDiaryNote,
     createRiceRecord,
     removeRiceRecord,
+    createPremiumRecord,
+    removePremiumRecord,
     reload,
     upsertSnapshot,
     removeSnapshot,

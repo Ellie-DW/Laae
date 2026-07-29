@@ -1,11 +1,16 @@
 import type { ThemeMode } from '../../lib/theme'
 import { GridScan } from './GridScan'
+import PinkBeanBackground from './PinkBeanBackground'
 
 interface GridScanBackgroundProps {
   theme: ThemeMode
 }
 
 export default function GridScanBackground({ theme }: GridScanBackgroundProps) {
+  if (theme === 'pinkbean') {
+    return <PinkBeanBackground />
+  }
+
   if (theme !== 'cyber') {
     return <div className="fixed inset-0 -z-10 bg-dark-bg" aria-hidden />
   }
