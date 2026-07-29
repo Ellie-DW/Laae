@@ -1,6 +1,7 @@
 import type { ThemeMode } from '../../lib/theme'
 import { GridScan } from './GridScan'
 import PinkBeanBackground from './PinkBeanBackground'
+import StoneSpiritBackground from './StoneSpiritBackground'
 
 interface GridScanBackgroundProps {
   theme: ThemeMode
@@ -9,6 +10,10 @@ interface GridScanBackgroundProps {
 export default function GridScanBackground({ theme }: GridScanBackgroundProps) {
   if (theme === 'pinkbean') {
     return <PinkBeanBackground />
+  }
+
+  if (theme === 'stonespirit') {
+    return <StoneSpiritBackground />
   }
 
   if (theme !== 'cyber') {

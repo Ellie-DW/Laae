@@ -13,7 +13,7 @@ export default function ThemeSwitcher({ compact = false }: ThemeSwitcherProps) {
       {!compact && (
         <p className="text-xs font-medium text-slate-500 px-1 uppercase tracking-wider">테마</p>
       )}
-      <div className={`grid grid-cols-2 sm:grid-cols-4 gap-1 ${compact ? '' : 'px-0.5'}`}>
+      <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 ${compact ? '' : 'px-0.5'}`}>
         {THEME_OPTIONS.map((option) => {
           const active = theme === option.id
           return (

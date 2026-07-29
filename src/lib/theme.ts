@@ -1,4 +1,4 @@
-export type ThemeMode = 'cyber' | 'dark' | 'light' | 'pinkbean'
+export type ThemeMode = 'cyber' | 'dark' | 'light' | 'pinkbean' | 'stonespirit'
 
 export const THEME_STORAGE_KEY = 'maple-diary-theme'
 
@@ -7,10 +7,17 @@ export const THEME_OPTIONS: { id: ThemeMode; label: string; description: string 
   { id: 'dark', label: '다크', description: '심플 다크' },
   { id: 'light', label: '화이트', description: '밝은 배경' },
   { id: 'pinkbean', label: '핑크빈', description: '핑크빈 · 파스텔 핑크' },
+  { id: 'stonespirit', label: '돌의정령', description: '돌의 정령들의 숲' },
 ]
 
 export function isThemeMode(value: string | null | undefined): value is ThemeMode {
-  return value === 'cyber' || value === 'dark' || value === 'light' || value === 'pinkbean'
+  return (
+    value === 'cyber' ||
+    value === 'dark' ||
+    value === 'light' ||
+    value === 'pinkbean' ||
+    value === 'stonespirit'
+  )
 }
 
 export function readStoredTheme(): ThemeMode {
