@@ -35,6 +35,7 @@ interface PremiumPageProps {
   onRenameGroup: (groupId: string, name: string) => Promise<void>
   onDeleteGroup: (groupId: string) => Promise<void>
   onAssignCharacterGroup: (characterId: string, groupId: string | null) => Promise<void>
+  onResetAssignments: () => Promise<void>
   isOwner: boolean
   grants: PremiumAccessGrant[]
   onGrantAccess: (email: string) => Promise<void>
@@ -51,6 +52,7 @@ export default function PremiumPage({
   onRenameGroup,
   onDeleteGroup,
   onAssignCharacterGroup,
+  onResetAssignments,
   isOwner,
   grants,
   onGrantAccess,
@@ -61,6 +63,11 @@ export default function PremiumPage({
   const sections = useMemo(
     () => buildPremiumCharacterSections(characters, groups),
     [characters, groups]
+  )
+
+  const assignedCharacterCount = useMemo(
+    () => characters.filter((character) => character.premiumGroupId).length,
+    [characters]
   )
 
   const dragEnabled = groups.length > 0
@@ -156,9 +163,11 @@ export default function PremiumPage({
 
       <PremiumGroupManager
         groups={groups}
+        assignedCharacterCount={assignedCharacterCount}
         onCreate={onCreateGroup}
         onRename={onRenameGroup}
         onDelete={onDeleteGroup}
+        onResetAssignments={onResetAssignments}
       />
 
       {characters.length === 0 ? (

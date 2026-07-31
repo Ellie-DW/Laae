@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useCallback } from 'react'
 import Sidebar from './components/layout/Sidebar'
 import BottomNav from './components/layout/BottomNav'
 import MobileHeader from './components/layout/MobileHeader'
@@ -68,6 +68,8 @@ function MainApp() {
     toggleWeeklyBossCleared,
     toggleMonthlyBossCleared,
     updateCharacterPremiumGroup,
+    clearAllCharacterPremiumGroups,
+    resetAllBossLedgerState,
   } = useAppData()
 
   const riceAccess = useRiceAccess()
@@ -89,6 +91,11 @@ function MainApp() {
     hasRiceAccess: riceAccess.hasAccess,
     hasPremiumAccess: premiumAccess.hasAccess,
   })
+
+  const handleResetLedger = useCallback(async () => {
+    await ledger.resetAllRecords()
+    await resetAllBossLedgerState()
+  }, [ledger.resetAllRecords, resetAllBossLedgerState])
 
   const riceHeldMeso = useMemo(() => {
     const netProfit = computeAccountCumulativeNetProfit(
@@ -338,6 +345,10 @@ function MainApp() {
               await premiumGroups.assignCharacterGroup(characterId, groupId)
               updateCharacterPremiumGroup(characterId, groupId)
             }}
+            onResetAssignments={async () => {
+              await premiumGroups.resetAllAssignments()
+              clearAllCharacterPremiumGroups()
+            }}
             isOwner={premiumAccess.isOwner}
             grants={premiumAccess.grants}
             onGrantAccess={premiumAccess.grantAccess}
@@ -360,6 +371,7 @@ function MainApp() {
         onReorderCharacters={reorderCharacters}
         onSyncNexonProfile={syncNexonProfile}
         onClearNexonLink={clearNexonLink}
+        onResetLedger={handleResetLedger}
       />
 
       <div className="flex-1 flex flex-col min-h-screen pb-16 lg:pb-0">
@@ -372,6 +384,7 @@ function MainApp() {
           onReorderCharacters={reorderCharacters}
           onSyncNexonProfile={syncNexonProfile}
           onClearNexonLink={clearNexonLink}
+          onResetLedger={handleResetLedger}
         />
 
         <div className="hidden lg:flex border-b border-dark-border/60 bg-dark-surface/50 backdrop-blur-md px-6 py-2 gap-1">

@@ -55,6 +55,16 @@ export function createDefaultBossData(): CharacterBossData {
   return { selections, dropItems: createDefaultDropItems(), bossesClearedAt: null, weeklyClearedPeriodStart: null, monthlyClearedPeriodStart: null }
 }
 
+export function clearBossLedgerState(bossData: CharacterBossData): CharacterBossData {
+  return {
+    ...bossData,
+    selections: bossData.selections.map((selection) => ({ ...selection, checked: false })),
+    bossesClearedAt: null,
+    weeklyClearedPeriodStart: null,
+    monthlyClearedPeriodStart: null,
+  }
+}
+
 function normalizeBossSelections(selections: BossSelection[]): BossSelection[] {
   const keptDifficulty = new Map<string, string>()
 
