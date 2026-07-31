@@ -615,6 +615,28 @@ export async function deletePremiumRecord(id: string) {
   if (error) throw error
 }
 
+const LEDGER_RECORD_TABLES = [
+  'expenses',
+  'income_records',
+  'hunt_records',
+  'gather_records',
+  'drop_records',
+  'goals',
+  'boss_snapshots',
+  'diary_notes',
+  'rice_records',
+  'premium_records',
+] as const
+
+export async function clearAllLedgerRecords(userId: string): Promise<void> {
+  const results = await Promise.all(
+    LEDGER_RECORD_TABLES.map((table) => supabase.from(table).delete().eq('user_id', userId))
+  )
+
+  const failed = results.find((result) => result.error)
+  if (failed?.error) throw failed.error
+}
+
 export const INCOME_CATEGORY_LABEL: Record<IncomeCategory, string> = {
   trade: '거래',
   sale: '판매',

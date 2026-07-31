@@ -9,6 +9,7 @@ import { isGlobalCharacterNameTaken } from '../../lib/appDataApi'
 import { SITE_LOGO_SRC } from '../../lib/assetImages'
 import CharacterList from './CharacterList'
 import ThemeSwitcher from './ThemeSwitcher'
+import LedgerResetButton from './LedgerResetButton'
 import NexonCharacterPanel from '../character/NexonCharacterPanel'
 
 interface MobileHeaderProps {
@@ -20,6 +21,7 @@ interface MobileHeaderProps {
   onReorderCharacters: (orderedIds: string[]) => void
   onSyncNexonProfile: (characterId: string) => Promise<void>
   onClearNexonLink: (characterId: string) => Promise<void>
+  onResetLedger: () => Promise<void>
 }
 
 export default function MobileHeader({
@@ -31,6 +33,7 @@ export default function MobileHeader({
   onReorderCharacters,
   onSyncNexonProfile,
   onClearNexonLink,
+  onResetLedger,
 }: MobileHeaderProps) {
   const { user, signOut } = useAuth()
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -98,6 +101,7 @@ export default function MobileHeader({
         {user && (
           <div className="mt-2 pt-2 border-t border-dark-border/30 space-y-2">
             <ThemeSwitcher compact />
+            <LedgerResetButton onReset={onResetLedger} />
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0">
               {user.user_metadata?.avatar_url ? (

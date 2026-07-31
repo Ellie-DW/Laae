@@ -26,6 +26,7 @@ import {
   deleteRiceRecord,
   addPremiumRecord,
   deletePremiumRecord,
+  clearAllLedgerRecords,
 } from '../lib/ledgerApi'
 import {
   computeLedgerSummary,
@@ -529,6 +530,22 @@ export function useLedger(
     setPremiumRecords((prev) => prev.filter((r) => r.id !== id))
   }, [])
 
+  const resetAllRecords = useCallback(async () => {
+    if (!user) return
+    await clearAllLedgerRecords(user.id)
+    setExpenses([])
+    setIncomes([])
+    setHunts([])
+    setGathers([])
+    setDrops([])
+    setGoals([])
+    setSnapshots([])
+    setDiaryNotes([])
+    setRiceRecords([])
+    setPremiumRecords([])
+    setError(null)
+  }, [user])
+
   return {
     expenses,
     incomes,
@@ -583,6 +600,7 @@ export function useLedger(
     removeRiceRecord,
     createPremiumRecord,
     removePremiumRecord,
+    resetAllRecords,
     reload,
     upsertSnapshot,
     removeSnapshot,

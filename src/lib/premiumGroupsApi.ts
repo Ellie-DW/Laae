@@ -98,3 +98,18 @@ export async function assignCharacterPremiumGroup(
 
   if (error) throw error
 }
+
+export async function clearAllCharacterPremiumGroupAssignments(): Promise<void> {
+  const { data: userData, error: userError } = await supabase.auth.getUser()
+  if (userError) throw userError
+  const userId = userData.user?.id
+  if (!userId) throw new Error('로그인이 필요합니다.')
+
+  const { error } = await supabase
+    .from('characters')
+    .update({ premium_group_id: null })
+    .eq('user_id', userId)
+    .not('premium_group_id', 'is', null)
+
+  if (error) throw error
+}

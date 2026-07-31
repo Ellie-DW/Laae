@@ -15,6 +15,7 @@ import {
   type AppData,
   EMPTY_DATA,
   createDefaultBossData,
+  clearBossLedgerState,
   fetchUserAppData,
   savePreferences,
   createCharacter,
@@ -258,6 +259,15 @@ export function useAppData() {
     }))
   }, [])
 
+  const clearAllCharacterPremiumGroups = useCallback(() => {
+    setData((prev) => ({
+      ...prev,
+      characters: prev.characters.map((character) =>
+        character.premiumGroupId ? { ...character, premiumGroupId: null } : character
+      ),
+    }))
+  }, [])
+
   const selectCharacter = useCallback(
     (id: string) => {
       setData((prev) => ({ ...prev, selectedCharacterId: id }))
@@ -454,6 +464,23 @@ export function useAppData() {
     [data.characters, data.bossData]
   )
 
+  const resetAllBossLedgerState = useCallback(async () => {
+    if (!user || data.characters.length === 0) return
+
+    const nextBossData = { ...data.bossData }
+    for (const character of data.characters) {
+      const current = nextBossData[character.id] ?? createDefaultBossData()
+      nextBossData[character.id] = clearBossLedgerState(current)
+    }
+
+    setData((prev) => ({ ...prev, bossData: nextBossData }))
+
+    await Promise.all(
+      data.characters.map((character) => saveBossData(character.id, nextBossData[character.id]))
+    )
+    setSyncError(null)
+  }, [user, data.characters, data.bossData])
+
   return {
     characters: data.characters,
     selectedCharacter,
@@ -478,5 +505,7 @@ export function useAppData() {
     syncNexonProfile,
     clearNexonLink,
     updateCharacterPremiumGroup,
+    clearAllCharacterPremiumGroups,
+    resetAllBossLedgerState,
   }
 }

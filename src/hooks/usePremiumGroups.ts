@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import {
   assignCharacterPremiumGroup,
+  clearAllCharacterPremiumGroupAssignments,
   createPremiumCharacterGroup,
   deletePremiumCharacterGroup,
   fetchPremiumCharacterGroups,
@@ -67,6 +68,11 @@ export function usePremiumGroups(enabled: boolean) {
     setError(null)
   }, [])
 
+  const resetAllAssignments = useCallback(async () => {
+    await clearAllCharacterPremiumGroupAssignments()
+    setError(null)
+  }, [])
+
   return {
     groups,
     loading,
@@ -75,6 +81,7 @@ export function usePremiumGroups(enabled: boolean) {
     renameGroup,
     removeGroup,
     assignCharacterGroup,
+    resetAllAssignments,
     reload,
   }
 }

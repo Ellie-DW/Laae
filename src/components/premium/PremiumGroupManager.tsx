@@ -3,19 +3,24 @@ import type { PremiumCharacterGroup } from '../../lib/premiumGroupsApi'
 
 interface PremiumGroupManagerProps {
   groups: PremiumCharacterGroup[]
+  assignedCharacterCount: number
   onCreate: (name: string) => Promise<void>
   onRename: (groupId: string, name: string) => Promise<void>
   onDelete: (groupId: string) => Promise<void>
+  onResetAssignments: () => Promise<void>
 }
 
 export default function PremiumGroupManager({
   groups,
+  assignedCharacterCount,
   onCreate,
   onRename,
   onDelete,
+  onResetAssignments,
 }: PremiumGroupManagerProps) {
   const [newGroupName, setNewGroupName] = useState('')
   const [creating, setCreating] = useState(false)
+  const [resetting, setResetting] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -80,11 +85,41 @@ export default function PremiumGroupManager({
     }
   }
 
+  const handleResetAssignments = async () => {
+    if (
+      !confirm(
+        `모든 캐릭터의 그룹 배정을 초기화할까요?\n${assignedCharacterCount}명이 미분류로 이동해요.`
+      )
+    ) {
+      return
+    }
+
+    setResetting(true)
+    setError(null)
+    try {
+      await onResetAssignments()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '배정 초기화에 실패했습니다.')
+    } finally {
+      setResetting(false)
+    }
+  }
+
   return (
     <div className="panel-light p-4 space-y-4">
-      <div>
-        <h2 className="font-semibold text-slate-100">그룹 관리</h2>
-        <p className="text-xs text-slate-500 mt-1">아이디별로 캐릭터를 묶어서 볼 수 있어요</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="font-semibold text-slate-100">그룹 관리</h2>
+          <p className="text-xs text-slate-500 mt-1">아이디별로 캐릭터를 묶어서 볼 수 있어요</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleResetAssignments}
+          disabled={resetting || assignedCharacterCount === 0}
+          className="text-xs text-red-400 hover:text-red-300 border border-red-500/30 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-colors disabled:opacity-40 disabled:pointer-events-none shrink-0"
+        >
+          {resetting ? '...' : '배정 초기화'}
+        </button>
       </div>
 
       <form onSubmit={handleCreate} className="flex gap-2">

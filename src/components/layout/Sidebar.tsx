@@ -9,6 +9,7 @@ import { isGlobalCharacterNameTaken } from '../../lib/appDataApi'
 import { SITE_LOGO_SRC } from '../../lib/assetImages'
 import CharacterList from './CharacterList'
 import ThemeSwitcher from './ThemeSwitcher'
+import LedgerResetButton from './LedgerResetButton'
 import NexonCharacterPanel from '../character/NexonCharacterPanel'
 
 interface SidebarProps {
@@ -20,6 +21,7 @@ interface SidebarProps {
   onReorderCharacters: (orderedIds: string[]) => void
   onSyncNexonProfile: (characterId: string) => Promise<void>
   onClearNexonLink: (characterId: string) => Promise<void>
+  onResetLedger: () => Promise<void>
 }
 
 export default function Sidebar({
@@ -31,6 +33,7 @@ export default function Sidebar({
   onReorderCharacters,
   onSyncNexonProfile,
   onClearNexonLink,
+  onResetLedger,
 }: SidebarProps) {
   const { user, signOut } = useAuth()
   const [showAdd, setShowAdd] = useState(false)
@@ -143,6 +146,7 @@ export default function Sidebar({
       {user && (
         <div className="p-4 border-t border-dark-border/40 space-y-4">
           <ThemeSwitcher />
+          <LedgerResetButton onReset={onResetLedger} />
           <div className="flex items-center gap-3">
             {user.user_metadata?.avatar_url ? (
               <img
