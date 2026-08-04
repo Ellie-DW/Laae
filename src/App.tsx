@@ -329,7 +329,8 @@ function MainApp() {
             characters={characters}
             groups={premiumGroups.groups}
             groupsLoading={premiumGroups.loading}
-            getCharacterSummary={ledger.getCharacterSummary}
+            getCharacterSummary={ledger.getCharacterAllTimeSummary}
+            getCharacterPeriodSummary={ledger.getCharacterPeriodSummary}
             onSelectCharacter={selectCharacter}
             onCreateGroup={async (name) => {
               await premiumGroups.createGroup(name)
