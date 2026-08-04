@@ -16,6 +16,7 @@ import type { LedgerSummary } from '../lib/ledgerAnalytics'
 import { buildPremiumCharacterSections } from '../lib/premiumGroups'
 import PremiumAccessAdmin from '../components/premium/PremiumAccessAdmin'
 import PremiumCharacterCard from '../components/premium/PremiumCharacterCard'
+import PremiumMesoPortfolioPanel from '../components/premium/PremiumMesoPortfolioPanel'
 import PremiumDraggableCharacterCard, {
   parsePremiumCharacterDragId,
 } from '../components/premium/PremiumDraggableCharacterCard'
@@ -30,6 +31,7 @@ interface PremiumPageProps {
   groups: PremiumCharacterGroup[]
   groupsLoading: boolean
   getCharacterSummary: (characterId: string) => LedgerSummary
+  getCharacterPeriodSummary: (characterId: string, startDate: string, endDate: string) => LedgerSummary
   onSelectCharacter: (id: string) => void
   onCreateGroup: (name: string) => Promise<void>
   onRenameGroup: (groupId: string, name: string) => Promise<void>
@@ -47,6 +49,7 @@ export default function PremiumPage({
   groups,
   groupsLoading,
   getCharacterSummary,
+  getCharacterPeriodSummary,
   onSelectCharacter,
   onCreateGroup,
   onRenameGroup,
@@ -118,17 +121,18 @@ export default function PremiumPage({
     }
 
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5">
+      <div className="flex gap-4 sm:gap-5 overflow-x-auto pb-2 -mx-1 px-1">
         {section.characters.map((character) => (
-          <PremiumDraggableCharacterCard
-            key={character.id}
-            character={character}
-            summary={getCharacterSummary(character.id)}
-            groups={groups}
-            dragEnabled={dragEnabled}
-            onGroupChange={(groupId) => onAssignCharacterGroup(character.id, groupId)}
-            onClick={() => onSelectCharacter(character.id)}
-          />
+          <div key={character.id} className="w-[140px] sm:w-[160px] shrink-0">
+            <PremiumDraggableCharacterCard
+              character={character}
+              summary={getCharacterSummary(character.id)}
+              groups={groups}
+              dragEnabled={dragEnabled}
+              onGroupChange={(groupId) => onAssignCharacterGroup(character.id, groupId)}
+              onClick={() => onSelectCharacter(character.id)}
+            />
+          </div>
         ))}
       </div>
     )
@@ -136,16 +140,23 @@ export default function PremiumPage({
 
   const sectionList = (
     <div className="space-y-8">
-      {sections.map((section) => (
-        <PremiumGroupDropSection
-          key={section.group?.id ?? 'ungrouped'}
-          group={section.group}
-          characterCount={section.characters.length}
-          dropEnabled={dragEnabled}
-        >
-          {renderSectionContent(section)}
-        </PremiumGroupDropSection>
-      ))}
+      {sections.map((section) => {
+        const totalMeso = section.characters.reduce(
+          (sum, character) => sum + getCharacterSummary(character.id).netProfit,
+          0
+        )
+        return (
+          <PremiumGroupDropSection
+            key={section.group?.id ?? 'ungrouped'}
+            group={section.group}
+            characterCount={section.characters.length}
+            totalMeso={totalMeso}
+            dropEnabled={dragEnabled}
+          >
+            {renderSectionContent(section)}
+          </PremiumGroupDropSection>
+        )
+      })}
     </div>
   )
 
@@ -160,6 +171,14 @@ export default function PremiumPage({
           아이디별 그룹으로 캐릭터를 모아보고, 드래그해서 옮길 수 있어요
         </p>
       </div>
+
+      {characters.length > 0 && !groupsLoading && (
+        <PremiumMesoPortfolioPanel
+          sections={sections}
+          getCharacterSummary={getCharacterSummary}
+          getCharacterPeriodSummary={getCharacterPeriodSummary}
+        />
+      )}
 
       <PremiumGroupManager
         groups={groups}

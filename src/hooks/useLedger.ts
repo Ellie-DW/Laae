@@ -36,9 +36,12 @@ import {
   computeCharacterSummaries,
   computeGoalProgress,
   computeMonthlyBossIncomeByCharacter,
+  computeBossIncomeForRange,
+  computeLiveBossIncome,
   enrichLedgerWithBoss,
   getCurrentMonth,
 } from '../lib/ledgerAnalytics'
+import { getBossCumulativeStats } from '../lib/bossStats'
 import { createDefaultBossData } from '../lib/appDataApi'
 import { getHeldSolErdaFragments, buildSolErdaPurchaseMemo, parseSolErdaPurchaseMemo } from '../lib/huntStats'
 import {
@@ -46,7 +49,7 @@ import {
   buildPremiumTradeDescription,
   calcRiceTradeAmount,
 } from '../lib/riceTrade'
-import { getWeeklyPeriod, getErrorMessage } from '../utils'
+import { getWeeklyPeriod, getToday, getErrorMessage } from '../utils'
 
 export function useLedger(
   characters: { id: string; name: string }[],
@@ -207,6 +210,37 @@ export function useLedger(
       )
     },
     [hunts, gathers, expenses, drops, incomes, weeklyBossIncomeByCharacter]
+  )
+
+  const getCharacterAllTimeSummary = useCallback(
+    (characterId: string) => {
+      const bossData = bossDataMap[characterId] ?? createDefaultBossData()
+      const bossIncome = getBossCumulativeStats(snapshots, characterId, bossData).totalMeso
+      return enrichLedgerWithBoss(
+        computeLedgerSummary(hunts, gathers, expenses, drops, incomes, { characterId }),
+        bossIncome
+      )
+    },
+    [hunts, gathers, expenses, drops, incomes, snapshots, bossDataMap]
+  )
+
+  const getCharacterPeriodSummary = useCallback(
+    (characterId: string, startDate: string, endDate: string) => {
+      const bossData = bossDataMap[characterId] ?? createDefaultBossData()
+      let bossIncome = computeBossIncomeForRange(snapshots, characterId, startDate, endDate)
+      if (endDate >= getToday()) {
+        bossIncome += computeLiveBossIncome(bossData, snapshots, characterId)
+      }
+      return enrichLedgerWithBoss(
+        computeLedgerSummary(hunts, gathers, expenses, drops, incomes, {
+          characterId,
+          startDate,
+          endDate,
+        }),
+        bossIncome
+      )
+    },
+    [hunts, gathers, expenses, drops, incomes, snapshots, bossDataMap]
   )
 
   const getGoalProgress = useCallback(
@@ -572,6 +606,8 @@ export function useLedger(
     characterSummaries,
     getCharacterSummary,
     getCharacterWeekSummary,
+    getCharacterAllTimeSummary,
+    getCharacterPeriodSummary,
     getGoalProgress,
     createExpense,
     removeExpense,
