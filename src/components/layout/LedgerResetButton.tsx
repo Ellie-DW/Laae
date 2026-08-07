@@ -13,7 +13,7 @@ export default function LedgerResetButton({ onReset }: LedgerResetButtonProps) {
       '모든 가계부 기록을 삭제할까요?\n\n' +
         '· 사냥·채집·드랍·지출·수입\n' +
         '· 다이어리·목표·보스 잡음 기록\n' +
-        '· 쌀곳간·프리미엄 거래\n\n' +
+        '· 쌀곳간·프리미엄·수익률 가계부\n\n' +
         '캐릭터와 보스 난이도 설정은 유지돼요.\n' +
         '되돌릴 수 없습니다.'
     )
