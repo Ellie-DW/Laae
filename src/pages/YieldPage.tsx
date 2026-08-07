@@ -9,13 +9,18 @@ import {
   buildDailyRows,
   buildMonthSummaries,
   calcTotalSeedKrw,
+  calcTotalSeedUsd,
   calcDepositKrw,
+  calcDepositUsd,
   calcWithdrawalKrw,
+  calcWithdrawalUsd,
   formatYieldProfit,
+  formatYieldProfitUsd,
   formatYieldRate,
   getLatestDailyRow,
   parseOptionalWonInput,
   parseUsdInput,
+  resolveInitialPrincipalUsd,
   sortRecordsAsc,
   suggestNextDayStarts,
   summarizeOverall,
@@ -26,7 +31,12 @@ interface YieldPageProps {
   records: YieldDailyRecord[]
   settings: YieldSettings | null
   onSaveRecord: (data: YieldDailyRecordInput) => Promise<void>
-  onSaveSettings: (data: { initialPrincipal: number; startDate?: string; memo?: string }) => Promise<void>
+  onSaveSettings: (data: {
+    initialPrincipal: number
+    initialPrincipalUsd?: number | null
+    startDate?: string
+    memo?: string
+  }) => Promise<void>
   onRemoveRecord: (id: string) => Promise<void>
   isOwner: boolean
   grants: YieldAccessGrant[]
@@ -101,20 +111,25 @@ export default function YieldPage({
   const [memo, setMemo] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [principalInput, setPrincipalInput] = useState('')
+  const [principalUsdInput, setPrincipalUsdInput] = useState('')
   const [settingsStartDate, setSettingsStartDate] = useState(getToday())
   const [settingsMemo, setSettingsMemo] = useState('')
   const [savingSettings, setSavingSettings] = useState(false)
 
   const initialPrincipal = settings?.initialPrincipal ?? null
-  const rows = useMemo(() => buildDailyRows(records, initialPrincipal), [records, initialPrincipal])
+  const initialPrincipalUsd = settings?.initialPrincipalUsd ?? null
+  const rows = useMemo(
+    () => buildDailyRows(records, initialPrincipal, initialPrincipalUsd),
+    [records, initialPrincipal, initialPrincipalUsd]
+  )
   const monthSummaries = useMemo(
-    () => buildMonthSummaries(rows, initialPrincipal),
-    [rows, initialPrincipal]
+    () => buildMonthSummaries(rows, initialPrincipal, initialPrincipalUsd),
+    [rows, initialPrincipal, initialPrincipalUsd]
   )
   const latestRow = useMemo(() => getLatestDailyRow(rows), [rows])
   const overallSummary = useMemo(
-    () => summarizeOverall(rows, settings?.initialPrincipal ?? null),
-    [rows, settings?.initialPrincipal]
+    () => summarizeOverall(rows, initialPrincipal, initialPrincipalUsd),
+    [rows, initialPrincipal, initialPrincipalUsd]
   )
   const previousRecord = useMemo(() => {
     const ordered = sortRecordsAsc(records)
@@ -124,6 +139,9 @@ export default function YieldPage({
   useEffect(() => {
     if (!settings) return
     setPrincipalInput(String(settings.initialPrincipal))
+    setPrincipalUsdInput(
+      settings.initialPrincipalUsd != null ? String(settings.initialPrincipalUsd) : ''
+    )
     setSettingsStartDate(settings.startDate ?? getToday())
     setSettingsMemo(settings.memo ?? '')
   }, [settings])
@@ -140,28 +158,43 @@ export default function YieldPage({
       : isFirstRecord && initialPrincipal != null && initialPrincipal > 0
         ? initialPrincipal
         : null
+    const baselineUsd = previous
+      ? calcTotalSeedUsd(previous)
+      : isFirstRecord
+        ? resolveInitialPrincipalUsd(
+            initialPrincipal,
+            initialPrincipalUsd,
+            ordered[0] ?? null
+          )
+        : null
 
-    const totalSeed = calcTotalSeedKrw({
+    const recordDraft = {
       upbitEnd: parseOptionalWonInput(upbitEnd),
       binanceEnd: parseUsdInput(binanceEnd),
       usdKrwRate: rate,
-    })
-    const withdrawalKrw = calcWithdrawalKrw({
       withdrawalUpbit: parseOptionalWonInput(withdrawalUpbit),
       withdrawalBinance: parseUsdInput(withdrawalBinance),
-      usdKrwRate: rate,
-    })
-    const depositKrw = calcDepositKrw({
       depositUpbit: parseOptionalWonInput(depositUpbit),
       depositBinance: parseUsdInput(depositBinance),
-      usdKrwRate: rate,
-    })
+    }
+    const totalSeed = calcTotalSeedKrw(recordDraft)
+    const totalSeedUsd = calcTotalSeedUsd(recordDraft)
+    const withdrawalKrw = calcWithdrawalKrw(recordDraft)
+    const withdrawalUsd = calcWithdrawalUsd(recordDraft)
+    const depositKrw = calcDepositKrw(recordDraft)
+    const depositUsd = calcDepositUsd(recordDraft)
     const profit =
       baseline != null ? totalSeed - baseline + withdrawalKrw - depositKrw : null
+    const profitUsd =
+      baselineUsd != null ? totalSeedUsd - baselineUsd + withdrawalUsd - depositUsd : null
     const yieldRate =
       baseline != null && baseline > 0 && profit != null ? (profit / baseline) * 100 : null
+    const yieldRateUsd =
+      baselineUsd != null && baselineUsd > 0 && profitUsd != null
+        ? (profitUsd / baselineUsd) * 100
+        : null
 
-    return { totalSeed, withdrawalKrw, depositKrw, profit, yieldRate }
+    return { totalSeed, withdrawalKrw, depositKrw, profit, profitUsd, yieldRate, yieldRateUsd }
   }, [
     usdKrwRate,
     recordDate,
@@ -173,6 +206,7 @@ export default function YieldPage({
     depositBinance,
     records,
     initialPrincipal,
+    initialPrincipalUsd,
   ])
 
   const applySuggestedStarts = () => {
@@ -186,11 +220,13 @@ export default function YieldPage({
     e.preventDefault()
     const initialPrincipal = parseWonInput(principalInput)
     if (initialPrincipal <= 0) return
+    const parsedUsd = parseUsdInput(principalUsdInput)
 
     setSavingSettings(true)
     try {
       await onSaveSettings({
         initialPrincipal,
+        initialPrincipalUsd: parsedUsd,
         startDate: settingsStartDate,
         memo: settingsMemo.trim() || undefined,
       })
@@ -245,7 +281,7 @@ export default function YieldPage({
       </div>
 
       {(settings || latestRow) && overallSummary && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <div className="panel-glow p-5">
             <p className="text-sm text-slate-400">시작 원금</p>
             <p className="text-2xl font-bold text-slate-100 mt-1">
@@ -265,7 +301,7 @@ export default function YieldPage({
             <p className="text-xs text-slate-500 mt-1">{latestRow?.recordDate ?? '기록 없음'}</p>
           </div>
           <div className="panel-glow p-5">
-            <p className="text-sm text-slate-400">총 수익금</p>
+            <p className="text-sm text-slate-400">원화 수익금</p>
             <p
               className={`text-2xl font-bold mt-1 ${
                 (overallSummary.totalProfit ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'
@@ -273,10 +309,23 @@ export default function YieldPage({
             >
               {overallSummary.totalProfit == null ? '-' : formatYieldProfit(overallSummary.totalProfit)}
             </p>
-            <p className="text-xs text-slate-500 mt-1">시작 원금 대비</p>
+            <p className="text-xs text-slate-500 mt-1">환율 반영 · ₩</p>
           </div>
           <div className="panel-glow p-5">
-            <p className="text-sm text-slate-400">총 수익률</p>
+            <p className="text-sm text-slate-400">달러 수익금</p>
+            <p
+              className={`text-2xl font-bold mt-1 ${
+                (overallSummary.totalProfitUsd ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'
+              }`}
+            >
+              {overallSummary.totalProfitUsd == null
+                ? '-'
+                : formatYieldProfitUsd(overallSummary.totalProfitUsd)}
+            </p>
+            <p className="text-xs text-slate-500 mt-1">환율 제외 · $</p>
+          </div>
+          <div className="panel-glow p-5">
+            <p className="text-sm text-slate-400">원화 수익률</p>
             <p
               className={`text-2xl font-bold mt-1 ${
                 (overallSummary.totalYieldRate ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'
@@ -286,7 +335,20 @@ export default function YieldPage({
                 ? '-'
                 : formatYieldRate(overallSummary.totalYieldRate)}
             </p>
-            <p className="text-xs text-slate-500 mt-1">시작 원금 대비</p>
+            <p className="text-xs text-slate-500 mt-1">환율 반영 · ₩ 기준</p>
+          </div>
+          <div className="panel-glow p-5">
+            <p className="text-sm text-slate-400">달러 수익률</p>
+            <p
+              className={`text-2xl font-bold mt-1 ${
+                (overallSummary.totalYieldRateUsd ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'
+              }`}
+            >
+              {overallSummary.totalYieldRateUsd == null
+                ? '-'
+                : formatYieldRate(overallSummary.totalYieldRateUsd)}
+            </p>
+            <p className="text-xs text-slate-500 mt-1">환율 제외 · $ 기준</p>
           </div>
         </div>
       )}
@@ -294,22 +356,34 @@ export default function YieldPage({
       <YieldPortfolioChart
         rows={rows}
         initialPrincipal={settings?.initialPrincipal ?? null}
+        initialPrincipalUsd={settings?.initialPrincipalUsd ?? null}
         investmentStartDate={settings?.startDate ?? null}
       />
 
       <form onSubmit={handleSaveSettings} className="panel-light p-4 space-y-3">
         <div>
           <h2 className="font-semibold text-slate-100">시작 원금</h2>
-          <p className="text-xs text-slate-500 mt-1">처음 투자한 금액을 저장해 두면 총 수익금·수익률 계산 기준이 됩니다</p>
+          <p className="text-xs text-slate-500 mt-1">
+            처음 투자한 금액 · 원화는 필수, 달러는 선택 (미입력 시 첫 기록 환율로 환산)
+          </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
-            <label className="text-xs text-slate-500 mb-1 block">원금 (원)</label>
+            <label className="text-xs text-slate-500 mb-1 block">원금 (₩)</label>
             <input
               value={principalInput}
               onChange={(e) => setPrincipalInput(e.target.value)}
               required
               placeholder="예: 2000000"
+              className="input-field text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-slate-500 mb-1 block">원금 ($, 선택)</label>
+            <input
+              value={principalUsdInput}
+              onChange={(e) => setPrincipalUsdInput(e.target.value)}
+              placeholder="예: 1500.00"
               className="input-field text-sm"
             />
           </div>
@@ -479,17 +553,33 @@ export default function YieldPage({
             )}
             {preview.profit != null && (
               <span className="text-slate-400">
-                수익금{' '}
+                원화 수익금{' '}
                 <strong className={preview.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
                   {formatYieldProfit(preview.profit)}
                 </strong>
               </span>
             )}
+            {preview.profitUsd != null && (
+              <span className="text-slate-400">
+                달러 수익금{' '}
+                <strong className={preview.profitUsd >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                  {formatYieldProfitUsd(preview.profitUsd)}
+                </strong>
+              </span>
+            )}
             {preview.yieldRate != null && (
               <span className="text-slate-400">
-                수익률{' '}
+                원화 수익률{' '}
                 <strong className={preview.yieldRate >= 0 ? 'text-emerald-400' : 'text-red-400'}>
                   {formatYieldRate(preview.yieldRate)}
+                </strong>
+              </span>
+            )}
+            {preview.yieldRateUsd != null && (
+              <span className="text-slate-400">
+                달러 수익률{' '}
+                <strong className={preview.yieldRateUsd >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                  {formatYieldRate(preview.yieldRateUsd)}
                 </strong>
               </span>
             )}

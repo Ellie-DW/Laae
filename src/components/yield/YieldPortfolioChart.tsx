@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
 import type { YieldDailyRow } from '../../lib/yieldCalc'
-import { formatYieldProfit, formatYieldRate } from '../../lib/yieldCalc'
+import { formatYieldProfit, formatYieldProfitUsd, formatYieldRate } from '../../lib/yieldCalc'
 import {
   YIELD_CHART_PERIODS,
   buildYieldChartSeries,
+  formatChartUsd,
+  formatChartUsdFull,
   formatChartWon,
   type YieldChartMode,
   type YieldChartPeriod,
@@ -14,7 +16,21 @@ import { formatWon } from '../../utils'
 interface YieldPortfolioChartProps {
   rows: YieldDailyRow[]
   initialPrincipal: number | null
+  initialPrincipalUsd: number | null
   investmentStartDate: string | null
+}
+
+const MODE_LABELS: Record<YieldChartMode, string> = {
+  seed: '총 시드 (₩)',
+  seed_usd: '총 시드 ($)',
+  return_krw: '원화 수익률',
+  return_usd: '달러 수익률',
+}
+
+const CHART_MODES: YieldChartMode[] = ['seed', 'seed_usd', 'return_krw', 'return_usd']
+
+function isSeedChartMode(mode: YieldChartMode): boolean {
+  return mode === 'seed' || mode === 'seed_usd'
 }
 
 function YieldLineChart({
@@ -33,9 +49,13 @@ function YieldLineChart({
   const padX = 8
   const padY = 12
   const padRight = 52
+  const isSeedMode = isSeedChartMode(mode)
 
-  const formatAxisValue = (value: number) =>
-    mode === 'seed' ? formatChartWon(value) : formatYieldRate(value)
+  const formatAxisValue = (value: number) => {
+    if (mode === 'seed') return formatChartWon(value)
+    if (mode === 'seed_usd') return formatChartUsd(value)
+    return formatYieldRate(value)
+  }
 
   if (points.length === 0) {
     return (
@@ -45,9 +65,9 @@ function YieldLineChart({
     )
   }
 
-  const minValue = mode === 'seed' ? 0 : Math.min(0, ...points.map((point) => point.value))
+  const minValue = isSeedMode ? 0 : Math.min(0, ...points.map((point) => point.value))
   const maxValue = Math.max(...points.map((point) => point.value), 0)
-  const valueRange = Math.max(maxValue - minValue, mode === 'return' ? 0.01 : 1)
+  const valueRange = Math.max(maxValue - minValue, isSeedMode ? 1 : 0.01)
 
   const chartW = width - padX - padRight
   const chartH = height - padY * 2
@@ -59,7 +79,7 @@ function YieldLineChart({
   })
 
   const linePath = coords.map((coord, index) => `${index === 0 ? 'M' : 'L'} ${coord.x} ${coord.y}`).join(' ')
-  const lineColor = '#fbbf24'
+  const lineColor = mode === 'seed' ? '#fbbf24' : '#38bdf8'
 
   const yTickCount = 4
   const yTicks = Array.from({ length: yTickCount + 1 }, (_, index) => minValue + (valueRange / yTickCount) * index)
@@ -162,6 +182,7 @@ function YieldLineChart({
 export default function YieldPortfolioChart({
   rows,
   initialPrincipal,
+  initialPrincipalUsd,
   investmentStartDate,
 }: YieldPortfolioChartProps) {
   const [mode, setMode] = useState<YieldChartMode>('seed')
@@ -169,8 +190,16 @@ export default function YieldPortfolioChart({
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
 
   const chart = useMemo(
-    () => buildYieldChartSeries(rows, initialPrincipal, investmentStartDate, mode, period),
-    [rows, initialPrincipal, investmentStartDate, mode, period]
+    () =>
+      buildYieldChartSeries(
+        rows,
+        initialPrincipal,
+        initialPrincipalUsd,
+        investmentStartDate,
+        mode,
+        period
+      ),
+    [rows, initialPrincipal, initialPrincipalUsd, investmentStartDate, mode, period]
   )
 
   if (rows.length === 0) return null
@@ -178,38 +207,40 @@ export default function YieldPortfolioChart({
   const activeIndex = hoverIndex ?? Math.max(chart.points.length - 1, 0)
   const activePoint = chart.points[activeIndex] ?? chart.points[chart.points.length - 1]
   const displayDate = activePoint?.date ?? chart.activeDate
-  const displayValue =
-    mode === 'seed'
-      ? formatWon(activePoint?.totalSeed ?? chart.currentValue)
-      : formatYieldRate(activePoint?.value ?? chart.currentValue)
 
-  const displayChange =
-    mode === 'seed'
-      ? formatYieldProfit(activePoint?.change ?? 0)
-      : formatYieldRate(activePoint?.change ?? 0)
+  const displayValue = (() => {
+    if (mode === 'seed') {
+      return formatWon(activePoint?.totalSeed ?? chart.currentValue)
+    }
+    if (mode === 'seed_usd') {
+      return formatChartUsdFull(activePoint?.totalSeedUsd ?? chart.currentValue)
+    }
+    return formatYieldRate(activePoint?.value ?? chart.currentValue)
+  })()
+
+  const displayChange = (() => {
+    const change = activePoint?.change ?? 0
+    if (mode === 'seed') return formatYieldProfit(change)
+    if (mode === 'seed_usd') return formatYieldProfitUsd(change)
+    return formatYieldRate(change)
+  })()
 
   return (
     <div className="rounded-xl border border-dark-border/70 bg-[#0b0f14] overflow-hidden">
       <div className="px-4 pt-4 pb-2 flex flex-wrap items-start justify-between gap-3 border-b border-dark-border/40">
-        <div className="flex gap-1 p-0.5 rounded-lg bg-dark-bg/50">
-          <button
-            type="button"
-            onClick={() => setMode('seed')}
-            className={`px-2.5 py-1 rounded-md text-xs transition-colors ${
-              mode === 'seed' ? 'bg-white/10 text-slate-100' : 'text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            총 시드
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode('return')}
-            className={`px-2.5 py-1 rounded-md text-xs transition-colors ${
-              mode === 'return' ? 'bg-white/10 text-slate-100' : 'text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            수익률
-          </button>
+        <div className="flex gap-1 p-0.5 rounded-lg bg-dark-bg/50 flex-wrap">
+          {CHART_MODES.map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => setMode(item)}
+              className={`px-2.5 py-1 rounded-md text-xs transition-colors ${
+                mode === item ? 'bg-white/10 text-slate-100' : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              {MODE_LABELS[item]}
+            </button>
+          ))}
         </div>
         <div className="flex flex-wrap gap-1.5">
           {YIELD_CHART_PERIODS.map((item) => (
@@ -228,7 +259,7 @@ export default function YieldPortfolioChart({
       </div>
 
       <div className="px-4 pt-4 pb-2">
-        <p className="text-sm text-slate-400">{mode === 'seed' ? '총 시드' : '누적 수익률'}</p>
+        <p className="text-sm text-slate-400">{MODE_LABELS[mode]}</p>
         <p className="text-[11px] text-slate-500 mt-1 tabular-nums">{displayDate}</p>
         <p className="text-3xl font-bold text-slate-50 mt-1 tracking-tight tabular-nums">{displayValue}</p>
         {activePoint && activePoint.change !== 0 && (

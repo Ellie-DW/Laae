@@ -3,6 +3,7 @@ import {
   formatKrwCell,
   formatUsd,
   formatYieldProfit,
+  formatYieldProfitUsd,
   formatYieldRate,
 } from '../../lib/yieldCalc'
 import { formatWon } from '../../utils'
@@ -22,18 +23,25 @@ function MetricBadge({
   kind,
 }: {
   value: number | null
-  kind: 'money' | 'rate'
+  kind: 'money_krw' | 'money_usd' | 'rate'
 }) {
   if (value == null) return <EmptyCell />
+  const formatMoney =
+    kind === 'money_usd'
+      ? formatYieldProfitUsd
+      : kind === 'money_krw'
+        ? formatYieldProfit
+        : null
+
   if (value === 0) {
     return (
       <span className="text-slate-500 tabular-nums">
-        {kind === 'money' ? formatYieldProfit(0) : formatYieldRate(0)}
+        {formatMoney ? formatMoney(0) : formatYieldRate(0)}
       </span>
     )
   }
 
-  const label = kind === 'money' ? formatYieldProfit(value) : formatYieldRate(value)
+  const label = formatMoney ? formatMoney(value) : formatYieldRate(value)
   const tone =
     value > 0
       ? 'bg-emerald-500/10 text-emerald-300 ring-emerald-500/20'
@@ -84,7 +92,7 @@ export default function YieldDailyTable({ rows, monthSummaries, onRemove }: Yiel
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-[1000px] w-full border-collapse">
+        <table className="min-w-[1200px] w-full border-collapse">
           <thead>
             <tr>
               <th className={`${thBase} sticky left-0 z-20 text-left`} rowSpan={2}>
@@ -106,10 +114,16 @@ export default function YieldDailyTable({ rows, monthSummaries, onRemove }: Yiel
                 입금
               </th>
               <th className={`${thBase} text-right border-l border-dark-border/50`} rowSpan={2}>
-                수익금
+                원화 수익금
               </th>
               <th className={`${thBase} text-right border-l border-dark-border/50`} rowSpan={2}>
-                수익률
+                달러 수익금
+              </th>
+              <th className={`${thBase} text-right border-l border-dark-border/50`} rowSpan={2}>
+                원화 수익률
+              </th>
+              <th className={`${thBase} text-right border-l border-dark-border/50`} rowSpan={2}>
+                달러 수익률
               </th>
               <th className={`${thBase} text-right border-l border-dark-border/50`} rowSpan={2}>
                 환율
@@ -171,10 +185,16 @@ export default function YieldDailyTable({ rows, monthSummaries, onRemove }: Yiel
                     )}
                   </td>
                   <td className={`${tdNum} border-l border-dark-border/30`}>
-                    <MetricBadge value={row.profit} kind="money" />
+                    <MetricBadge value={row.profit} kind="money_krw" />
+                  </td>
+                  <td className={`${tdNum} border-l border-dark-border/30`}>
+                    <MetricBadge value={row.profitUsd} kind="money_usd" />
                   </td>
                   <td className={`${tdNum} border-l border-dark-border/30`}>
                     <MetricBadge value={row.yieldRate} kind="rate" />
+                  </td>
+                  <td className={`${tdNum} border-l border-dark-border/30`}>
+                    <MetricBadge value={row.yieldRateUsd} kind="rate" />
                   </td>
                   <td className={`${tdNum} border-l border-dark-border/30 text-slate-400`}>
                     {row.usdKrwRate.toLocaleString('ko-KR')}
@@ -209,10 +229,16 @@ export default function YieldDailyTable({ rows, monthSummaries, onRemove }: Yiel
                     <td className={`${tdNum} border-l border-dark-border/30 border-t border-dark-border/70`} />
                     <td className={`${tdNum} border-l border-dark-border/30 border-t border-dark-border/70`} />
                     <td className={`${tdNum} border-l border-dark-border/30 border-t border-dark-border/70`}>
-                      <MetricBadge value={monthSummary.profit} kind="money" />
+                      <MetricBadge value={monthSummary.profit} kind="money_krw" />
+                    </td>
+                    <td className={`${tdNum} border-l border-dark-border/30 border-t border-dark-border/70`}>
+                      <MetricBadge value={monthSummary.profitUsd} kind="money_usd" />
                     </td>
                     <td className={`${tdNum} border-l border-dark-border/30 border-t border-dark-border/70`}>
                       <MetricBadge value={monthSummary.yieldRate} kind="rate" />
+                    </td>
+                    <td className={`${tdNum} border-l border-dark-border/30 border-t border-dark-border/70`}>
+                      <MetricBadge value={monthSummary.yieldRateUsd} kind="rate" />
                     </td>
                     <td className={`${tdNum} border-l border-dark-border/30 border-t border-dark-border/70`} colSpan={2} />
                   </tr>
