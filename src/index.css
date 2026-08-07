@@ -22,6 +22,20 @@
   --scrollbar-track: rgba(15, 23, 42, 0.5);
   --scrollbar-thumb: rgba(34, 211, 238, 0.2);
   --scrollbar-thumb-hover: rgba(34, 211, 238, 0.35);
+  --yield-krw: 251 191 36;
+  --yield-usd: 56 189 248;
+  --yield-upbit: 129 140 248;
+  --yield-binance: 251 191 36;
+  --yield-deposit: 56 189 248;
+  --yield-withdraw: 251 191 36;
+  --yield-profit: 52 211 153;
+  --yield-loss: 248 113 113;
+  --yield-accent: 34 211 238;
+  --yield-violet: 139 92 246;
+  --yield-chart-from: 12 17 24;
+  --yield-chart-to: 8 11 16;
+  --yield-hero-glow-a: 251 191 36;
+  --yield-hero-glow-b: 56 189 248;
 }
 
 [data-theme='dark'] {
@@ -43,6 +57,20 @@
   --scrollbar-track: rgba(24, 24, 27, 0.8);
   --scrollbar-thumb: rgba(161, 161, 170, 0.35);
   --scrollbar-thumb-hover: rgba(161, 161, 170, 0.55);
+  --yield-krw: 234 179 8;
+  --yield-usd: 96 165 250;
+  --yield-upbit: 167 139 250;
+  --yield-binance: 234 179 8;
+  --yield-deposit: 96 165 250;
+  --yield-withdraw: 234 179 8;
+  --yield-profit: 74 222 128;
+  --yield-loss: 248 113 113;
+  --yield-accent: 161 161 170;
+  --yield-violet: 167 139 250;
+  --yield-chart-from: 18 18 20;
+  --yield-chart-to: 9 9 11;
+  --yield-hero-glow-a: 234 179 8;
+  --yield-hero-glow-b: 96 165 250;
 }
 
 [data-theme='light'] {
@@ -73,6 +101,20 @@
   --scrollbar-track: rgba(231, 229, 228, 0.7);
   --scrollbar-thumb: rgba(168, 162, 158, 0.65);
   --scrollbar-thumb-hover: rgba(120, 113, 108, 0.75);
+  --yield-krw: var(--theme-maple);
+  --yield-usd: var(--theme-accent);
+  --yield-upbit: 79 70 229;
+  --yield-binance: var(--theme-maple);
+  --yield-deposit: var(--theme-accent);
+  --yield-withdraw: 217 119 6;
+  --yield-profit: var(--theme-profit);
+  --yield-loss: var(--theme-expense);
+  --yield-accent: var(--theme-accent);
+  --yield-violet: 109 40 217;
+  --yield-chart-from: 255 255 255;
+  --yield-chart-to: 250 250 249;
+  --yield-hero-glow-a: var(--theme-maple);
+  --yield-hero-glow-b: var(--theme-accent);
 }
 
 [data-theme='pinkbean'] {
@@ -109,6 +151,20 @@
   --scrollbar-track: rgba(251, 207, 232, 0.35);
   --scrollbar-thumb: rgba(244, 114, 182, 0.45);
   --scrollbar-thumb-hover: rgba(219, 39, 119, 0.6);
+  --yield-krw: var(--theme-maple);
+  --yield-usd: var(--theme-violet);
+  --yield-upbit: 192 38 211;
+  --yield-binance: 236 72 153;
+  --yield-deposit: var(--theme-violet);
+  --yield-withdraw: var(--theme-pending);
+  --yield-profit: var(--theme-profit);
+  --yield-loss: var(--theme-expense);
+  --yield-accent: var(--theme-accent);
+  --yield-violet: var(--theme-violet);
+  --yield-chart-from: 255 251 252;
+  --yield-chart-to: 253 242 248;
+  --yield-hero-glow-a: var(--theme-accent);
+  --yield-hero-glow-b: var(--theme-violet);
 }
 
 [data-theme='stonespirit'] {
@@ -145,6 +201,20 @@
   --scrollbar-track: rgba(35, 22, 55, 0.8);
   --scrollbar-thumb: rgba(165, 255, 120, 0.35);
   --scrollbar-thumb-hover: rgba(120, 240, 255, 0.5);
+  --yield-krw: var(--theme-maple);
+  --yield-usd: var(--theme-violet);
+  --yield-upbit: 196 181 253;
+  --yield-binance: 165 255 120;
+  --yield-deposit: var(--theme-violet);
+  --yield-withdraw: 153 246 228;
+  --yield-profit: var(--theme-profit);
+  --yield-loss: var(--theme-expense);
+  --yield-accent: var(--theme-accent);
+  --yield-violet: var(--theme-violet);
+  --yield-chart-from: 42 28 68;
+  --yield-chart-to: 35 22 55;
+  --yield-hero-glow-a: var(--theme-accent);
+  --yield-hero-glow-b: var(--theme-violet);
 }
 
 @layer base {
@@ -205,6 +275,490 @@
   .text-meso {
     @apply text-maple-400;
   }
+
+  .yield-page {
+    @apply space-y-8 max-w-[1400px] pb-8;
+  }
+
+  .yield-hero {
+    @apply relative overflow-hidden rounded-2xl border px-6 py-6 sm:py-7 panel-light;
+    border-color: rgb(var(--yield-krw) / 0.22);
+    background-image: linear-gradient(
+      135deg,
+      rgb(var(--theme-panel) / 0.95) 0%,
+      rgb(var(--theme-surface) / 0.88) 55%,
+      rgb(var(--theme-bg) / 0.92) 100%
+    );
+  }
+
+  .yield-hero-glow-a {
+    @apply absolute -top-16 -right-10 h-48 w-48 rounded-full blur-3xl pointer-events-none;
+    background-color: rgb(var(--yield-hero-glow-a) / 0.12);
+  }
+
+  .yield-hero-glow-b {
+    @apply absolute -bottom-20 -left-10 h-40 w-40 rounded-full blur-3xl pointer-events-none;
+    background-color: rgb(var(--yield-hero-glow-b) / 0.1);
+  }
+
+  .yield-hero-badge {
+    @apply inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-medium mb-3;
+    border: 1px solid rgb(var(--yield-krw) / 0.28);
+    background-color: rgb(var(--yield-krw) / 0.1);
+    color: rgb(var(--yield-krw));
+  }
+
+  .yield-hero-badge-dot {
+    @apply h-1.5 w-1.5 rounded-full animate-pulse;
+    background-color: rgb(var(--yield-krw));
+  }
+
+  .yield-hero-chip {
+    @apply rounded-lg border px-3 py-2 text-xs;
+    border-color: rgb(var(--theme-border) / 0.85);
+    background-color: rgb(var(--theme-bg) / 0.45);
+    color: rgb(var(--theme-text-muted));
+  }
+
+  .yield-section-title {
+    @apply text-sm font-semibold;
+    color: rgb(var(--theme-text-secondary));
+  }
+
+  .yield-section-divider {
+    @apply flex-1 h-px;
+    background-image: linear-gradient(to right, rgb(var(--yield-accent) / 0.35), transparent);
+  }
+
+  .yield-stat-card {
+    @apply relative overflow-hidden rounded-xl border p-4 sm:p-5;
+    border-color: rgb(var(--theme-border) / 0.75);
+    background-image: linear-gradient(
+      145deg,
+      rgb(var(--theme-panel) / 0.92) 0%,
+      rgb(var(--theme-bg) / 0.55) 100%
+    );
+  }
+
+  .yield-stat-card::before {
+    content: '';
+    @apply absolute inset-0 pointer-events-none;
+    background: linear-gradient(145deg, rgb(var(--yield-stat-accent, var(--theme-border)) / 0.12), transparent 55%);
+  }
+
+  .yield-stat-card--krw {
+    --yield-stat-accent: var(--yield-krw);
+  }
+
+  .yield-stat-card--usd {
+    --yield-stat-accent: var(--yield-usd);
+  }
+
+  .yield-stat-card--profit {
+    --yield-stat-accent: var(--yield-profit);
+  }
+
+  .yield-stat-card--violet {
+    --yield-stat-accent: var(--yield-violet);
+  }
+
+  .yield-stat-card--neutral {
+    --yield-stat-accent: var(--theme-muted);
+  }
+
+  .yield-stat-label {
+    @apply text-[11px] font-medium uppercase tracking-wider relative;
+    color: rgb(var(--theme-text-faint));
+  }
+
+  .yield-stat-value {
+    @apply text-xl sm:text-2xl font-bold mt-2 tabular-nums tracking-tight relative;
+    color: rgb(var(--theme-text));
+  }
+
+  .yield-stat-sub {
+    @apply text-[11px] mt-1.5 relative;
+    color: rgb(var(--theme-text-faint));
+  }
+
+  .yield-stat-value--krw {
+    color: rgb(var(--yield-krw));
+  }
+
+  .yield-stat-value--usd {
+    color: rgb(var(--yield-usd));
+  }
+
+  .yield-stat-value--violet {
+    color: rgb(var(--yield-violet));
+  }
+
+  .yield-stat-value--profit {
+    color: rgb(var(--yield-profit));
+  }
+
+  .yield-stat-value--loss {
+    color: rgb(var(--yield-loss));
+  }
+
+  .yield-panel {
+    @apply panel-light overflow-hidden;
+  }
+
+  .yield-panel--krw {
+    border-color: rgb(var(--yield-krw) / 0.22) !important;
+  }
+
+  .yield-panel--usd {
+    border-color: rgb(var(--yield-usd) / 0.22) !important;
+  }
+
+  .yield-panel--violet {
+    border-color: rgb(var(--yield-violet) / 0.22) !important;
+  }
+
+  .yield-panel-head {
+    @apply flex flex-wrap items-start justify-between gap-3 px-5 py-4 border-b;
+    border-color: rgb(var(--theme-border) / 0.55);
+    background: linear-gradient(to right, rgb(var(--theme-surface) / 0.45), transparent);
+  }
+
+  .yield-panel-dot {
+    @apply mt-1.5 h-2 w-2 shrink-0 rounded-full;
+  }
+
+  .yield-panel-dot--krw {
+    background-color: rgb(var(--yield-krw));
+  }
+
+  .yield-panel-dot--usd {
+    background-color: rgb(var(--yield-usd));
+  }
+
+  .yield-panel-dot--violet {
+    background-color: rgb(var(--yield-violet));
+  }
+
+  .yield-panel-dot--neutral {
+    background-color: rgb(var(--theme-muted));
+  }
+
+  .yield-panel-body {
+    @apply p-5;
+  }
+
+  .yield-exchange-card {
+    @apply rounded-xl border p-4 space-y-3;
+    border-color: rgb(var(--theme-border) / 0.7);
+    background-color: rgb(var(--theme-bg) / 0.35);
+  }
+
+  .yield-exchange-badge {
+    @apply text-[10px] font-semibold px-2 py-0.5 rounded-full ring-1;
+  }
+
+  .yield-exchange-badge--upbit {
+    background-color: rgb(var(--yield-upbit) / 0.12);
+    color: rgb(var(--yield-upbit));
+    --tw-ring-color: rgb(var(--yield-upbit) / 0.22);
+  }
+
+  .yield-exchange-badge--binance {
+    background-color: rgb(var(--yield-binance) / 0.12);
+    color: rgb(var(--yield-binance));
+    --tw-ring-color: rgb(var(--yield-binance) / 0.22);
+  }
+
+  .yield-flow-box {
+    @apply space-y-2 rounded-lg border p-3;
+  }
+
+  .yield-flow-box--deposit {
+    border-color: rgb(var(--yield-deposit) / 0.2);
+    background-color: rgb(var(--yield-deposit) / 0.06);
+  }
+
+  .yield-flow-box--withdraw {
+    border-color: rgb(var(--yield-withdraw) / 0.2);
+    background-color: rgb(var(--yield-withdraw) / 0.06);
+  }
+
+  .yield-flow-label--deposit {
+    color: rgb(var(--yield-deposit));
+  }
+
+  .yield-flow-label--withdraw {
+    color: rgb(var(--yield-withdraw));
+  }
+
+  .yield-preview {
+    @apply rounded-xl border px-4 py-3;
+    border-color: rgb(var(--yield-accent) / 0.22);
+    background: linear-gradient(to right, rgb(var(--yield-accent) / 0.07), rgb(var(--theme-bg) / 0.45));
+  }
+
+  .yield-preview-title {
+    @apply text-[10px] font-semibold uppercase tracking-wider mb-2;
+    color: rgb(var(--yield-accent) / 0.85);
+  }
+
+  .yield-preview-items {
+    @apply flex flex-wrap gap-x-5 gap-y-2 text-sm;
+  }
+
+  .yield-chart {
+    @apply relative overflow-hidden rounded-2xl border shadow-[0_8px_32px_rgba(0,0,0,0.2)];
+    border-color: rgb(var(--theme-border) / 0.75);
+    background-image: linear-gradient(
+      to bottom,
+      rgb(var(--yield-chart-from) / 0.98),
+      rgb(var(--yield-chart-to) / 0.98)
+    );
+  }
+
+  .yield-chart-topline {
+    @apply absolute inset-x-0 top-0 h-px;
+    background: linear-gradient(to right, transparent, rgb(var(--yield-krw) / 0.45), transparent);
+  }
+
+  .yield-chart-toolbar {
+    @apply px-4 pt-4 pb-2 flex flex-wrap items-start justify-between gap-3 border-b;
+    border-color: rgb(var(--theme-border) / 0.45);
+  }
+
+  .yield-chart-tab-group {
+    @apply flex gap-1 p-1 rounded-xl border flex-wrap;
+    border-color: rgb(var(--theme-border) / 0.55);
+    background-color: rgb(var(--theme-bg) / 0.55);
+  }
+
+  .yield-chart-tab {
+    @apply px-3 py-1.5 rounded-lg text-xs font-medium transition-all;
+    color: rgb(var(--theme-text-faint));
+  }
+
+  .yield-chart-tab:hover {
+    color: rgb(var(--theme-text-secondary));
+    background-color: rgb(var(--theme-surface) / 0.45);
+  }
+
+  .yield-chart-tab[data-active='true'][data-variant='krw'] {
+    background-color: rgb(var(--yield-krw) / 0.16);
+    color: rgb(var(--yield-krw));
+    box-shadow: inset 0 0 0 1px rgb(var(--yield-krw) / 0.28);
+  }
+
+  .yield-chart-tab[data-active='true'][data-variant='usd'] {
+    background-color: rgb(var(--yield-usd) / 0.16);
+    color: rgb(var(--yield-usd));
+    box-shadow: inset 0 0 0 1px rgb(var(--yield-usd) / 0.28);
+  }
+
+  .yield-chart-period-group {
+    @apply flex flex-wrap gap-1 p-1 rounded-xl border;
+    border-color: rgb(var(--theme-border) / 0.55);
+    background-color: rgb(var(--theme-bg) / 0.55);
+  }
+
+  .yield-chart-period {
+    @apply px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all;
+    color: rgb(var(--theme-text-disabled));
+  }
+
+  .yield-chart-period[data-active='true'] {
+    color: rgb(var(--theme-text));
+    background-color: rgb(var(--theme-surface) / 0.65);
+    box-shadow: inset 0 0 0 1px rgb(var(--theme-border) / 0.65);
+  }
+
+  .yield-chart-line--krw {
+    stroke: rgb(var(--yield-krw));
+  }
+
+  .yield-chart-line--usd {
+    stroke: rgb(var(--yield-usd));
+  }
+
+  .yield-chart-dot--krw {
+    fill: rgb(var(--yield-krw));
+  }
+
+  .yield-chart-dot--usd {
+    fill: rgb(var(--yield-usd));
+  }
+
+  .yield-table-group--upbit {
+    background-color: rgb(var(--yield-upbit) / 0.1);
+  }
+
+  .yield-table-group--binance {
+    background-color: rgb(var(--yield-binance) / 0.1);
+  }
+
+  .yield-table-seed {
+    color: rgb(var(--yield-krw));
+  }
+
+  .yield-table-deposit {
+    color: rgb(var(--yield-deposit));
+  }
+
+  .yield-table-withdraw {
+    color: rgb(var(--yield-withdraw));
+  }
+
+  .yield-metric-badge--profit {
+    @apply inline-flex rounded-md px-2 py-0.5 text-[11px] font-semibold tabular-nums ring-1;
+    background-color: rgb(var(--yield-profit) / 0.12);
+    color: rgb(var(--yield-profit));
+    --tw-ring-color: rgb(var(--yield-profit) / 0.22);
+  }
+
+  .yield-metric-badge--loss {
+    @apply inline-flex rounded-md px-2 py-0.5 text-[11px] font-semibold tabular-nums ring-1;
+    background-color: rgb(var(--yield-loss) / 0.12);
+    color: rgb(var(--yield-loss));
+    --tw-ring-color: rgb(var(--yield-loss) / 0.22);
+  }
+
+  .yield-empty-icon {
+    @apply inline-flex h-14 w-14 items-center justify-center rounded-2xl text-2xl mb-4;
+    border: 1px solid rgb(var(--yield-krw) / 0.22);
+    background-color: rgb(var(--yield-krw) / 0.1);
+  }
+
+  .yield-action-btn {
+    @apply text-xs font-medium rounded-lg px-3 py-1.5 transition-colors;
+    color: rgb(var(--yield-accent));
+    background-color: rgb(var(--yield-accent) / 0.1);
+    border: 1px solid rgb(var(--yield-accent) / 0.2);
+  }
+
+  .yield-action-btn:hover {
+    color: rgb(var(--theme-text));
+    background-color: rgb(var(--yield-accent) / 0.16);
+  }
+
+  .yield-field-label {
+    @apply text-xs mb-1.5 block;
+    color: rgb(var(--theme-text-faint));
+  }
+
+  .yield-field-label-sm {
+    @apply text-[10px] font-medium mb-1 block;
+    color: rgb(var(--theme-text-faint));
+  }
+
+  .yield-flow-section {
+    @apply rounded-xl border p-4 space-y-4;
+    border-color: rgb(var(--theme-border) / 0.6);
+    background-color: rgb(var(--theme-bg) / 0.3);
+  }
+
+  .yield-grant-empty {
+    @apply text-sm text-center py-6 rounded-xl border border-dashed;
+    color: rgb(var(--theme-text-faint));
+    border-color: rgb(var(--theme-border) / 0.6);
+  }
+
+  .yield-grant-row {
+    @apply flex items-center gap-3 p-3 rounded-xl border transition-colors;
+    background-color: rgb(var(--theme-bg) / 0.45);
+    border-color: rgb(var(--theme-border) / 0.6);
+  }
+
+  .yield-grant-row:hover {
+    border-color: rgb(var(--theme-border));
+  }
+
+  .yield-grant-avatar {
+    @apply h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0;
+    background-color: rgb(var(--yield-violet) / 0.12);
+    border: 1px solid rgb(var(--yield-violet) / 0.22);
+    color: rgb(var(--yield-violet));
+  }
+
+  .yield-revoke-btn {
+    @apply text-xs shrink-0 px-2 py-1 rounded transition-colors;
+    color: rgb(var(--theme-text-faint));
+  }
+
+  .yield-revoke-btn:hover {
+    color: rgb(var(--yield-loss));
+    background-color: rgb(var(--yield-loss) / 0.1);
+  }
+
+  .yield-table-row:hover {
+    background-color: rgb(var(--yield-accent) / 0.06) !important;
+  }
+
+  .yield-reset {
+    @apply space-y-1;
+  }
+
+  .yield-reset-btn {
+    @apply w-full text-xs rounded-lg px-3 py-2 transition-colors disabled:opacity-40 disabled:pointer-events-none;
+    color: rgb(var(--yield-loss));
+    border: 1px solid rgb(var(--yield-loss) / 0.3);
+  }
+
+  .yield-reset-btn:hover:not(:disabled) {
+    background-color: rgb(var(--yield-loss) / 0.1);
+  }
+
+  .yield-reset-error {
+    @apply text-[10px] leading-relaxed;
+    color: rgb(var(--yield-loss));
+  }
+}
+
+[data-theme='light'] .yield-chart,
+[data-theme='pinkbean'] .yield-chart,
+[data-theme='stonespirit'] .yield-chart {
+  background-image: none;
+}
+
+[data-theme='light'] .yield-chart {
+  background-color: rgb(var(--theme-panel));
+  box-shadow:
+    inset 0 1px 0 var(--panel-inset),
+    0 1px 2px var(--panel-shadow);
+}
+
+[data-theme='pinkbean'] .yield-chart,
+[data-theme='stonespirit'] .yield-chart {
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  background-color: var(--theme-glass);
+  border-color: var(--theme-glass-border);
+  box-shadow:
+    inset 0 1px 0 var(--panel-inset),
+    0 4px 24px var(--panel-shadow),
+    0 0 0 1px var(--panel-ring);
+}
+
+[data-theme='light'] .yield-hero {
+  background-image: none;
+  background-color: rgb(var(--theme-panel));
+}
+
+[data-theme='pinkbean'] .yield-hero,
+[data-theme='stonespirit'] .yield-hero {
+  background-image: none;
+}
+
+[data-theme='light'] .yield-stat-card {
+  background-image: none;
+  background-color: rgb(var(--theme-panel));
+}
+
+[data-theme='pinkbean'] .yield-stat-card,
+[data-theme='stonespirit'] .yield-stat-card {
+  backdrop-filter: blur(12px) saturate(1.15);
+  -webkit-backdrop-filter: blur(12px) saturate(1.15);
+  background-image: none;
+  background-color: var(--theme-glass);
+  border-color: var(--theme-glass-border);
 }
 
 [data-theme='light'] .text-slate-100,

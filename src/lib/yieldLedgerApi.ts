@@ -65,3 +65,8 @@ export async function deleteYieldDailyRecord(id: string): Promise<void> {
   const { error } = await supabase.from('yield_daily_records').delete().eq('id', id)
   if (error) throw error
 }
+
+export async function clearAllYieldDailyRecords(userId: string): Promise<void> {
+  const { error } = await supabase.from('yield_daily_records').delete().eq('user_id', userId)
+  if (error) throw error
+}

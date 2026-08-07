@@ -222,12 +222,14 @@ export interface YieldDailyRecordInput {
 
 export interface YieldSettings {
   initialPrincipal: number
+  initialPrincipalUsd: number | null
   startDate: string | null
   memo: string | null
 }
 
 export interface YieldSettingsInput {
   initialPrincipal: number
+  initialPrincipalUsd?: number | null
   startDate?: string
   memo?: string
 }

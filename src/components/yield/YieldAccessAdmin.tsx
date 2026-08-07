@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { YieldAccessGrant } from '../../lib/yieldAccessApi'
+import { YieldPanel } from './YieldUi'
 
 interface YieldAccessAdminProps {
   grants: YieldAccessGrant[]
@@ -40,60 +41,67 @@ export default function YieldAccessAdmin({ grants, onGrant, onRevoke }: YieldAcc
   }
 
   return (
-    <div className="panel-light p-5 space-y-4">
-      <div>
-        <h2 className="font-semibold text-slate-100">수익률 가계부 권한 관리</h2>
-        <p className="text-xs text-slate-500 mt-1">권한을 받은 사용자만 수익률 가계부 탭이 보여요</p>
-      </div>
+    <YieldPanel
+      title="권한 관리"
+      description="권한을 받은 사용자만 수익률 가계부 탭이 표시됩니다"
+      accent="neutral"
+    >
+      <div className="space-y-4">
+        <form onSubmit={handleGrant} className="flex gap-2">
+          <input
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value)
+              if (error) setError(null)
+            }}
+            placeholder="Google 이메일"
+            className="input-field text-sm flex-1"
+          />
+          <button
+            type="submit"
+            disabled={submitting || !email.trim()}
+            className="btn-primary text-sm px-5 py-2 disabled:opacity-50 shrink-0"
+          >
+            {submitting ? '...' : '권한 부여'}
+          </button>
+        </form>
 
-      <form onSubmit={handleGrant} className="flex gap-2">
-        <input
-          value={email}
-          onChange={(e) => {
-            setEmail(e.target.value)
-            if (error) setError(null)
-          }}
-          placeholder="Google 이메일"
-          className="input-field text-sm flex-1"
-        />
-        <button
-          type="submit"
-          disabled={submitting || !email.trim()}
-          className="btn-primary text-sm px-4 py-2 disabled:opacity-50 shrink-0"
-        >
-          {submitting ? '...' : '권한 부여'}
-        </button>
-      </form>
+        {error && (
+          <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+            {error}
+          </p>
+        )}
 
-      {error && <p className="text-xs text-red-400">{error}</p>}
-
-      {grants.length === 0 ? (
-        <p className="text-sm text-slate-500 text-center py-4">권한을 받은 사용자가 없어요</p>
-      ) : (
-        <div className="record-list-scroll">
-          {grants.map((grant) => (
-            <div
-              key={grant.userId}
-              className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50 border border-dark-border"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-200 truncate">
-                  {grant.fullName ?? grant.email ?? '알 수 없음'}
-                </p>
-                {grant.email && (
-                  <p className="text-xs text-slate-500 mt-0.5 truncate">{grant.email}</p>
-                )}
+        {grants.length === 0 ? (
+          <p className="yield-grant-empty">권한을 받은 사용자가 없어요</p>
+        ) : (
+          <div className="record-list-scroll space-y-2">
+            {grants.map((grant) => (
+              <div key={grant.userId} className="yield-grant-row">
+                <div className="yield-grant-avatar">
+                  {(grant.fullName ?? grant.email ?? '?').charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate" style={{ color: 'rgb(var(--theme-text))' }}>
+                    {grant.fullName ?? grant.email ?? '알 수 없음'}
+                  </p>
+                  {grant.email && (
+                    <p className="text-xs mt-0.5 truncate" style={{ color: 'rgb(var(--theme-text-faint))' }}>
+                      {grant.email}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleRevoke(grant.userId)}
+                  className="yield-revoke-btn"
+                >
+                  해제
+                </button>
               </div>
-              <button
-                onClick={() => handleRevoke(grant.userId)}
-                className="text-xs text-slate-500 hover:text-red-400 shrink-0"
-              >
-                해제
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </YieldPanel>
   )
 }

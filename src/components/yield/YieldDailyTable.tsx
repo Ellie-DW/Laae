@@ -3,9 +3,11 @@ import {
   formatKrwCell,
   formatUsd,
   formatYieldProfit,
+  formatYieldProfitUsd,
   formatYieldRate,
 } from '../../lib/yieldCalc'
 import { formatWon } from '../../utils'
+import { YieldPanel } from './YieldUi'
 
 interface YieldDailyTableProps {
   rows: YieldDailyRow[]
@@ -14,7 +16,7 @@ interface YieldDailyTableProps {
 }
 
 function EmptyCell() {
-  return <span className="text-slate-600">-</span>
+  return <span style={{ color: 'rgb(var(--theme-text-disabled))' }}>—</span>
 }
 
 function MetricBadge({
@@ -22,35 +24,43 @@ function MetricBadge({
   kind,
 }: {
   value: number | null
-  kind: 'money' | 'rate'
+  kind: 'money_krw' | 'money_usd' | 'rate'
 }) {
   if (value == null) return <EmptyCell />
+
   if (value === 0) {
+    const zeroLabel =
+      kind === 'money_usd'
+        ? formatYieldProfitUsd(0)
+        : kind === 'money_krw'
+          ? formatYieldProfit(0)
+          : formatYieldRate(0)
     return (
-      <span className="text-slate-500 tabular-nums">
-        {kind === 'money' ? formatYieldProfit(0) : formatYieldRate(0)}
+      <span className="tabular-nums text-[11px]" style={{ color: 'rgb(var(--theme-text-faint))' }}>
+        {zeroLabel}
       </span>
     )
   }
 
-  const label = kind === 'money' ? formatYieldProfit(value) : formatYieldRate(value)
-  const tone =
-    value > 0
-      ? 'bg-emerald-500/10 text-emerald-300 ring-emerald-500/20'
-      : 'bg-red-500/10 text-red-300 ring-red-500/20'
+  const label =
+    kind === 'money_usd'
+      ? formatYieldProfitUsd(value)
+      : kind === 'money_krw'
+        ? formatYieldProfit(value)
+        : formatYieldRate(value)
 
   return (
-    <span className={`inline-flex rounded-md px-2 py-0.5 text-xs font-semibold tabular-nums ring-1 ${tone}`}>
+    <span className={value > 0 ? 'yield-metric-badge--profit' : 'yield-metric-badge--loss'}>
       {label}
     </span>
   )
 }
 
-function GroupHeader({ label, currency }: { label: string; currency: string }) {
+function GroupHeader({ label, currency, variant }: { label: string; currency: string; variant: 'upbit' | 'binance' }) {
   return (
-    <div className="flex flex-col items-center gap-0.5">
+    <div className={`flex flex-col items-center gap-0.5 rounded-md px-2 py-1 yield-table-group--${variant}`}>
       <span>{label}</span>
-      <span className="text-[9px] font-normal text-slate-500">{currency}</span>
+      <span className="text-[9px] font-normal opacity-70">{currency}</span>
     </div>
   )
 }
@@ -60,69 +70,86 @@ export default function YieldDailyTable({ rows, monthSummaries, onRemove }: Yiel
 
   if (rows.length === 0) {
     return (
-      <div className="panel-light p-10 text-center">
-        <p className="text-sm text-slate-400">아직 일별 기록이 없어요</p>
-        <p className="text-xs text-slate-600 mt-2">아래에서 날짜별 거래소 잔고를 추가해 보세요</p>
-      </div>
+      <YieldPanel title="일별 기록" description="아직 등록된 기록이 없습니다" accent="neutral">
+        <div className="py-12 text-center">
+          <div className="yield-empty-icon">📊</div>
+          <p className="text-sm" style={{ color: 'rgb(var(--theme-text-muted))' }}>
+            첫 일별 기록을 추가해 보세요
+          </p>
+          <p className="text-xs mt-2" style={{ color: 'rgb(var(--theme-text-disabled))' }}>
+            업비트·바이낸스 잔고와 환율을 입력하면 표가 채워집니다
+          </p>
+        </div>
+      </YieldPanel>
     )
   }
 
   const thBase =
-    'px-3 py-2.5 text-[11px] font-semibold text-slate-400 whitespace-nowrap bg-dark-surface/90 border-b border-dark-border/80'
-  const tdBase =
-    'px-3 py-2.5 text-xs text-slate-300 whitespace-nowrap border-b border-dark-border/40 tabular-nums'
+    'px-3 py-3 text-[11px] font-semibold whitespace-nowrap border-b tabular-nums'
+  const thStyle = { color: 'rgb(var(--theme-text-muted))', backgroundColor: 'rgb(var(--theme-surface) / 0.92)', borderColor: 'rgb(var(--theme-border) / 0.7)' }
+  const tdBase = 'px-3 py-2.5 text-xs whitespace-nowrap border-b tabular-nums'
+  const tdStyle = { color: 'rgb(var(--theme-text-secondary))', borderColor: 'rgb(var(--theme-border) / 0.35)' }
   const tdNum = `${tdBase} text-right`
-  const tdDate = `${tdBase} sticky left-0 z-10 bg-dark-panel/98 font-medium text-slate-200 shadow-[4px_0_12px_rgba(0,0,0,0.25)]`
+  const tdDate = `${tdBase} sticky left-0 z-10 font-medium shadow-[4px_0_16px_rgba(0,0,0,0.2)] border-r`
 
   return (
-    <div className="panel-light overflow-hidden">
-      <div className="px-4 py-3 border-b border-dark-border/60 flex items-center justify-between gap-3">
-        <div>
-          <h2 className="font-semibold text-slate-100">일별 기록</h2>
-          <p className="text-xs text-slate-500 mt-0.5">날짜순 · {rows.length}일</p>
-        </div>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="min-w-[1000px] w-full border-collapse">
+    <YieldPanel
+      title="일별 기록"
+      description={`날짜순 · ${rows.length}일 · 월별 합계 포함`}
+      accent="neutral"
+    >
+      <div className="overflow-x-auto -mx-5 px-5 pb-1">
+        <table className="min-w-[1200px] w-full border-collapse">
           <thead>
             <tr>
-              <th className={`${thBase} sticky left-0 z-20 text-left`} rowSpan={2}>
+              <th className={`${thBase} sticky left-0 z-20 text-left`} style={thStyle} rowSpan={2}>
                 날짜
               </th>
-              <th className={`${thBase} text-center border-l border-dark-border/50`} colSpan={2}>
-                <GroupHeader label="업비트" currency="KRW" />
+              <th className={`${thBase} text-center border-l`} style={thStyle} colSpan={2}>
+                <GroupHeader label="업비트" currency="KRW" variant="upbit" />
               </th>
-              <th className={`${thBase} text-center border-l border-dark-border/50`} colSpan={2}>
-                <GroupHeader label="바이낸스" currency="USD" />
+              <th className={`${thBase} text-center border-l`} style={thStyle} colSpan={2}>
+                <GroupHeader label="바이낸스" currency="USD" variant="binance" />
               </th>
-              <th className={`${thBase} text-right border-l border-dark-border/50`} rowSpan={2}>
+              <th className={`${thBase} text-right border-l`} style={thStyle} rowSpan={2}>
                 총 시드
               </th>
-              <th className={`${thBase} text-right border-l border-dark-border/50`} rowSpan={2}>
+              <th className={`${thBase} text-right border-l`} style={thStyle} rowSpan={2}>
                 출금
               </th>
-              <th className={`${thBase} text-right border-l border-dark-border/50`} rowSpan={2}>
+              <th className={`${thBase} text-right border-l`} style={thStyle} rowSpan={2}>
                 입금
               </th>
-              <th className={`${thBase} text-right border-l border-dark-border/50`} rowSpan={2}>
-                수익금
+              <th className={`${thBase} text-right border-l`} style={thStyle} rowSpan={2}>
+                원화 수익금
               </th>
-              <th className={`${thBase} text-right border-l border-dark-border/50`} rowSpan={2}>
-                수익률
+              <th className={`${thBase} text-right border-l`} style={thStyle} rowSpan={2}>
+                달러 수익금
               </th>
-              <th className={`${thBase} text-right border-l border-dark-border/50`} rowSpan={2}>
+              <th className={`${thBase} text-right border-l`} style={thStyle} rowSpan={2}>
+                원화 수익률
+              </th>
+              <th className={`${thBase} text-right border-l`} style={thStyle} rowSpan={2}>
+                달러 수익률
+              </th>
+              <th className={`${thBase} text-right border-l`} style={thStyle} rowSpan={2}>
                 환율
               </th>
-              <th className={`${thBase} w-10 border-l border-dark-border/50`} rowSpan={2}></th>
+              <th className={`${thBase} w-10 border-l`} style={thStyle} rowSpan={2}></th>
             </tr>
             <tr>
-              <th className={`${thBase} text-right text-[10px] font-normal text-slate-500`}>시작</th>
-              <th className={`${thBase} text-right text-[10px] font-normal text-slate-500`}>마감</th>
-              <th className={`${thBase} text-right text-[10px] font-normal text-slate-500 border-l border-dark-border/50`}>
+              <th className={`${thBase} text-right text-[10px] font-normal`} style={thStyle}>
                 시작
               </th>
-              <th className={`${thBase} text-right text-[10px] font-normal text-slate-500`}>마감</th>
+              <th className={`${thBase} text-right text-[10px] font-normal`} style={thStyle}>
+                마감
+              </th>
+              <th className={`${thBase} text-right text-[10px] font-normal border-l`} style={thStyle}>
+                시작
+              </th>
+              <th className={`${thBase} text-right text-[10px] font-normal`} style={thStyle}>
+                마감
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -132,58 +159,68 @@ export default function YieldDailyTable({ rows, monthSummaries, onRemove }: Yiel
               const isLastInMonth = !next || next.recordDate.slice(0, 7) !== monthKey
               const monthSummary = summaryByMonth.get(monthKey)
               const isEven = index % 2 === 0
+              const rowBg = isEven ? 'rgb(var(--theme-bg) / 0.28)' : 'transparent'
+              const stickyBg = 'rgb(var(--theme-panel) / 0.98)'
 
               const elements = [
                 <tr
                   key={row.id}
-                  className={`group transition-colors hover:bg-cyber-400/5 ${
-                    isEven ? 'bg-dark-bg/20' : 'bg-transparent'
-                  }`}
+                  className="group transition-colors yield-table-row"
+                  style={{ backgroundColor: rowBg }}
                 >
-                  <td className={tdDate}>{row.recordDate}</td>
-                  <td className={tdNum}>
+                  <td className={tdDate} style={{ ...tdStyle, backgroundColor: stickyBg, color: 'rgb(var(--theme-text))' }}>
+                    {row.recordDate}
+                  </td>
+                  <td className={tdNum} style={tdStyle}>
                     {row.upbitStart == null ? <EmptyCell /> : formatKrwCell(row.upbitStart)}
                   </td>
-                  <td className={tdNum}>
+                  <td className={tdNum} style={tdStyle}>
                     {row.upbitEnd == null ? <EmptyCell /> : formatKrwCell(row.upbitEnd)}
                   </td>
-                  <td className={`${tdNum} border-l border-dark-border/30`}>
+                  <td className={`${tdNum} border-l`} style={tdStyle}>
                     {row.binanceStart == null ? <EmptyCell /> : formatUsd(row.binanceStart)}
                   </td>
-                  <td className={tdNum}>
+                  <td className={tdNum} style={tdStyle}>
                     {row.binanceEnd == null ? <EmptyCell /> : formatUsd(row.binanceEnd)}
                   </td>
-                  <td className={`${tdNum} border-l border-dark-border/30 font-semibold text-slate-100`}>
+                  <td className={`${tdNum} border-l font-semibold yield-table-seed`} style={tdStyle}>
                     {formatWon(row.totalSeed)}
                   </td>
-                  <td className={`${tdNum} border-l border-dark-border/30`}>
+                  <td className={`${tdNum} border-l`} style={tdStyle}>
                     {row.withdrawalKrw > 0 ? (
-                      <span className="text-amber-300/90 tabular-nums">{formatWon(row.withdrawalKrw)}</span>
+                      <span className="yield-table-withdraw tabular-nums">{formatWon(row.withdrawalKrw)}</span>
                     ) : (
                       <EmptyCell />
                     )}
                   </td>
-                  <td className={`${tdNum} border-l border-dark-border/30`}>
+                  <td className={`${tdNum} border-l`} style={tdStyle}>
                     {row.depositKrw > 0 ? (
-                      <span className="text-sky-300/90 tabular-nums">{formatWon(row.depositKrw)}</span>
+                      <span className="yield-table-deposit tabular-nums">{formatWon(row.depositKrw)}</span>
                     ) : (
                       <EmptyCell />
                     )}
                   </td>
-                  <td className={`${tdNum} border-l border-dark-border/30`}>
-                    <MetricBadge value={row.profit} kind="money" />
+                  <td className={`${tdNum} border-l`} style={tdStyle}>
+                    <MetricBadge value={row.profit} kind="money_krw" />
                   </td>
-                  <td className={`${tdNum} border-l border-dark-border/30`}>
+                  <td className={`${tdNum} border-l`} style={tdStyle}>
+                    <MetricBadge value={row.profitUsd} kind="money_usd" />
+                  </td>
+                  <td className={`${tdNum} border-l`} style={tdStyle}>
                     <MetricBadge value={row.yieldRate} kind="rate" />
                   </td>
-                  <td className={`${tdNum} border-l border-dark-border/30 text-slate-400`}>
+                  <td className={`${tdNum} border-l`} style={tdStyle}>
+                    <MetricBadge value={row.yieldRateUsd} kind="rate" />
+                  </td>
+                  <td className={`${tdNum} border-l`} style={{ ...tdStyle, color: 'rgb(var(--theme-text-faint))' }}>
                     {row.usdKrwRate.toLocaleString('ko-KR')}
                   </td>
-                  <td className={`${tdBase} border-l border-dark-border/30 text-center`}>
+                  <td className={`${tdBase} border-l text-center`} style={tdStyle}>
                     <button
                       type="button"
                       onClick={() => onRemove(row.id)}
-                      className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-red-400 transition-opacity"
+                      className="opacity-0 group-hover:opacity-100 transition-all rounded p-1 hover:bg-red-500/10"
+                      style={{ color: 'rgb(var(--theme-text-disabled))' }}
                       aria-label="기록 삭제"
                     >
                       ✕
@@ -194,27 +231,40 @@ export default function YieldDailyTable({ rows, monthSummaries, onRemove }: Yiel
 
               if (isLastInMonth && monthSummary) {
                 elements.push(
-                  <tr key={`${monthKey}-summary`} className="bg-dark-surface/60">
+                  <tr key={`${monthKey}-summary`} style={{ backgroundColor: 'rgb(var(--theme-surface) / 0.55)' }}>
                     <td
-                      className={`${tdDate} text-xs font-semibold text-cyber-300/90 border-t border-dark-border/70`}
+                      className={`${tdDate} text-xs font-semibold border-t`}
+                      style={{
+                        ...tdStyle,
+                        backgroundColor: stickyBg,
+                        color: 'rgb(var(--yield-accent))',
+                        borderColor: 'rgb(var(--theme-border) / 0.55)',
+                      }}
                       colSpan={5}
                     >
                       {monthSummary.label} 합계
                     </td>
                     <td
-                      className={`${tdNum} border-l border-dark-border/30 border-t border-dark-border/70 font-semibold text-maple-300/90`}
+                      className={`${tdNum} border-l border-t font-semibold yield-table-seed`}
+                      style={{ ...tdStyle, borderColor: 'rgb(var(--theme-border) / 0.55)' }}
                     >
                       {formatWon(monthSummary.lastTotalSeed)}
                     </td>
-                    <td className={`${tdNum} border-l border-dark-border/30 border-t border-dark-border/70`} />
-                    <td className={`${tdNum} border-l border-dark-border/30 border-t border-dark-border/70`} />
-                    <td className={`${tdNum} border-l border-dark-border/30 border-t border-dark-border/70`}>
-                      <MetricBadge value={monthSummary.profit} kind="money" />
+                    <td className={`${tdNum} border-l border-t`} style={{ ...tdStyle, borderColor: 'rgb(var(--theme-border) / 0.55)' }} />
+                    <td className={`${tdNum} border-l border-t`} style={{ ...tdStyle, borderColor: 'rgb(var(--theme-border) / 0.55)' }} />
+                    <td className={`${tdNum} border-l border-t`} style={{ ...tdStyle, borderColor: 'rgb(var(--theme-border) / 0.55)' }}>
+                      <MetricBadge value={monthSummary.profit} kind="money_krw" />
                     </td>
-                    <td className={`${tdNum} border-l border-dark-border/30 border-t border-dark-border/70`}>
+                    <td className={`${tdNum} border-l border-t`} style={{ ...tdStyle, borderColor: 'rgb(var(--theme-border) / 0.55)' }}>
+                      <MetricBadge value={monthSummary.profitUsd} kind="money_usd" />
+                    </td>
+                    <td className={`${tdNum} border-l border-t`} style={{ ...tdStyle, borderColor: 'rgb(var(--theme-border) / 0.55)' }}>
                       <MetricBadge value={monthSummary.yieldRate} kind="rate" />
                     </td>
-                    <td className={`${tdNum} border-l border-dark-border/30 border-t border-dark-border/70`} colSpan={2} />
+                    <td className={`${tdNum} border-l border-t`} style={{ ...tdStyle, borderColor: 'rgb(var(--theme-border) / 0.55)' }}>
+                      <MetricBadge value={monthSummary.yieldRateUsd} kind="rate" />
+                    </td>
+                    <td className={`${tdNum} border-l border-t`} style={{ ...tdStyle, borderColor: 'rgb(var(--theme-border) / 0.55)' }} colSpan={2} />
                   </tr>
                 )
               }
@@ -224,6 +274,6 @@ export default function YieldDailyTable({ rows, monthSummaries, onRemove }: Yiel
           </tbody>
         </table>
       </div>
-    </div>
+    </YieldPanel>
   )
 }

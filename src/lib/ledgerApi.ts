@@ -626,7 +626,6 @@ const LEDGER_RECORD_TABLES = [
   'diary_notes',
   'rice_records',
   'premium_records',
-  'yield_daily_records',
 ] as const
 
 export async function clearAllLedgerRecords(userId: string): Promise<void> {

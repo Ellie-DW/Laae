@@ -2,11 +2,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import type { YieldDailyRecord, YieldDailyRecordInput, YieldSettings, YieldSettingsInput } from '../types'
 import {
+  clearAllYieldDailyRecords,
   deleteYieldDailyRecord,
   fetchYieldDailyRecords,
   saveYieldDailyRecord,
 } from '../lib/yieldLedgerApi'
-import { fetchYieldSettings, saveYieldSettings } from '../lib/yieldSettingsApi'
+import { deleteYieldSettings, fetchYieldSettings, saveYieldSettings } from '../lib/yieldSettingsApi'
 import { getErrorMessage } from '../utils'
 
 export function useYieldRecords(enabled: boolean) {
@@ -75,6 +76,14 @@ export function useYieldRecords(enabled: boolean) {
     setError(null)
   }, [])
 
+  const resetAll = useCallback(async () => {
+    if (!user) return
+    await Promise.all([clearAllYieldDailyRecords(user.id), deleteYieldSettings(user.id)])
+    setRecords([])
+    setSettings(null)
+    setError(null)
+  }, [user])
+
   return {
     records,
     settings,
@@ -83,6 +92,7 @@ export function useYieldRecords(enabled: boolean) {
     saveRecord,
     saveSettings,
     removeRecord,
+    resetAll,
     reload,
   }
 }

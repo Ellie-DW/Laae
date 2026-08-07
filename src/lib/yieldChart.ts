@@ -1,7 +1,8 @@
 import type { YieldDailyRow } from './yieldCalc'
+import { resolveInitialPrincipalUsd } from './yieldCalc'
 import { getToday } from '../utils'
 
-export type YieldChartMode = 'seed' | 'return'
+export type YieldChartMode = 'seed' | 'seed_usd' | 'return_krw' | 'return_usd'
 export type YieldChartPeriod = '1w' | '1m' | '3m' | 'all'
 
 export const YIELD_CHART_PERIODS: { id: YieldChartPeriod; label: string }[] = [
@@ -17,6 +18,7 @@ export interface YieldChartPoint {
   value: number
   change: number
   totalSeed: number
+  totalSeedUsd: number
   hasRecord: boolean
 }
 
@@ -61,9 +63,22 @@ export function formatChartWon(value: number): string {
   return value.toLocaleString('ko-KR', { maximumFractionDigits: 0 })
 }
 
+export function formatChartUsd(value: number): string {
+  if (value === 0) return '$0'
+  const abs = Math.abs(value)
+  if (abs >= 1_000_000) return `$${(value / 1_000_000).toFixed(2)}M`
+  if (abs >= 1_000) return `$${(value / 1_000).toFixed(2)}K`
+  return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+export function formatChartUsdFull(value: number): string {
+  return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
 export function buildYieldChartSeries(
   rows: YieldDailyRow[],
   initialPrincipal: number | null,
+  initialPrincipalUsd: number | null,
   investmentStartDate: string | null,
   mode: YieldChartMode,
   period: YieldChartPeriod
@@ -87,45 +102,63 @@ export function buildYieldChartSeries(
   const rangeStart = periodStart ?? investmentStartDate ?? firstRecordDate
   const rangeEnd = today >= lastRecordDate ? today : lastRecordDate
 
-  const basePrincipal = initialPrincipal ?? ordered[0].totalSeed
+  const basePrincipalKrw = initialPrincipal ?? ordered[0].totalSeed
+  const basePrincipalUsd =
+    resolveInitialPrincipalUsd(initialPrincipal, initialPrincipalUsd, ordered[0]) ??
+    ordered[0].totalSeedUsd
   const dates = enumerateDates(
     rangeStart <= rangeEnd ? rangeStart : firstRecordDate,
     rangeEnd
   )
 
-  let lastSeed = 0
-  let cumulativeWithdrawals = 0
-  let cumulativeDeposits = 0
+  let lastSeedKrw = 0
+  let lastSeedUsd = 0
+  let cumulativeWithdrawalsKrw = 0
+  let cumulativeDepositsKrw = 0
+  let cumulativeWithdrawalsUsd = 0
+  let cumulativeDepositsUsd = 0
   let previousValue = 0
   const points: YieldChartPoint[] = []
 
   for (const date of dates) {
     const row = recordByDate.get(date)
     if (row) {
-      lastSeed = row.totalSeed
-      cumulativeWithdrawals += row.withdrawalKrw
-      cumulativeDeposits += row.depositKrw
+      lastSeedKrw = row.totalSeed
+      lastSeedUsd = row.totalSeedUsd
+      cumulativeWithdrawalsKrw += row.withdrawalKrw
+      cumulativeDepositsKrw += row.depositKrw
+      cumulativeWithdrawalsUsd += row.withdrawalUsd
+      cumulativeDepositsUsd += row.depositUsd
     }
 
     const started = date >= firstRecordDate
-    const totalSeed = started ? lastSeed : 0
+    const totalSeedKrw = started ? lastSeedKrw : 0
+    const totalSeedUsd = started ? lastSeedUsd : 0
 
-    const value =
-      mode === 'seed'
-        ? started
-          ? totalSeed
-          : 0
-        : started && basePrincipal > 0
-          ? ((totalSeed + cumulativeWithdrawals - cumulativeDeposits - basePrincipal) / basePrincipal) *
-            100
-          : 0
+    let value = 0
+    if (mode === 'seed') {
+      value = totalSeedKrw
+    } else if (mode === 'seed_usd') {
+      value = totalSeedUsd
+    } else if (mode === 'return_krw' && started && basePrincipalKrw > 0) {
+      value =
+        ((totalSeedKrw + cumulativeWithdrawalsKrw - cumulativeDepositsKrw - basePrincipalKrw) /
+          basePrincipalKrw) *
+        100
+    } else if (mode === 'return_usd' && started && basePrincipalUsd > 0) {
+      value =
+        ((totalSeedUsd + cumulativeWithdrawalsUsd - cumulativeDepositsUsd - basePrincipalUsd) /
+          basePrincipalUsd) *
+        100
+    }
 
     points.push({
       date,
       label: formatChartDateLabel(date),
       value,
       change: value - previousValue,
-      totalSeed: started ? totalSeed : 0,
+      totalSeed: totalSeedKrw,
+      totalSeedUsd,
       hasRecord: row != null,
     })
     previousValue = value
