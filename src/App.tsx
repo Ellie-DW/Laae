@@ -12,6 +12,7 @@ import GatherPage from './pages/GatherPage'
 import GoalsPage from './pages/GoalsPage'
 import RicePage from './pages/RicePage'
 import PremiumPage from './pages/PremiumPage'
+import YieldPage from './pages/YieldPage'
 import DiaryPage from './pages/DiaryPage'
 import DropPage from './pages/DropPage'
 import LoginPage from './pages/LoginPage'
@@ -23,6 +24,8 @@ import { useAppData } from './hooks/useAppData'
 import { useLedger } from './hooks/useLedger'
 import { useRiceAccess } from './hooks/useRiceAccess'
 import { usePremiumAccess } from './hooks/usePremiumAccess'
+import { useYieldAccess } from './hooks/useYieldAccess'
+import { useYieldRecords } from './hooks/useYieldRecords'
 import { usePremiumGroups } from './hooks/usePremiumGroups'
 import { getDiaryEntryTargetPage, type DiaryEntry } from './lib/diaryEntries'
 import { computeExpenseByCategory, computeAccountCumulativeNetProfit } from './lib/ledgerAnalytics'
@@ -74,7 +77,9 @@ function MainApp() {
 
   const riceAccess = useRiceAccess()
   const premiumAccess = usePremiumAccess()
+  const yieldAccess = useYieldAccess()
   const premiumGroups = usePremiumGroups(premiumAccess.hasAccess)
+  const yieldRecords = useYieldRecords(yieldAccess.hasAccess)
 
   const weeklyBossIncomeByCharacter = useMemo(
     () => Object.fromEntries(accountStats.perCharacter.map((c) => [c.id, c.weeklyBossMeso])),
@@ -90,12 +95,14 @@ function MainApp() {
   const navItems = getNavItems({
     hasRiceAccess: riceAccess.hasAccess,
     hasPremiumAccess: premiumAccess.hasAccess,
+    hasYieldAccess: yieldAccess.hasAccess,
   })
 
   const handleResetLedger = useCallback(async () => {
     await ledger.resetAllRecords()
     await resetAllBossLedgerState()
-  }, [ledger.resetAllRecords, resetAllBossLedgerState])
+    await yieldRecords.reload()
+  }, [ledger.resetAllRecords, resetAllBossLedgerState, yieldRecords.reload])
 
   const riceHeldMeso = useMemo(() => {
     const netProfit = computeAccountCumulativeNetProfit(
@@ -133,12 +140,24 @@ function MainApp() {
     }
   }, [premiumAccess.loading, premiumAccess.hasAccess, currentPage, setPage])
 
-  if (dataLoading || ledger.loading || riceAccess.loading || premiumAccess.loading) {
+  useEffect(() => {
+    if (!yieldAccess.loading && currentPage === 'yield' && !yieldAccess.hasAccess) {
+      setPage('dashboard')
+    }
+  }, [yieldAccess.loading, yieldAccess.hasAccess, currentPage, setPage])
+
+  if (dataLoading || ledger.loading || riceAccess.loading || premiumAccess.loading || yieldAccess.loading) {
     return <LoadingScreen message="데이터 불러오는 중..." />
   }
 
   const combinedError =
-    syncError || ledger.error || riceAccess.error || premiumAccess.error || premiumGroups.error
+    syncError ||
+    ledger.error ||
+    riceAccess.error ||
+    premiumAccess.error ||
+    premiumGroups.error ||
+    yieldAccess.error ||
+    yieldRecords.error
   const weekPeriod = getWeeklyPeriod()
   const selectedLedgerSummary = selectedCharacter
     ? ledger.getCharacterSummary(selectedCharacter.id)
@@ -356,6 +375,21 @@ function MainApp() {
             onRevokeAccess={premiumAccess.revokeAccess}
           />
         )
+      case 'yield':
+        if (!yieldAccess.hasAccess) return null
+        return (
+          <YieldPage
+            records={yieldRecords.records}
+            settings={yieldRecords.settings}
+            onSaveRecord={yieldRecords.saveRecord}
+            onSaveSettings={yieldRecords.saveSettings}
+            onRemoveRecord={yieldRecords.removeRecord}
+            isOwner={yieldAccess.isOwner}
+            grants={yieldAccess.grants}
+            onGrantAccess={yieldAccess.grantAccess}
+            onRevokeAccess={yieldAccess.revokeAccess}
+          />
+        )
       default:
         return null
     }
@@ -407,7 +441,7 @@ function MainApp() {
 
         <main
           className={`flex-1 p-4 lg:p-6 mx-auto w-full ${
-            currentPage === 'premium' ? 'max-w-7xl' : 'max-w-5xl'
+            currentPage === 'premium' || currentPage === 'yield' ? 'max-w-7xl' : 'max-w-5xl'
           }`}
         >
           {combinedError && (
@@ -426,6 +460,7 @@ function MainApp() {
         onNavigate={setPage}
         hasRiceAccess={riceAccess.hasAccess}
         hasPremiumAccess={premiumAccess.hasAccess}
+        hasYieldAccess={yieldAccess.hasAccess}
       />
     </div>
   )

@@ -11,13 +11,19 @@ export const NAV_ITEMS: { id: Page; label: string }[] = [
   { id: 'goals', label: '목표' },
   { id: 'rice', label: '쌀곳간' },
   { id: 'premium', label: '프리미엄' },
+  { id: 'yield', label: '수익률' },
 ]
 
-export function getNavItems(access: { hasRiceAccess?: boolean; hasPremiumAccess?: boolean } = {}) {
-  const { hasRiceAccess = false, hasPremiumAccess = false } = access
+export function getNavItems(access: {
+  hasRiceAccess?: boolean
+  hasPremiumAccess?: boolean
+  hasYieldAccess?: boolean
+} = {}) {
+  const { hasRiceAccess = false, hasPremiumAccess = false, hasYieldAccess = false } = access
   return NAV_ITEMS.filter((item) => {
     if (item.id === 'rice') return hasRiceAccess
     if (item.id === 'premium') return hasPremiumAccess
+    if (item.id === 'yield') return hasYieldAccess
     return true
   })
 }

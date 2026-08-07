@@ -1,4 +1,4 @@
-export type Page = 'dashboard' | 'diary' | 'hunt' | 'expense' | 'boss' | 'drop' | 'gather' | 'goals' | 'rice' | 'premium'
+export type Page = 'dashboard' | 'diary' | 'hunt' | 'expense' | 'boss' | 'drop' | 'gather' | 'goals' | 'rice' | 'premium' | 'yield'
 
 export type BossTab = 'grandis' | 'belowSword' | 'normal'
 
@@ -187,4 +187,47 @@ export interface PremiumRecord {
   memo: string | null
   recordDate: string
   createdAt: string
+}
+
+/** 수익률 가계부 — 일별 거래소 잔고 기록 */
+export interface YieldDailyRecord {
+  id: string
+  recordDate: string
+  usdKrwRate: number
+  upbitStart: number | null
+  upbitEnd: number | null
+  binanceStart: number | null
+  binanceEnd: number | null
+  withdrawalUpbit: number | null
+  withdrawalBinance: number | null
+  depositUpbit: number | null
+  depositBinance: number | null
+  memo: string | null
+  createdAt: string
+}
+
+export interface YieldDailyRecordInput {
+  recordDate: string
+  usdKrwRate: number
+  upbitStart?: number | null
+  upbitEnd?: number | null
+  binanceStart?: number | null
+  binanceEnd?: number | null
+  withdrawalUpbit?: number | null
+  withdrawalBinance?: number | null
+  depositUpbit?: number | null
+  depositBinance?: number | null
+  memo?: string
+}
+
+export interface YieldSettings {
+  initialPrincipal: number
+  startDate: string | null
+  memo: string | null
+}
+
+export interface YieldSettingsInput {
+  initialPrincipal: number
+  startDate?: string
+  memo?: string
 }
