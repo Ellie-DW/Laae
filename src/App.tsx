@@ -101,8 +101,7 @@ function MainApp() {
   const handleResetLedger = useCallback(async () => {
     await ledger.resetAllRecords()
     await resetAllBossLedgerState()
-    await yieldRecords.reload()
-  }, [ledger.resetAllRecords, resetAllBossLedgerState, yieldRecords.reload])
+  }, [ledger.resetAllRecords, resetAllBossLedgerState])
 
   const riceHeldMeso = useMemo(() => {
     const netProfit = computeAccountCumulativeNetProfit(
@@ -384,6 +383,7 @@ function MainApp() {
             onSaveRecord={yieldRecords.saveRecord}
             onSaveSettings={yieldRecords.saveSettings}
             onRemoveRecord={yieldRecords.removeRecord}
+            onResetAll={yieldRecords.resetAll}
             isOwner={yieldAccess.isOwner}
             grants={yieldAccess.grants}
             onGrantAccess={yieldAccess.grantAccess}

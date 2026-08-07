@@ -43,3 +43,8 @@ export async function saveYieldSettings(userId: string, data: YieldSettingsInput
   if (error) throw error
   return mapSettings(row)
 }
+
+export async function deleteYieldSettings(userId: string): Promise<void> {
+  const { error } = await supabase.from('yield_settings').delete().eq('user_id', userId)
+  if (error) throw error
+}

@@ -4,7 +4,16 @@ import type { YieldAccessGrant } from '../lib/yieldAccessApi'
 import YieldAccessAdmin from '../components/yield/YieldAccessAdmin'
 import YieldDailyTable from '../components/yield/YieldDailyTable'
 import YieldPortfolioChart from '../components/yield/YieldPortfolioChart'
-import YieldIcon from '../components/yield/YieldIcon'
+import YieldResetButton from '../components/yield/YieldResetButton'
+import YieldSummarySection from '../components/yield/YieldSummarySection'
+import {
+  YieldExchangeCard,
+  YieldPageHeader,
+  YieldPanel,
+  YieldPreviewItem,
+  YieldPreviewStrip,
+  YieldSectionHeader,
+} from '../components/yield/YieldUi'
 import {
   buildDailyRows,
   buildMonthSummaries,
@@ -38,6 +47,7 @@ interface YieldPageProps {
     memo?: string
   }) => Promise<void>
   onRemoveRecord: (id: string) => Promise<void>
+  onResetAll: () => Promise<void>
   isOwner: boolean
   grants: YieldAccessGrant[]
   onGrantAccess: (email: string) => Promise<void>
@@ -46,44 +56,44 @@ interface YieldPageProps {
 
 function ExchangeField({
   label,
-  currency,
+  badge,
+  variant,
   startValue,
   endValue,
   onStartChange,
   onEndChange,
 }: {
   label: string
-  currency: 'krw' | 'usd'
+  badge: string
+  variant: 'upbit' | 'binance'
   startValue: string
   endValue: string
   onStartChange: (value: string) => void
   onEndChange: (value: string) => void
 }) {
-  const placeholder = currency === 'krw' ? '원' : '$'
   return (
-    <div className="rounded-lg border border-dark-border bg-dark-surface/40 p-3 space-y-2">
-      <p className="text-xs font-semibold text-slate-300">{label}</p>
-      <div className="grid grid-cols-2 gap-2">
+    <YieldExchangeCard label={label} badge={badge} variant={variant}>
+      <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-[10px] text-slate-500 mb-1 block">시작</label>
+          <label className="yield-field-label-sm">시작 잔고</label>
           <input
             value={startValue}
             onChange={(e) => onStartChange(e.target.value)}
-            placeholder={placeholder}
-            className="input-field text-xs py-2"
+            placeholder="0"
+            className="input-field text-sm py-2.5"
           />
         </div>
         <div>
-          <label className="text-[10px] text-slate-500 mb-1 block">마감</label>
+          <label className="yield-field-label-sm">마감 잔고</label>
           <input
             value={endValue}
             onChange={(e) => onEndChange(e.target.value)}
-            placeholder={placeholder}
-            className="input-field text-xs py-2"
+            placeholder="0"
+            className="input-field text-sm py-2.5"
           />
         </div>
       </div>
-    </div>
+    </YieldExchangeCard>
   )
 }
 
@@ -93,6 +103,7 @@ export default function YieldPage({
   onSaveRecord,
   onSaveSettings,
   onRemoveRecord,
+  onResetAll,
   isOwner,
   grants,
   onGrantAccess,
@@ -137,7 +148,13 @@ export default function YieldPage({
   }, [records])
 
   useEffect(() => {
-    if (!settings) return
+    if (!settings) {
+      setPrincipalInput('')
+      setPrincipalUsdInput('')
+      setSettingsStartDate(getToday())
+      setSettingsMemo('')
+      return
+    }
     setPrincipalInput(String(settings.initialPrincipal))
     setPrincipalUsdInput(
       settings.initialPrincipalUsd != null ? String(settings.initialPrincipalUsd) : ''
@@ -216,6 +233,25 @@ export default function YieldPage({
     if (suggested.binanceStart != null) setBinanceStart(String(suggested.binanceStart))
   }
 
+  const resetRecordForm = () => {
+    setRecordDate(getToday())
+    setUsdKrwRate('')
+    setUpbitStart('')
+    setUpbitEnd('')
+    setBinanceStart('')
+    setBinanceEnd('')
+    setWithdrawalUpbit('')
+    setWithdrawalBinance('')
+    setDepositUpbit('')
+    setDepositBinance('')
+    setMemo('')
+  }
+
+  const handleResetAll = async () => {
+    await onResetAll()
+    resetRecordForm()
+  }
+
   const handleSaveSettings = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const initialPrincipal = parseWonInput(principalInput)
@@ -269,333 +305,282 @@ export default function YieldPage({
   }
 
   return (
-    <div className="space-y-6 max-w-[1400px]">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
-          <YieldIcon size="lg" />
-          수익률 가계부
-        </h1>
-        <p className="text-sm text-slate-500 mt-1">
-          거래소별 시작·마감 잔고와 환율을 기록하면 총 시드·수익금·수익률이 자동 계산돼요
-        </p>
-      </div>
+    <div className="yield-page">
+      <YieldPageHeader recordCount={rows.length} />
 
-      {(settings || latestRow) && overallSummary && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <div className="panel-glow p-5">
-            <p className="text-sm text-slate-400">시작 원금</p>
-            <p className="text-2xl font-bold text-slate-100 mt-1">
-              {overallSummary.basePrincipal != null
-                ? formatWon(overallSummary.basePrincipal)
-                : '-'}
-            </p>
-            <p className="text-xs text-slate-500 mt-1">
-              {settings?.startDate ? `${settings.startDate} 시작` : '원금 기준'}
-            </p>
-          </div>
-          <div className="panel-glow p-5">
-            <p className="text-sm text-slate-400">현재 총 시드</p>
-            <p className="text-2xl font-bold text-maple-400 mt-1">
-              {latestRow ? formatWon(latestRow.totalSeed) : '-'}
-            </p>
-            <p className="text-xs text-slate-500 mt-1">{latestRow?.recordDate ?? '기록 없음'}</p>
-          </div>
-          <div className="panel-glow p-5">
-            <p className="text-sm text-slate-400">원화 수익금</p>
-            <p
-              className={`text-2xl font-bold mt-1 ${
-                (overallSummary.totalProfit ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'
-              }`}
-            >
-              {overallSummary.totalProfit == null ? '-' : formatYieldProfit(overallSummary.totalProfit)}
-            </p>
-            <p className="text-xs text-slate-500 mt-1">환율 반영 · ₩</p>
-          </div>
-          <div className="panel-glow p-5">
-            <p className="text-sm text-slate-400">달러 수익금</p>
-            <p
-              className={`text-2xl font-bold mt-1 ${
-                (overallSummary.totalProfitUsd ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'
-              }`}
-            >
-              {overallSummary.totalProfitUsd == null
-                ? '-'
-                : formatYieldProfitUsd(overallSummary.totalProfitUsd)}
-            </p>
-            <p className="text-xs text-slate-500 mt-1">환율 제외 · $</p>
-          </div>
-          <div className="panel-glow p-5">
-            <p className="text-sm text-slate-400">원화 수익률</p>
-            <p
-              className={`text-2xl font-bold mt-1 ${
-                (overallSummary.totalYieldRate ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'
-              }`}
-            >
-              {overallSummary.totalYieldRate == null
-                ? '-'
-                : formatYieldRate(overallSummary.totalYieldRate)}
-            </p>
-            <p className="text-xs text-slate-500 mt-1">환율 반영 · ₩ 기준</p>
-          </div>
-          <div className="panel-glow p-5">
-            <p className="text-sm text-slate-400">달러 수익률</p>
-            <p
-              className={`text-2xl font-bold mt-1 ${
-                (overallSummary.totalYieldRateUsd ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'
-              }`}
-            >
-              {overallSummary.totalYieldRateUsd == null
-                ? '-'
-                : formatYieldRate(overallSummary.totalYieldRateUsd)}
-            </p>
-            <p className="text-xs text-slate-500 mt-1">환율 제외 · $ 기준</p>
-          </div>
+      <YieldSummarySection
+        settings={settings}
+        latestRow={latestRow}
+        recordCount={rows.length}
+        overallSummary={
+          overallSummary ?? {
+            basePrincipal: null,
+            totalProfit: null,
+            totalProfitUsd: null,
+            totalYieldRate: null,
+            totalYieldRateUsd: null,
+          }
+        }
+      />
+
+      {rows.length > 0 && (
+        <div className="space-y-3">
+          <YieldSectionHeader title="자산 추이" variant="usd" />
+          <YieldPortfolioChart
+            rows={rows}
+            initialPrincipal={settings?.initialPrincipal ?? null}
+            initialPrincipalUsd={settings?.initialPrincipalUsd ?? null}
+            investmentStartDate={settings?.startDate ?? null}
+          />
         </div>
       )}
 
-      <YieldPortfolioChart
-        rows={rows}
-        initialPrincipal={settings?.initialPrincipal ?? null}
-        initialPrincipalUsd={settings?.initialPrincipalUsd ?? null}
-        investmentStartDate={settings?.startDate ?? null}
-      />
-
-      <form onSubmit={handleSaveSettings} className="panel-light p-4 space-y-3">
-        <div>
-          <h2 className="font-semibold text-slate-100">시작 원금</h2>
-          <p className="text-xs text-slate-500 mt-1">
-            처음 투자한 금액 · 원화는 필수, 달러는 선택 (미입력 시 첫 기록 환율로 환산)
-          </p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div>
-            <label className="text-xs text-slate-500 mb-1 block">원금 (₩)</label>
-            <input
-              value={principalInput}
-              onChange={(e) => setPrincipalInput(e.target.value)}
-              required
-              placeholder="예: 2000000"
-              className="input-field text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-slate-500 mb-1 block">원금 ($, 선택)</label>
-            <input
-              value={principalUsdInput}
-              onChange={(e) => setPrincipalUsdInput(e.target.value)}
-              placeholder="예: 1500.00"
-              className="input-field text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-slate-500 mb-1 block">투자 시작일</label>
-            <input
-              type="date"
-              value={settingsStartDate}
-              onChange={(e) => setSettingsStartDate(e.target.value)}
-              className="input-field text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-slate-500 mb-1 block">메모 (선택)</label>
-            <input
-              value={settingsMemo}
-              onChange={(e) => setSettingsMemo(e.target.value)}
-              placeholder={settings?.memo ?? '메모'}
-              className="input-field text-sm"
-            />
-          </div>
-        </div>
-        <button
-          type="submit"
-          disabled={savingSettings || parseWonInput(principalInput) <= 0}
-          className="btn-secondary text-sm w-full sm:w-auto px-6 py-2 disabled:opacity-50"
-        >
-          {savingSettings ? '저장 중...' : settings ? '원금 수정' : '원금 저장'}
-        </button>
-      </form>
-
-      <form onSubmit={handleSubmit} className="panel-light p-4 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-semibold text-slate-100">일별 기록 추가</h2>
-          {previousRecord && (
-            <button
-              type="button"
-              onClick={applySuggestedStarts}
-              className="text-xs text-cyber-300 hover:text-cyber-200"
-            >
-              전일 마감 → 오늘 시작 불러오기
-            </button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label className="text-xs text-slate-500 mb-1 block">날짜</label>
-            <input
-              type="date"
-              value={recordDate}
-              onChange={(e) => setRecordDate(e.target.value)}
-              className="input-field text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-slate-500 mb-1 block">당일 환율 (USD/KRW)</label>
-            <input
-              value={usdKrwRate}
-              onChange={(e) => setUsdKrwRate(e.target.value)}
-              required
-              placeholder="예: 1399"
-              className="input-field text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-slate-500 mb-1 block">메모 (선택)</label>
-            <input
-              value={memo}
-              onChange={(e) => setMemo(e.target.value)}
-              placeholder="메모"
-              className="input-field text-sm"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <ExchangeField
-            label="업비트 (₩)"
-            currency="krw"
-            startValue={upbitStart}
-            endValue={upbitEnd}
-            onStartChange={setUpbitStart}
-            onEndChange={setUpbitEnd}
-          />
-          <ExchangeField
-            label="바이낸스 ($)"
-            currency="usd"
-            startValue={binanceStart}
-            endValue={binanceEnd}
-            onStartChange={setBinanceStart}
-            onEndChange={setBinanceEnd}
-          />
-        </div>
-
-        <div className="rounded-lg border border-dark-border bg-dark-surface/40 p-3 space-y-3">
-          <div>
-            <p className="text-xs font-semibold text-slate-300">당일 입출금 (선택)</p>
-            <p className="text-[10px] text-slate-500 mt-0.5">
-              입금·출금 금액을 적어 두면 잔고 변동과 투자 수익을 구분해서 계산해요
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <p className="text-[10px] font-medium text-sky-400/90">입금</p>
-              <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        <form onSubmit={handleSaveSettings} className="xl:col-span-2">
+          <YieldPanel
+            title="시작 원금"
+            description="원화는 필수, 달러는 선택 (미입력 시 첫 기록 환율로 환산)"
+            accent="violet"
+          >
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] text-slate-500 mb-1 block">업비트 (₩)</label>
+                  <label className="yield-field-label">원금 (₩)</label>
                   <input
-                    value={depositUpbit}
-                    onChange={(e) => setDepositUpbit(e.target.value)}
-                    placeholder="원"
-                    className="input-field text-xs py-2"
+                    value={principalInput}
+                    onChange={(e) => setPrincipalInput(e.target.value)}
+                    required
+                    placeholder="예: 2000000"
+                    className="input-field text-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-slate-500 mb-1 block">바이낸스 ($)</label>
+                  <label className="yield-field-label">원금 ($, 선택)</label>
                   <input
-                    value={depositBinance}
-                    onChange={(e) => setDepositBinance(e.target.value)}
-                    placeholder="$"
-                    className="input-field text-xs py-2"
+                    value={principalUsdInput}
+                    onChange={(e) => setPrincipalUsdInput(e.target.value)}
+                    placeholder="예: 1500.00"
+                    className="input-field text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="yield-field-label">투자 시작일</label>
+                  <input
+                    type="date"
+                    value={settingsStartDate}
+                    onChange={(e) => setSettingsStartDate(e.target.value)}
+                    className="input-field text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="yield-field-label">메모 (선택)</label>
+                  <input
+                    value={settingsMemo}
+                    onChange={(e) => setSettingsMemo(e.target.value)}
+                    placeholder={settings?.memo ?? '메모'}
+                    className="input-field text-sm"
                   />
                 </div>
               </div>
+              <button
+                type="submit"
+                disabled={savingSettings || parseWonInput(principalInput) <= 0}
+                className="btn-secondary text-sm w-full px-6 py-2.5 disabled:opacity-50"
+              >
+                {savingSettings ? '저장 중...' : settings ? '원금 수정' : '원금 저장'}
+              </button>
             </div>
-            <div className="space-y-2">
-              <p className="text-[10px] font-medium text-amber-400/90">출금</p>
-              <div className="grid grid-cols-2 gap-2">
+          </YieldPanel>
+        </form>
+
+        <form onSubmit={handleSubmit} className="xl:col-span-3 space-y-0">
+          <YieldPanel
+            title="일별 기록 추가"
+            description="날짜·환율·거래소 잔고를 입력하세요"
+            accent="krw"
+            action={
+              previousRecord ? (
+                <button type="button" onClick={applySuggestedStarts} className="yield-action-btn">
+                  전일 마감 → 시작 불러오기
+                </button>
+              ) : undefined
+            }
+          >
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-[10px] text-slate-500 mb-1 block">업비트 (₩)</label>
+                  <label className="yield-field-label">날짜</label>
                   <input
-                    value={withdrawalUpbit}
-                    onChange={(e) => setWithdrawalUpbit(e.target.value)}
-                    placeholder="원"
-                    className="input-field text-xs py-2"
+                    type="date"
+                    value={recordDate}
+                    onChange={(e) => setRecordDate(e.target.value)}
+                    className="input-field text-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-slate-500 mb-1 block">바이낸스 ($)</label>
+                  <label className="yield-field-label">당일 환율 (USD/KRW)</label>
                   <input
-                    value={withdrawalBinance}
-                    onChange={(e) => setWithdrawalBinance(e.target.value)}
-                    placeholder="$"
-                    className="input-field text-xs py-2"
+                    value={usdKrwRate}
+                    onChange={(e) => setUsdKrwRate(e.target.value)}
+                    required
+                    placeholder="예: 1399"
+                    className="input-field text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="yield-field-label">메모 (선택)</label>
+                  <input
+                    value={memo}
+                    onChange={(e) => setMemo(e.target.value)}
+                    placeholder="메모"
+                    className="input-field text-sm"
                   />
                 </div>
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <ExchangeField
+                  label="업비트"
+                  badge="KRW"
+                  variant="upbit"
+                  startValue={upbitStart}
+                  endValue={upbitEnd}
+                  onStartChange={setUpbitStart}
+                  onEndChange={setUpbitEnd}
+                />
+                <ExchangeField
+                  label="바이낸스"
+                  badge="USD"
+                  variant="binance"
+                  startValue={binanceStart}
+                  endValue={binanceEnd}
+                  onStartChange={setBinanceStart}
+                  onEndChange={setBinanceEnd}
+                />
+              </div>
+
+              <div className="yield-flow-section">
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: 'rgb(var(--theme-text-secondary))' }}>
+                    당일 입출금
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgb(var(--theme-text-faint))' }}>
+                    선택 · 입금·출금을 구분해 수익을 계산합니다
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="yield-flow-box yield-flow-box--deposit">
+                    <p className="text-[11px] font-semibold yield-flow-label--deposit">입금</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="yield-field-label-sm">업비트 (₩)</label>
+                        <input
+                          value={depositUpbit}
+                          onChange={(e) => setDepositUpbit(e.target.value)}
+                          placeholder="0"
+                          className="input-field text-xs py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="yield-field-label-sm">바이낸스 ($)</label>
+                        <input
+                          value={depositBinance}
+                          onChange={(e) => setDepositBinance(e.target.value)}
+                          placeholder="0"
+                          className="input-field text-xs py-2"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="yield-flow-box yield-flow-box--withdraw">
+                    <p className="text-[11px] font-semibold yield-flow-label--withdraw">출금</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="yield-field-label-sm">업비트 (₩)</label>
+                        <input
+                          value={withdrawalUpbit}
+                          onChange={(e) => setWithdrawalUpbit(e.target.value)}
+                          placeholder="0"
+                          className="input-field text-xs py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="yield-field-label-sm">바이낸스 ($)</label>
+                        <input
+                          value={withdrawalBinance}
+                          onChange={(e) => setWithdrawalBinance(e.target.value)}
+                          placeholder="0"
+                          className="input-field text-xs py-2"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {preview && (
+                <YieldPreviewStrip>
+                  <YieldPreviewItem label="총 시드" value={formatWon(preview.totalSeed)} />
+                  {preview.depositKrw > 0 && (
+                    <YieldPreviewItem label="입금" value={formatWon(preview.depositKrw)} tone="deposit" />
+                  )}
+                  {preview.withdrawalKrw > 0 && (
+                    <YieldPreviewItem label="출금" value={formatWon(preview.withdrawalKrw)} tone="withdraw" />
+                  )}
+                  {preview.profit != null && (
+                    <YieldPreviewItem
+                      label="원화 수익금"
+                      value={formatYieldProfit(preview.profit)}
+                      tone={preview.profit >= 0 ? 'positive' : 'negative'}
+                    />
+                  )}
+                  {preview.profitUsd != null && (
+                    <YieldPreviewItem
+                      label="달러 수익금"
+                      value={formatYieldProfitUsd(preview.profitUsd)}
+                      tone={preview.profitUsd >= 0 ? 'positive' : 'negative'}
+                    />
+                  )}
+                  {preview.yieldRate != null && (
+                    <YieldPreviewItem
+                      label="원화 수익률"
+                      value={formatYieldRate(preview.yieldRate)}
+                      tone={preview.yieldRate >= 0 ? 'positive' : 'negative'}
+                    />
+                  )}
+                  {preview.yieldRateUsd != null && (
+                    <YieldPreviewItem
+                      label="달러 수익률"
+                      value={formatYieldRate(preview.yieldRateUsd)}
+                      tone={preview.yieldRateUsd >= 0 ? 'positive' : 'negative'}
+                    />
+                  )}
+                </YieldPreviewStrip>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitting || !usdKrwRate.trim()}
+                className="btn-primary text-sm w-full py-2.5 disabled:opacity-50"
+              >
+                {submitting ? '저장 중...' : '기록 저장'}
+              </button>
             </div>
-          </div>
-        </div>
-
-        {preview && (
-          <div className="rounded-lg bg-dark-bg/60 border border-dark-border px-4 py-3 text-sm flex flex-wrap gap-4">
-            <span className="text-slate-400">
-              총 시드 <strong className="text-slate-100 ml-1">{formatWon(preview.totalSeed)}</strong>
-            </span>
-            {preview.depositKrw > 0 && (
-              <span className="text-slate-400">
-                입금 <strong className="text-sky-300 ml-1">{formatWon(preview.depositKrw)}</strong>
-              </span>
-            )}
-            {preview.withdrawalKrw > 0 && (
-              <span className="text-slate-400">
-                출금 <strong className="text-amber-300 ml-1">{formatWon(preview.withdrawalKrw)}</strong>
-              </span>
-            )}
-            {preview.profit != null && (
-              <span className="text-slate-400">
-                원화 수익금{' '}
-                <strong className={preview.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                  {formatYieldProfit(preview.profit)}
-                </strong>
-              </span>
-            )}
-            {preview.profitUsd != null && (
-              <span className="text-slate-400">
-                달러 수익금{' '}
-                <strong className={preview.profitUsd >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                  {formatYieldProfitUsd(preview.profitUsd)}
-                </strong>
-              </span>
-            )}
-            {preview.yieldRate != null && (
-              <span className="text-slate-400">
-                원화 수익률{' '}
-                <strong className={preview.yieldRate >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                  {formatYieldRate(preview.yieldRate)}
-                </strong>
-              </span>
-            )}
-            {preview.yieldRateUsd != null && (
-              <span className="text-slate-400">
-                달러 수익률{' '}
-                <strong className={preview.yieldRateUsd >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                  {formatYieldRate(preview.yieldRateUsd)}
-                </strong>
-              </span>
-            )}
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={submitting || !usdKrwRate.trim()}
-          className="btn-primary text-sm w-full py-2 disabled:opacity-50"
-        >
-          {submitting ? '저장 중...' : '기록 저장'}
-        </button>
-      </form>
+          </YieldPanel>
+        </form>
+      </div>
 
       <YieldDailyTable rows={rows} monthSummaries={monthSummaries} onRemove={onRemoveRecord} />
+
+      {(records.length > 0 || settings) && (
+        <YieldPanel
+          title="데이터 초기화"
+          description="일별 기록과 시작 원금 설정을 모두 삭제합니다"
+          accent="neutral"
+        >
+          <YieldResetButton onReset={handleResetAll} />
+        </YieldPanel>
+      )}
 
       {isOwner && (
         <YieldAccessAdmin grants={grants} onGrant={onGrantAccess} onRevoke={onRevokeAccess} />
