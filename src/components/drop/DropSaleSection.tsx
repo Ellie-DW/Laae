@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { DropRecord } from '../../types'
-import { PREDEFINED_DROP_ITEMS, getAcquisitionCounts, getDropItemGroups } from '../../data/dropItems'
+import { PREDEFINED_DROP_ITEMS, RING_MISS_NAME, getAcquisitionCounts, getDropItemGroups } from '../../data/dropItems'
 import { buildDropSaleMemo, calcDropSale, normalizeDropSaleRatios } from '../../lib/dropSale'
 import { formatMesoKorean, getToday, parseMesoInput } from '../../utils'
 import DropItemIcon from './DropItemIcon'
@@ -38,7 +38,7 @@ export default function DropSaleSection({ drops, onSell }: DropSaleSectionProps)
   const groups = useMemo(
     () =>
       getDropItemGroups(
-        PREDEFINED_DROP_ITEMS.map((item) => ({
+        PREDEFINED_DROP_ITEMS.filter((item) => item.name !== RING_MISS_NAME).map((item) => ({
           id: item.id,
           name: item.name,
           meso: 0,

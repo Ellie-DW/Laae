@@ -131,6 +131,18 @@ export interface DropRecord {
   memo: string | null
   recordDate: string
   createdAt: string
+  bossId?: string | null
+  difficulty?: BossDifficulty | null
+}
+
+export interface DropRecordInput {
+  characterId: string
+  itemName: string
+  meso: number
+  memo?: string
+  recordDate: string
+  bossId?: string | null
+  difficulty?: BossDifficulty | null
 }
 
 export interface Goal {

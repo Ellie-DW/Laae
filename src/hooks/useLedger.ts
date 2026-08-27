@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import type { ExpenseCategory, IncomeCategory, BossResetCycle, BossSnapshot, CharacterBossData } from '../types'
+import type { ExpenseCategory, IncomeCategory, BossResetCycle, BossSnapshot, CharacterBossData, BossDifficulty, DropRecordInput } from '../types'
 import { useAuth } from '../contexts/AuthContext'
 import {
   fetchLedgerData,
@@ -395,7 +395,7 @@ export function useLedger(
   }, [])
 
   const createDrop = useCallback(
-    async (data: { characterId: string; itemName: string; meso: number; memo?: string; recordDate: string }) => {
+    async (data: DropRecordInput) => {
       if (!user) return
       const row = await addDropRecord(user.id, data)
       setDrops((prev) => [row, ...prev])
@@ -420,7 +420,16 @@ export function useLedger(
   }, [])
 
   const updateDrop = useCallback(
-    async (id: string, data: { recordDate?: string; memo?: string | null }) => {
+    async (
+      id: string,
+      data: {
+        recordDate?: string
+        memo?: string | null
+        itemName?: string
+        bossId?: string | null
+        difficulty?: BossDifficulty | null
+      }
+    ) => {
       const row = await updateDropRecord(id, data)
       setDrops((prev) => prev.map((d) => (d.id === id ? row : d)))
       setError(null)

@@ -79,6 +79,7 @@ const dropModules = import.meta.glob<string>('../assets/images/drops/*.png', {
 const DROP_ICON_ALIASES: Record<string, string> = {
   '리스트레인트 링 Lv4': '리스트레인트링',
   '컨티뉴어스 링 Lv4': '컨티뉴어스 링',
+  '익셉셔널 해머 (벨트)': '익셉셔널 해버 (벨트)',
 }
 
 function assetPath(folder: string, fileName: string) {

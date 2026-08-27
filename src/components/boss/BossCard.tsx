@@ -1,8 +1,8 @@
 import type { BossDefinition, BossSelection } from '../../types'
 import { getBossResetCycle } from '../../data/bosses'
 import { formatMesoKorean, DIFFICULTY_COLORS } from '../../utils'
-import { getBossIconSrc } from '../../lib/assetImages'
 import ResetCycleBadge from './ResetCycleBadge'
+import BossIconWithDrops from './BossIconWithDrops'
 
 interface BossCardProps {
   boss: BossDefinition
@@ -43,27 +43,19 @@ export default function BossCard({
     }
   }
 
-  const bossIconSrc = getBossIconSrc(boss.id)
-
   return (
     <div
-      className={`panel-light p-4 transition-all ${
+      className={`panel-light p-4 transition-all overflow-visible hover:z-20 ${
         selected ? 'ring-1 ring-cyber-500/30 border-cyber-600/25' : ''
       }`}
     >
       <div className="flex items-start gap-3">
-        {bossIconSrc ? (
-          <img
-            src={bossIconSrc}
-            alt=""
-            className="w-10 h-10 rounded-lg bg-dark-surface border border-dark-border object-contain p-0.5 shrink-0"
-            draggable={false}
-          />
-        ) : (
-          <span className="w-8 h-8 mt-0.5 rounded-lg bg-dark-surface border border-dark-border flex items-center justify-center text-xs font-bold text-cyber-400 shrink-0">
-            {boss.shortName}
-          </span>
-        )}
+        <BossIconWithDrops
+          bossId={boss.id}
+          name={boss.name}
+          shortName={boss.shortName}
+          selectedDifficulty={selected?.difficulty}
+        />
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">

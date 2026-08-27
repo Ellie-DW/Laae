@@ -272,6 +272,8 @@ function MainApp() {
           <DropPage
             characters={characters}
             drops={ledger.drops}
+            snapshots={ledger.snapshots}
+            bossDataMap={bossDataMap}
             onAdd={ledger.createDrop}
             onSell={ledger.sellDrops}
             onUpdate={ledger.updateDrop}

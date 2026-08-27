@@ -158,7 +158,7 @@ export default function BossPage({
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="relative z-0 grid grid-cols-1 md:grid-cols-2 gap-4 overflow-visible">
         {bosses.map((boss) => (
           <BossCard
             key={boss.id}

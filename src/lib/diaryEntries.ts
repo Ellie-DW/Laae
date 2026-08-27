@@ -1,4 +1,5 @@
 import type { HuntRecord, GatherRecord, Expense, Income, DropRecord, BossSnapshot, CharacterBossData, DiaryNote, RiceRecord, Page } from '../types'
+import { formatDropRecordSource } from './dropRates'
 import { EXPENSE_CATEGORY_LABEL, INCOME_CATEGORY_LABEL } from './ledgerApi'
 import { calculateBossStats, isWeeklyBossCleared, isMonthlyBossCleared } from './bossStats'
 import { isSolErdaSale, isSolErdaSpend, parseSolErdaPurchaseMemo, isSolErdaPurchaseExpense } from './huntStats'
@@ -257,7 +258,7 @@ export function buildDiaryDays(
       recordDate: d.recordDate,
       createdAt: d.createdAt,
       amount: d.meso,
-      title: d.itemName,
+      title: formatDropRecordSource(d) ? `${d.itemName} · ${formatDropRecordSource(d)}` : d.itemName,
       memo: d.memo,
     })
   }
