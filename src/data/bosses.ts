@@ -1,4 +1,4 @@
-import type { BossDefinition, BossResetCycle, BossRunnerPreset } from '../types'
+import type { BossDefinition, BossDifficulty, BossResetCycle, BossRunnerPreset, BossTab } from '../types'
 
 export const BOSS_TABS = [
   { id: 'grandis' as const, label: '그란디스', desc: '세렌부터 유피테르까지 그란디스 레이드 보스' },
@@ -163,39 +163,140 @@ export const RESET_CYCLE_INFO = {
   monthly: { label: '월간', desc: '매월 1일 초기화' },
 } as const
 
-/** 검밑솔 돌이 / 이적자 돌이 주간 보스 루트 */
-export const BOSS_RUNNER_PRESETS: Record<
-  BossRunnerPreset,
-  Array<{ bossId: string; difficulty: BossDefinition['difficulties'][number]['difficulty'] }>
-> = {
+export type BossRunnerPresetPick = {
+  bossId: string
+  difficulty: BossDifficulty
+  partySize?: number
+}
+
+const BELOW_SWORD_CORE: BossRunnerPresetPick[] = [
+  { bossId: 'suu', difficulty: 'HARD' },
+  { bossId: 'damien', difficulty: 'HARD' },
+  { bossId: 'g-slime', difficulty: 'CHAOS' },
+  { bossId: 'lucid', difficulty: 'HARD' },
+  { bossId: 'will', difficulty: 'HARD' },
+  { bossId: 'gloom', difficulty: 'CHAOS' },
+  { bossId: 'true-hilla', difficulty: 'HARD' },
+  { bossId: 'darknell', difficulty: 'HARD' },
+]
+
+const BELOW_SWORD_CORE_NO_SLIME = BELOW_SWORD_CORE.filter((boss) => boss.bossId !== 'g-slime')
+
+const BLACK_MAGE_HARD: BossRunnerPresetPick = { bossId: 'black-mage', difficulty: 'HARD' }
+
+/** 돌이 프리셋별 보스 루트. 하세는 주간 12마리 1인 + 월간 검마 1인 */
+export const BOSS_RUNNER_PRESETS: Record<BossRunnerPreset, BossRunnerPresetPick[]> = {
   belowSword: [
     { bossId: 'magnus', difficulty: 'HARD' },
     { bossId: 'papulatus', difficulty: 'CHAOS' },
     { bossId: 'bloody-queen', difficulty: 'CHAOS' },
     { bossId: 'vellum', difficulty: 'CHAOS' },
-    { bossId: 'suu', difficulty: 'HARD' },
-    { bossId: 'damien', difficulty: 'HARD' },
-    { bossId: 'g-slime', difficulty: 'CHAOS' },
-    { bossId: 'lucid', difficulty: 'HARD' },
-    { bossId: 'will', difficulty: 'HARD' },
-    { bossId: 'gloom', difficulty: 'CHAOS' },
-    { bossId: 'true-hilla', difficulty: 'HARD' },
-    { bossId: 'darknell', difficulty: 'HARD' },
-    { bossId: 'black-mage', difficulty: 'HARD' },
+    ...BELOW_SWORD_CORE,
+    BLACK_MAGE_HARD,
+  ],
+  hardSeren: [
+    { bossId: 'papulatus', difficulty: 'CHAOS', partySize: 1 },
+    { bossId: 'suu', difficulty: 'HARD', partySize: 1 },
+    { bossId: 'damien', difficulty: 'HARD', partySize: 1 },
+    { bossId: 'g-slime', difficulty: 'CHAOS', partySize: 1 },
+    { bossId: 'lucid', difficulty: 'HARD', partySize: 1 },
+    { bossId: 'will', difficulty: 'HARD', partySize: 1 },
+    { bossId: 'gloom', difficulty: 'CHAOS', partySize: 1 },
+    { bossId: 'true-hilla', difficulty: 'HARD', partySize: 1 },
+    { bossId: 'darknell', difficulty: 'HARD', partySize: 1 },
+    { bossId: 'seren', difficulty: 'HARD', partySize: 1 },
+    { bossId: 'kalos', difficulty: 'EASY', partySize: 1 },
+    { bossId: 'first-adversary', difficulty: 'EASY', partySize: 1 },
+    { bossId: 'black-mage', difficulty: 'HARD', partySize: 1 },
   ],
   transcendent: [
     { bossId: 'papulatus', difficulty: 'CHAOS' },
-    { bossId: 'suu', difficulty: 'HARD' },
-    { bossId: 'damien', difficulty: 'HARD' },
-    { bossId: 'g-slime', difficulty: 'CHAOS' },
-    { bossId: 'lucid', difficulty: 'HARD' },
-    { bossId: 'will', difficulty: 'HARD' },
-    { bossId: 'gloom', difficulty: 'CHAOS' },
-    { bossId: 'true-hilla', difficulty: 'HARD' },
-    { bossId: 'darknell', difficulty: 'HARD' },
+    ...BELOW_SWORD_CORE,
+    { bossId: 'seren', difficulty: 'NORMAL' },
+    { bossId: 'kalos', difficulty: 'EASY' },
+    { bossId: 'first-adversary', difficulty: 'EASY' },
+    BLACK_MAGE_HARD,
+  ],
+  easyKaring: [
+    ...BELOW_SWORD_CORE,
     { bossId: 'seren', difficulty: 'HARD' },
     { bossId: 'kalos', difficulty: 'EASY' },
     { bossId: 'first-adversary', difficulty: 'EASY' },
-    { bossId: 'black-mage', difficulty: 'HARD' },
+    { bossId: 'karing', difficulty: 'EASY' },
+    BLACK_MAGE_HARD,
+  ],
+  easyBellona: [
+    ...BELOW_SWORD_CORE_NO_SLIME,
+    { bossId: 'seren', difficulty: 'HARD' },
+    { bossId: 'kalos', difficulty: 'EASY' },
+    { bossId: 'first-adversary', difficulty: 'EASY' },
+    { bossId: 'karing', difficulty: 'EASY' },
+    { bossId: 'bellona', difficulty: 'EASY' },
+    BLACK_MAGE_HARD,
+  ],
+  normalVoidDuo: [
+    { bossId: 'suu', difficulty: 'EXTREME', partySize: 2 },
+    { bossId: 'lucid', difficulty: 'HARD', partySize: 1 },
+    { bossId: 'will', difficulty: 'HARD', partySize: 1 },
+    { bossId: 'gloom', difficulty: 'CHAOS', partySize: 1 },
+    { bossId: 'true-hilla', difficulty: 'HARD', partySize: 1 },
+    { bossId: 'darknell', difficulty: 'HARD', partySize: 1 },
+    { bossId: 'seren', difficulty: 'HARD', partySize: 1 },
+    { bossId: 'kalos', difficulty: 'NORMAL', partySize: 1 },
+    { bossId: 'first-adversary', difficulty: 'NORMAL', partySize: 1 },
+    { bossId: 'karing', difficulty: 'EASY', partySize: 1 },
+    { bossId: 'brilliant-void', difficulty: 'NORMAL', partySize: 2 },
+    { bossId: 'bellona', difficulty: 'EASY', partySize: 1 },
+    { bossId: 'black-mage', difficulty: 'HARD', partySize: 1 },
   ],
 }
+
+export const BOSS_RUNNER_PRESET_OPTIONS: Array<{
+  id: BossRunnerPreset
+  label: string
+  tab: BossTab
+  buttonClass: string
+}> = [
+  {
+    id: 'belowSword',
+    label: '검밑솔 돌이',
+    tab: 'normal',
+    buttonClass:
+      'bg-maple-600/20 text-maple-300 border border-maple-500/40 hover:bg-maple-600/30 hover:border-maple-400/50',
+  },
+  {
+    id: 'transcendent',
+    label: '이적자 돌이',
+    tab: 'grandis',
+    buttonClass:
+      'bg-cyber-600/20 text-cyber-300 border border-cyber-500/40 hover:bg-cyber-600/30 hover:border-cyber-400/50',
+  },
+  {
+    id: 'hardSeren',
+    label: '하세 돌이',
+    tab: 'grandis',
+    buttonClass:
+      'bg-amber-600/20 text-amber-300 border border-amber-500/40 hover:bg-amber-600/30 hover:border-amber-400/50',
+  },
+  {
+    id: 'easyKaring',
+    label: '이카돌이',
+    tab: 'grandis',
+    buttonClass:
+      'bg-violet-600/20 text-violet-300 border border-violet-500/40 hover:bg-violet-600/30 hover:border-violet-400/50',
+  },
+  {
+    id: 'easyBellona',
+    label: '이지벨로나돌이',
+    tab: 'grandis',
+    buttonClass:
+      'bg-rose-600/20 text-rose-300 border border-rose-500/40 hover:bg-rose-600/30 hover:border-rose-400/50',
+  },
+  {
+    id: 'normalVoidDuo',
+    label: '노말흉성2인돌이',
+    tab: 'grandis',
+    buttonClass:
+      'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 hover:bg-indigo-600/30 hover:border-indigo-400/50',
+  },
+]
