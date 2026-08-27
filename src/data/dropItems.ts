@@ -64,6 +64,8 @@ const DROP_NAME_ALIASES: Record<string, string> = {
   '굶주리는 핏빛 원혼': '굶주리는 빛빈 원혼',
   '고대의 에테르넬 상자': '고대의 에테르넬 방어구 상자',
   '영롱한 달빛 포션 (익스트림)': '영롱한 달빛 포션',
+  '특수형 에너지 코어(S)급': '특수형 에너지 코어(S급)',
+  '녹옥 보스 반지 상자': '녹옥의 보스 반지 상자',
 }
 
 export function normalizeDropItemName(name: string): string {
