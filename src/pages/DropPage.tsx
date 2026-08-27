@@ -1,6 +1,6 @@
 import type { Character, CharacterBossData, DropRecord, DropRecordInput, BossSnapshot, BossDifficulty } from '../types'
 import DropRecordPanel from '../components/drop/DropRecordPanel'
-import type { DropSaleItem } from '../components/drop/DropSaleSection'
+import type { DropSaleItem } from '../components/drop/DropInventorySection'
 
 interface DropPageProps {
   characters: Character[]
@@ -8,7 +8,7 @@ interface DropPageProps {
   snapshots: BossSnapshot[]
   bossDataMap: Record<string, CharacterBossData>
   onAdd: (data: DropRecordInput) => Promise<void>
-  onSell: (items: DropSaleItem[]) => Promise<void>
+  onSell: (items: DropSaleItem[], characterId?: string | null) => Promise<void>
   onUpdate: (
     id: string,
     data: {
