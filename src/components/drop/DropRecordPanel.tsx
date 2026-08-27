@@ -1,31 +1,49 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Character, DropRecord } from '../../types'
-import { formatMesoKorean } from '../../utils'
+import type { BossSnapshot, Character, CharacterBossData, DropRecord, DropRecordInput, BossDifficulty } from '../../types'
+import { DIFFICULTY_COLORS, formatMesoKorean } from '../../utils'
+import { formatDropRecordSource } from '../../lib/dropRates'
 import DropAcquisitionList from './DropAcquisitionList'
 import DropAcquisitionSummary from './DropAcquisitionSummary'
 import DropChecklistSection, { type DropAddItem } from './DropChecklistSection'
+import DropRateSection from './DropRateSection'
 import DropSaleSection, { type DropSaleItem } from './DropSaleSection'
 import DropItemIcon from './DropItemIcon'
 
 interface DropRecordPanelProps {
   characters: Character[]
   drops: DropRecord[]
-  onAdd: (data: { characterId: string; itemName: string; meso: number; memo?: string; recordDate: string }) => Promise<void>
+  snapshots: BossSnapshot[]
+  bossDataMap: Record<string, CharacterBossData>
+  onAdd: (data: DropRecordInput) => Promise<void>
   onSell: (items: DropSaleItem[]) => Promise<void>
-  onUpdate: (id: string, data: { recordDate?: string; memo?: string | null }) => Promise<void>
+  onUpdate: (
+    id: string,
+    data: {
+      recordDate?: string
+      memo?: string | null
+      itemName?: string
+      bossId?: string | null
+      difficulty?: BossDifficulty | null
+    }
+  ) => Promise<void>
   onRemove: (id: string) => Promise<void>
   embedded?: boolean
 }
 
+type DropViewMode = 'records' | 'rates'
+
 export default function DropRecordPanel({
   characters,
   drops,
+  snapshots,
+  bossDataMap,
   onAdd,
   onSell,
   onUpdate,
   onRemove,
   embedded,
 }: DropRecordPanelProps) {
+  const [viewMode, setViewMode] = useState<DropViewMode>('records')
   const [filterCharacterId, setFilterCharacterId] = useState<string | null>(null)
   const [addCharacterId, setAddCharacterId] = useState(() => characters[0]?.id ?? '')
 
@@ -69,7 +87,10 @@ export default function DropRecordPanel({
         characterId: addCharacterId,
         itemName: item.itemName,
         meso: 0,
+        memo: item.memo,
         recordDate: item.recordDate,
+        bossId: item.bossId,
+        difficulty: item.difficulty,
       })
     }
   }
@@ -90,13 +111,27 @@ export default function DropRecordPanel({
   return (
     <div className="space-y-6">
       {!embedded && (
-        <div>
-          <h1 className="text-2xl font-bold text-slate-100">보스 드랍</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            {filterCharacterId
-              ? `${charNameById[filterCharacterId]} · 획득·판매 기록`
-              : `${characters.length}개 캐릭터 통합 드랍 현황`}
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-100">보스 드랍</h1>
+            <p className="text-sm text-slate-500 mt-1">
+              {viewMode === 'rates'
+                ? filterCharacterId
+                  ? `${charNameById[filterCharacterId]} · 처치 대비 드랍`
+                  : '잡음 체크와 획득 기록을 비교해요'
+                : filterCharacterId
+                  ? `${charNameById[filterCharacterId]} · 획득·판매 기록`
+                  : `${characters.length}개 캐릭터 통합 드랍 현황`}
+            </p>
+          </div>
+          <div className="flex gap-1 shrink-0">
+            <ViewTab active={viewMode === 'records'} onClick={() => setViewMode('records')}>
+              📋 기록
+            </ViewTab>
+            <ViewTab active={viewMode === 'rates'} onClick={() => setViewMode('rates')}>
+              📊 처치 대비
+            </ViewTab>
+          </div>
         </div>
       )}
 
@@ -115,59 +150,101 @@ export default function DropRecordPanel({
         ))}
       </div>
 
-      <div className="panel-glow p-5 border-maple-500/20">
-        <p className="text-sm text-slate-400">총 판매 수익</p>
-        <p className="text-2xl font-bold text-maple-400 mt-1">{formatMesoKorean(total)}</p>
-        <p className="text-xs text-slate-500 mt-1">{saleRecords.length}건 판매 기록</p>
-      </div>
-
-      <DropChecklistSection
-        characters={characters}
-        characterId={addCharacterId}
-        onCharacterChange={setAddCharacterId}
-        onAdd={handleChecklistAdd}
-      />
-
-      <DropAcquisitionList
-        records={acquisitionRecords}
-        characters={characters}
-        showCharacter={showCharacter}
-        onUpdate={onUpdate}
-        onRemove={onRemove}
-      />
-
-      <DropAcquisitionSummary drops={visibleDrops} characterId={filterCharacterId ?? undefined} />
-
-      <DropSaleSection drops={drops} onSell={handleSell} />
-
-      <div className="panel-light p-5">
-        <h2 className="font-semibold text-slate-100 mb-4">판매 내역</h2>
-        {saleRecords.length === 0 ? (
-          <p className="text-sm text-slate-500 text-center py-6">아직 판매 기록이 없어요</p>
-        ) : (
-          <div className="record-list-scroll">
-            {saleRecords.map((d) => (
-              <div key={d.id} className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50 border border-dark-border">
-                <DropItemIcon name={d.itemName} size="sm" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-medium text-slate-200">{d.itemName}</p>
-                    {showCharacter && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyber-500/10 text-cyber-400 border border-cyber-500/20">
-                        {charNameById[d.characterId] ?? '캐릭터'}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 mt-0.5">판매 {d.recordDate}{d.memo ? ` · ${d.memo}` : ''}</p>
-                </div>
-                <span className="text-sm font-semibold text-maple-400 shrink-0">+{formatMesoKorean(d.meso)}</span>
-                <button onClick={() => onRemove(d.id)} className="text-slate-600 hover:text-red-400 text-xs">✕</button>
-              </div>
-            ))}
+      {viewMode === 'rates' ? (
+        <DropRateSection
+          characters={characters}
+          characterId={filterCharacterId ?? undefined}
+          drops={visibleDrops}
+          snapshots={snapshots}
+          bossDataMap={bossDataMap}
+        />
+      ) : (
+        <>
+          <div className="panel-glow p-5 border-maple-500/20">
+            <p className="text-sm text-slate-400">총 판매 수익</p>
+            <p className="text-2xl font-bold text-maple-400 mt-1">{formatMesoKorean(total)}</p>
+            <p className="text-xs text-slate-500 mt-1">{saleRecords.length}건 판매 기록</p>
           </div>
-        )}
-      </div>
+
+          <DropChecklistSection
+            characters={characters}
+            characterId={addCharacterId}
+            bossDataMap={bossDataMap}
+            onCharacterChange={setAddCharacterId}
+            onAdd={handleChecklistAdd}
+          />
+
+          <DropAcquisitionList
+            records={acquisitionRecords}
+            characters={characters}
+            showCharacter={showCharacter}
+            onUpdate={onUpdate}
+            onRemove={onRemove}
+          />
+
+          <DropAcquisitionSummary drops={visibleDrops} characterId={filterCharacterId ?? undefined} />
+
+          <DropSaleSection drops={drops} onSell={handleSell} />
+
+          <div className="panel-light p-5">
+            <h2 className="font-semibold text-slate-100 mb-4">판매 내역</h2>
+            {saleRecords.length === 0 ? (
+              <p className="text-sm text-slate-500 text-center py-6">아직 판매 기록이 없어요</p>
+            ) : (
+              <div className="record-list-scroll">
+                {saleRecords.map((d) => (
+                  <div key={d.id} className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50 border border-dark-border">
+                    <DropItemIcon name={d.itemName} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-medium text-slate-200">{d.itemName}</p>
+                        {formatDropRecordSource(d) && (
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded border ${d.difficulty ? DIFFICULTY_COLORS[d.difficulty] : 'border-dark-border text-slate-500'}`}>
+                            {formatDropRecordSource(d)}
+                          </span>
+                        )}
+                        {showCharacter && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyber-500/10 text-cyber-400 border border-cyber-500/20">
+                            {charNameById[d.characterId] ?? '캐릭터'}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">판매 {d.recordDate}{d.memo ? ` · ${d.memo}` : ''}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-maple-400 shrink-0">+{formatMesoKorean(d.meso)}</span>
+                    <button onClick={() => onRemove(d.id)} className="text-slate-600 hover:text-red-400 text-xs">✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
+  )
+}
+
+function ViewTab({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-3 py-1.5 rounded-lg text-xs border transition-colors ${
+        active
+          ? 'bg-cyber-500/20 border-cyber-500/40 text-cyber-300'
+          : 'border-dark-border text-slate-500 hover:text-slate-300'
+      }`}
+    >
+      {children}
+    </button>
   )
 }
 

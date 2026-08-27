@@ -8,6 +8,7 @@ import type {
   HuntRecord,
   GatherRecord,
   DropRecord,
+  DropRecordInput,
   Goal,
   BossSnapshot,
   BossResetCycle,
@@ -74,6 +75,8 @@ function mapDrop(row: Record<string, unknown>): DropRecord {
     memo: (row.memo as string) ?? null,
     recordDate,
     createdAt: row.created_at as string,
+    bossId: (row.boss_id as string) ?? null,
+    difficulty: (row.difficulty as DropRecord['difficulty']) ?? null,
   }
 }
 
@@ -322,7 +325,7 @@ export async function deleteGatherRecord(id: string) {
 
 export async function addDropRecord(
   userId: string,
-  data: { characterId: string; itemName: string; meso: number; memo?: string; recordDate: string }
+  data: DropRecordInput
 ) {
   const { data: row, error } = await supabase
     .from('drop_records')
@@ -335,6 +338,8 @@ export async function addDropRecord(
       record_date: data.recordDate,
       acquired_date: data.recordDate,
       sold_date: data.meso > 0 ? data.recordDate : null,
+      boss_id: data.bossId ?? null,
+      difficulty: data.difficulty ?? null,
     })
     .select('*')
     .single()
@@ -349,7 +354,13 @@ export async function deleteDropRecord(id: string) {
 
 export async function updateDropRecord(
   id: string,
-  data: { recordDate?: string; memo?: string | null }
+  data: {
+    recordDate?: string
+    memo?: string | null
+    itemName?: string
+    bossId?: string | null
+    difficulty?: DropRecord['difficulty']
+  }
 ) {
   const payload: Record<string, unknown> = {}
   if (data.recordDate != null) {
@@ -357,6 +368,9 @@ export async function updateDropRecord(
     payload.acquired_date = data.recordDate
   }
   if (data.memo !== undefined) payload.memo = data.memo
+  if (data.itemName != null) payload.item_name = data.itemName
+  if (data.bossId !== undefined) payload.boss_id = data.bossId
+  if (data.difficulty !== undefined) payload.difficulty = data.difficulty
 
   const { data: row, error } = await supabase
     .from('drop_records')
@@ -399,6 +413,8 @@ export async function sellDropRecords(
       meso: item.meso,
       memo: item.memo,
       recordDate: item.recordDate,
+      bossId: acquisition.bossId,
+      difficulty: acquisition.difficulty,
     })
     created.push(sale)
   }
