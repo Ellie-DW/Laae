@@ -52,6 +52,7 @@ const BOSS_ICON_FILE_BY_ID: Record<string, string> = {
   limbo: '림보',
   baldrix: '발드릭스',
   jupiter: '유피테르',
+  bellona: '벨로나',
   suu: '스우',
   damien: '데미안',
   'g-slime': '가디언 엔젤 슬라임',

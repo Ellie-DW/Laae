@@ -1,7 +1,7 @@
 import type { BossDefinition, BossResetCycle, BossRunnerPreset } from '../types'
 
 export const BOSS_TABS = [
-  { id: 'grandis' as const, label: '그란디스', desc: '세렌부터 유피테르까지 그란디스 레이드 보스' },
+  { id: 'grandis' as const, label: '그란디스', desc: '세렌부터 벨로나까지 그란디스 레이드 보스' },
   { id: 'belowSword' as const, label: '검밑솔', desc: '스우부터 검은 마법사까지 검밑솔 구간' },
   { id: 'normal' as const, label: '일반 보스', desc: '자쿰·루타비스 등 기본 주간 보스' },
 ]
@@ -56,6 +56,12 @@ export const BOSSES: BossDefinition[] = [
     difficulties: [
       { difficulty: 'NORMAL', meso: 1615 * M },
       { difficulty: 'HARD', meso: 4845 * M },
+    ] },
+  { id: 'bellona', name: '벨로나', shortName: '벨로', tab: 'grandis', group: '그란디스', maxParty: 3,
+    difficulties: [
+      { difficulty: 'EASY', meso: 440 * M },
+      { difficulty: 'NORMAL', meso: 850 * M },
+      { difficulty: 'HARD', meso: 2950 * M },
     ] },
 
   // 검밑솔
