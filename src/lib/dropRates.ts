@@ -165,7 +165,7 @@ export function getTrackedItemsForSource(bossId: string, difficulty: BossDifficu
 
 export function formatDropRate(drops: number, kills: number) {
   if (kills <= 0) return drops > 0 ? '처치 기록 없음' : '-'
-  return `${((drops / kills) * 100).toFixed(1)}%`
+  return `${((drops / kills) * 100).toFixed(3)}%`
 }
 
 function isRateDropRecord(drop: DropRecord, itemName: string) {
