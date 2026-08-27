@@ -350,7 +350,7 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
       HARD: [
         { name: '생명의 보스 반지 상자' },
         { name: '저주받은 원혼의 잔재', qty: 2 },
-        { name: '굶주리는 빛빈 원혼' },
+        { name: '굶주리는 핏빛 원혼' },
         { name: '광기의 에테르넬 방어구 상자' },
         { name: '혼돈의 칠흑 장신구 상자' },
         { name: '에리온의 조각', qty: 100 },

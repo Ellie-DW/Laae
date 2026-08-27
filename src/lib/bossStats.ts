@@ -55,7 +55,12 @@ export function canSelectWeeklyBoss(bossData: CharacterBossData, bossId: string)
 /** 돌이 프리셋으로 주간 보스 루트 일괄 선택 (주간 12개 제한 적용) */
 export function applyBossRunnerPreset(bossData: CharacterBossData, preset: BossRunnerPreset): CharacterBossData {
   const targets = BOSS_RUNNER_PRESETS[preset]
-  let selections = bossData.selections.map((s) => ({ ...s, checked: false }))
+  const partyByBoss = new Map(targets.map((target) => [target.bossId, target.partySize ?? 1]))
+  let selections = bossData.selections.map((s) => ({
+    ...s,
+    checked: false,
+    partySize: partyByBoss.get(s.bossId) ?? 1,
+  }))
 
   for (const { bossId, difficulty } of targets) {
     const boss = BOSSES.find((b) => b.id === bossId)

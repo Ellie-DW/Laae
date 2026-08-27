@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Character, CharacterBossData, BossTab, BossRunnerPreset } from '../types'
 import { calculatePlannedBossStats, calculateMonthlyExpectedBossStats, MAX_WEEKLY_BOSSES } from '../lib/bossStats'
-import { BOSS_TABS, getBossesByTab } from '../data/bosses'
+import { BOSS_TABS, BOSS_RUNNER_PRESET_OPTIONS, getBossesByTab } from '../data/bosses'
 import { formatMesoKorean, getWeeklyPeriod, getMonthlyPeriod, getCurrentMonth, getToday } from '../utils'
 import BossCard from '../components/boss/BossCard'
 import SelectedBossSummary from '../components/boss/SelectedBossSummary'
@@ -122,26 +122,20 @@ export default function BossPage({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <button
-          onClick={() => {
-            setActiveTab('normal')
-            onSelectBossRunnerPreset('belowSword')
-          }}
-          className="px-4 py-2 rounded-lg text-sm font-medium bg-maple-600/20 text-maple-300 border border-maple-500/40 hover:bg-maple-600/30 hover:border-maple-400/50 transition-colors"
-        >
-          검밑솔 돌이
-        </button>
-        <button
-          onClick={() => {
-            setActiveTab('grandis')
-            onSelectBossRunnerPreset('transcendent')
-          }}
-          className="px-4 py-2 rounded-lg text-sm font-medium bg-cyber-600/20 text-cyber-300 border border-cyber-500/40 hover:bg-cyber-600/30 hover:border-cyber-400/50 transition-colors"
-        >
-          이적자 돌이
-        </button>
+        {BOSS_RUNNER_PRESET_OPTIONS.map((preset) => (
+          <button
+            key={preset.id}
+            onClick={() => {
+              setActiveTab(preset.tab)
+              onSelectBossRunnerPreset(preset.id)
+            }}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${preset.buttonClass}`}
+          >
+            {preset.label}
+          </button>
+        ))}
         <p className="w-full text-[10px] text-slate-500">
-          각 루트에 맞는 보스·난이도가 일괄 선택돼요. 하드 검은 마법사(월간)도 포함돼요.
+          각 루트에 맞는 보스·난이도가 일괄 선택돼요. 하세 돌이는 1인 솔로고, 노말흉성2인돌이는 파티 2인으로 들어가요.
         </p>
       </div>
 
