@@ -24,7 +24,7 @@ const SCROLL_COUPON_DROPS: BossDropItem[] = [
 export const BOSS_DROP_TABLES: BossDropTable[] = [
   {
     bossId: 'suu',
-    common: [{ name: '특수형 에너지 코어(S)급' }],
+    common: [{ name: '특수형 에너지 코어(S급)' }],
     byDifficulty: {
       NORMAL: [{ name: '녹옥의 보스 반지 상자' }],
       HARD: [

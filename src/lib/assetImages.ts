@@ -80,6 +80,8 @@ const DROP_ICON_ALIASES: Record<string, string> = {
   '리스트레인트 링 Lv4': '리스트레인트링',
   '컨티뉴어스 링 Lv4': '컨티뉴어스 링',
   '익셉셔널 해머 (벨트)': '익셉셔널 해버 (벨트)',
+  '특수형 에너지 코어(S)급': '특수형 에너지 코어(S급)',
+  '녹옥 보스 반지 상자': '녹옥의 보스 반지 상자',
 }
 
 function assetPath(folder: string, fileName: string) {
