@@ -42,6 +42,12 @@ export const BOSSES: BossDefinition[] = [
       { difficulty: 'NORMAL', meso: 625 * M },
       { difficulty: 'HARD', meso: 2678 * M },
     ] },
+  { id: 'bellona', name: '벨로나', shortName: '벨로', tab: 'grandis', group: '그란디스', maxParty: 3,
+    difficulties: [
+      { difficulty: 'EASY', meso: 440 * M },
+      { difficulty: 'NORMAL', meso: 850 * M },
+      { difficulty: 'HARD', meso: 2950 * M },
+    ] },
   { id: 'limbo', name: '림보', shortName: '림보', tab: 'grandis', group: '그란디스', maxParty: 3,
     difficulties: [
       { difficulty: 'NORMAL', meso: 1026 * M },
