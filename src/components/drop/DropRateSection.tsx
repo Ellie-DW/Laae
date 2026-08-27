@@ -91,7 +91,7 @@ export default function DropRateSection({
                         <span className="text-[10px] text-slate-600 w-14 text-right tabular-nums">
                           {item.kills}회
                         </span>
-                        <span className="text-[11px] text-slate-500 w-16 text-right tabular-nums">
+                        <span className="text-[11px] text-slate-500 w-[4.75rem] text-right tabular-nums">
                           {formatDropRate(item.drops, item.kills)}
                         </span>
                       </div>
@@ -103,7 +103,7 @@ export default function DropRateSection({
                               <p className="text-[11px] text-slate-400 truncate flex-1">{open.name}</p>
                               <span className="text-[11px] tabular-nums text-maple-300">{open.count}개</span>
                               <span className="w-14 shrink-0" />
-                              <span className="text-[11px] text-slate-500 w-16 text-right tabular-nums">
+                              <span className="text-[11px] text-slate-500 w-[4.75rem] text-right tabular-nums">
                                 {formatDropRate(open.count, item.opened)}
                               </span>
                             </div>
@@ -180,7 +180,7 @@ export default function DropRateSection({
                             <span className={`text-xs tabular-nums ${item.drops > 0 ? 'text-maple-300' : 'text-slate-600'}`}>
                               {item.drops}개
                             </span>
-                            <span className="text-[11px] text-slate-500 w-16 text-right tabular-nums">
+                            <span className="text-[11px] text-slate-500 w-[4.75rem] text-right tabular-nums">
                               {item.untagged ? '미기록' : formatDropRate(item.drops, item.kills)}
                             </span>
                           </div>
@@ -204,7 +204,7 @@ export default function DropRateSection({
                 <DropItemIcon name={item.name} size="xs" />
                 <p className="text-xs text-slate-300 truncate flex-1">{item.name}</p>
                 <span className="text-xs tabular-nums text-maple-300">{item.untaggedDrops}개</span>
-                <span className="text-[11px] text-slate-500 w-16 text-right">미기록</span>
+                <span className="text-[11px] text-slate-500 w-[4.75rem] text-right">미기록</span>
               </div>
             ))}
           </div>
