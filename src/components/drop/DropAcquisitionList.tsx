@@ -30,6 +30,7 @@ interface DropAcquisitionListProps {
     }
   ) => Promise<void>
   onRemove: (id: string) => Promise<void>
+  embedded?: boolean
 }
 
 export default function DropAcquisitionList({
@@ -38,6 +39,7 @@ export default function DropAcquisitionList({
   showCharacter,
   onUpdate,
   onRemove,
+  embedded,
 }: DropAcquisitionListProps) {
   const charNameById = useMemo(
     () => Object.fromEntries(characters.map((c) => [c.id, c.name])),
@@ -53,27 +55,31 @@ export default function DropAcquisitionList({
     [records]
   )
 
+  const list =
+    sorted.length === 0 ? (
+      <p className="text-sm text-slate-500 text-center py-6">아직 획득 기록이 없어요</p>
+    ) : (
+      <div className="record-list-scroll">
+        {sorted.map((record) => (
+          <AcquisitionListItem
+            key={record.id}
+            record={record}
+            charName={charNameById[record.characterId] ?? '캐릭터'}
+            showCharacter={showCharacter}
+            onUpdate={onUpdate}
+            onRemove={onRemove}
+          />
+        ))}
+      </div>
+    )
+
+  if (embedded) return list
+
   return (
     <div className="panel-light p-5">
       <h2 className="font-semibold text-slate-100 mb-1">획득 내역</h2>
       <p className="text-xs text-slate-500 mb-4">날짜·메모 수정 · 상자 개봉 · 삭제 가능</p>
-
-      {sorted.length === 0 ? (
-        <p className="text-sm text-slate-500 text-center py-6">아직 획득 기록이 없어요</p>
-      ) : (
-        <div className="record-list-scroll">
-          {sorted.map((record) => (
-            <AcquisitionListItem
-              key={record.id}
-              record={record}
-              charName={charNameById[record.characterId] ?? '캐릭터'}
-              showCharacter={showCharacter}
-              onUpdate={onUpdate}
-              onRemove={onRemove}
-            />
-          ))}
-        </div>
-      )}
+      {list}
     </div>
   )
 }

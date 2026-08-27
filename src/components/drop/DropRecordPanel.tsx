@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { BossSnapshot, Character, CharacterBossData, DropRecord, DropRecordInput, BossDifficulty } from '../../types'
-import { DIFFICULTY_COLORS, formatMesoKorean } from '../../utils'
-import { formatDropRecordSource } from '../../lib/dropRates'
-import DropAcquisitionList from './DropAcquisitionList'
-import DropAcquisitionSummary from './DropAcquisitionSummary'
+import { formatMesoKorean } from '../../utils'
 import DropChecklistSection, { type DropAddItem } from './DropChecklistSection'
+import DropHistorySection from './DropHistorySection'
+import DropInventorySection, { type DropSaleItem } from './DropInventorySection'
 import DropRateSection from './DropRateSection'
-import DropSaleSection, { type DropSaleItem } from './DropSaleSection'
-import DropItemIcon from './DropItemIcon'
 
 interface DropRecordPanelProps {
   characters: Character[]
@@ -15,7 +12,7 @@ interface DropRecordPanelProps {
   snapshots: BossSnapshot[]
   bossDataMap: Record<string, CharacterBossData>
   onAdd: (data: DropRecordInput) => Promise<void>
-  onSell: (items: DropSaleItem[]) => Promise<void>
+  onSell: (items: DropSaleItem[], characterId?: string | null) => Promise<void>
   onUpdate: (
     id: string,
     data: {
@@ -96,7 +93,7 @@ export default function DropRecordPanel({
   }
 
   const handleSell = async (items: DropSaleItem[]) => {
-    await onSell(items)
+    await onSell(items, filterCharacterId)
   }
 
   if (characters.length === 0) {
@@ -174,50 +171,20 @@ export default function DropRecordPanel({
             onAdd={handleChecklistAdd}
           />
 
-          <DropAcquisitionList
-            records={acquisitionRecords}
+          <DropInventorySection
+            drops={visibleDrops}
+            characterId={filterCharacterId}
+            onSell={handleSell}
+          />
+
+          <DropHistorySection
+            acquisitionRecords={acquisitionRecords}
+            saleRecords={saleRecords}
             characters={characters}
             showCharacter={showCharacter}
             onUpdate={onUpdate}
             onRemove={onRemove}
           />
-
-          <DropAcquisitionSummary drops={visibleDrops} characterId={filterCharacterId ?? undefined} />
-
-          <DropSaleSection drops={drops} onSell={handleSell} />
-
-          <div className="panel-light p-5">
-            <h2 className="font-semibold text-slate-100 mb-4">판매 내역</h2>
-            {saleRecords.length === 0 ? (
-              <p className="text-sm text-slate-500 text-center py-6">아직 판매 기록이 없어요</p>
-            ) : (
-              <div className="record-list-scroll">
-                {saleRecords.map((d) => (
-                  <div key={d.id} className="flex items-center gap-3 p-3 rounded-lg bg-dark-surface/50 border border-dark-border">
-                    <DropItemIcon name={d.itemName} size="sm" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-medium text-slate-200">{d.itemName}</p>
-                        {formatDropRecordSource(d) && (
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded border ${d.difficulty ? DIFFICULTY_COLORS[d.difficulty] : 'border-dark-border text-slate-500'}`}>
-                            {formatDropRecordSource(d)}
-                          </span>
-                        )}
-                        {showCharacter && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyber-500/10 text-cyber-400 border border-cyber-500/20">
-                            {charNameById[d.characterId] ?? '캐릭터'}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-500 mt-0.5">판매 {d.recordDate}{d.memo ? ` · ${d.memo}` : ''}</p>
-                    </div>
-                    <span className="text-sm font-semibold text-maple-400 shrink-0">+{formatMesoKorean(d.meso)}</span>
-                    <button onClick={() => onRemove(d.id)} className="text-slate-600 hover:text-red-400 text-xs">✕</button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </>
       )}
     </div>
