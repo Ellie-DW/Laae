@@ -25,6 +25,7 @@ interface DropChecklistSectionProps {
   characters: Character[]
   characterId: string
   bossDataMap: Record<string, CharacterBossData>
+  showCharacterSelect?: boolean
   onCharacterChange: (id: string) => void
   onAdd: (items: DropAddItem[]) => Promise<void>
 }
@@ -41,9 +42,11 @@ export default function DropChecklistSection({
   characters,
   characterId,
   bossDataMap,
+  showCharacterSelect = true,
   onCharacterChange,
   onAdd,
 }: DropChecklistSectionProps) {
+  const recordCharacter = characters.find((c) => c.id === characterId)
   const initial = defaultSource(characterId, bossDataMap)
   const [bossId, setBossId] = useState(initial.bossId)
   const [difficulty, setDifficulty] = useState<BossDifficulty | ''>(initial.difficulty)
@@ -140,23 +143,29 @@ export default function DropChecklistSection({
     <div className="panel-light p-5">
       <div className="mb-4">
         <h2 className="font-semibold text-slate-100">획득 추가</h2>
-        <p className="text-xs text-slate-500 mt-0.5">보스·난이도를 고른 뒤 나온 아이템을 기록하세요</p>
+        <p className="text-xs text-slate-500 mt-0.5">
+          {recordCharacter && !showCharacterSelect
+            ? `${recordCharacter.name} · 보스·난이도를 고른 뒤 나온 아이템을 기록하세요`
+            : '보스·난이도를 고른 뒤 나온 아이템을 기록하세요'}
+        </p>
       </div>
 
-      <div className="mb-4">
-        <label className="text-xs text-slate-500 mb-1 block">기록 캐릭터</label>
-        <select
-          value={characterId}
-          onChange={(e) => onCharacterChange(e.target.value)}
-          className="input-field text-sm"
-        >
-          {characters.map((char) => (
-            <option key={char.id} value={char.id}>
-              {char.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {showCharacterSelect && (
+        <div className="mb-4">
+          <label className="text-xs text-slate-500 mb-1 block">기록 캐릭터</label>
+          <select
+            value={characterId}
+            onChange={(e) => onCharacterChange(e.target.value)}
+            className="input-field text-sm"
+          >
+            {characters.map((char) => (
+              <option key={char.id} value={char.id}>
+                {char.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="mb-5">
         <DropSourcePicker bossId={bossId} difficulty={difficulty} onChange={handleSourceChange} />

@@ -271,6 +271,8 @@ function MainApp() {
         return (
           <DropPage
             characters={characters}
+            selectedCharacterId={selectedCharacter?.id ?? null}
+            onSelectCharacter={selectCharacter}
             drops={ledger.drops}
             snapshots={ledger.snapshots}
             bossDataMap={bossDataMap}

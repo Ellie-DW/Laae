@@ -8,6 +8,8 @@ import DropRateSection from './DropRateSection'
 
 interface DropRecordPanelProps {
   characters: Character[]
+  selectedCharacterId?: string | null
+  onSelectCharacter?: (id: string) => void
   drops: DropRecord[]
   snapshots: BossSnapshot[]
   bossDataMap: Record<string, CharacterBossData>
@@ -31,6 +33,8 @@ type DropViewMode = 'records' | 'rates'
 
 export default function DropRecordPanel({
   characters,
+  selectedCharacterId,
+  onSelectCharacter,
   drops,
   snapshots,
   bossDataMap,
@@ -41,8 +45,12 @@ export default function DropRecordPanel({
   embedded,
 }: DropRecordPanelProps) {
   const [viewMode, setViewMode] = useState<DropViewMode>('records')
-  const [filterCharacterId, setFilterCharacterId] = useState<string | null>(null)
-  const [addCharacterId, setAddCharacterId] = useState(() => characters[0]?.id ?? '')
+  const [filterCharacterId, setFilterCharacterId] = useState<string | null>(
+    () => selectedCharacterId ?? null
+  )
+  const [addCharacterId, setAddCharacterId] = useState(
+    () => selectedCharacterId ?? characters[0]?.id ?? ''
+  )
 
   useEffect(() => {
     if (characters.length === 0) {
@@ -55,8 +63,19 @@ export default function DropRecordPanel({
   }, [characters, addCharacterId])
 
   useEffect(() => {
+    if (!selectedCharacterId) return
+    setFilterCharacterId(selectedCharacterId)
+    setAddCharacterId(selectedCharacterId)
+  }, [selectedCharacterId])
+
+  useEffect(() => {
     if (filterCharacterId) setAddCharacterId(filterCharacterId)
   }, [filterCharacterId])
+
+  const selectFilterCharacter = (id: string | null) => {
+    setFilterCharacterId(id)
+    if (id) onSelectCharacter?.(id)
+  }
 
   const charNameById = useMemo(
     () => Object.fromEntries(characters.map((c) => [c.id, c.name])),
@@ -133,14 +152,14 @@ export default function DropRecordPanel({
       )}
 
       <div className="flex flex-wrap gap-2">
-        <ScopeButton active={filterCharacterId === null} onClick={() => setFilterCharacterId(null)}>
+        <ScopeButton active={filterCharacterId === null} onClick={() => selectFilterCharacter(null)}>
           전체 캐릭터
         </ScopeButton>
         {characters.map((char) => (
           <ScopeButton
             key={char.id}
             active={filterCharacterId === char.id}
-            onClick={() => setFilterCharacterId(char.id)}
+            onClick={() => selectFilterCharacter(char.id)}
           >
             {char.name}
           </ScopeButton>
@@ -167,6 +186,7 @@ export default function DropRecordPanel({
             characters={characters}
             characterId={addCharacterId}
             bossDataMap={bossDataMap}
+            showCharacterSelect={!filterCharacterId}
             onCharacterChange={setAddCharacterId}
             onAdd={handleChecklistAdd}
           />
