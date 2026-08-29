@@ -4,6 +4,8 @@ import type { DropSaleItem } from '../components/drop/DropInventorySection'
 
 interface DropPageProps {
   characters: Character[]
+  selectedCharacterId?: string | null
+  onSelectCharacter?: (id: string) => void
   drops: DropRecord[]
   snapshots: BossSnapshot[]
   bossDataMap: Record<string, CharacterBossData>
