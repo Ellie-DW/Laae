@@ -37,6 +37,7 @@ export default function SolErdaFragmentSection({
   const [useDate, setUseDate] = useState(getToday())
   const [using, setUsing] = useState(false)
 
+  const recordCharacter = characters.find((c) => c.id === recordCharacterId)
   const held = useMemo(() => getHeldSolErdaFragments(hunts), [hunts])
 
   const buyQuantity = buyQuantityInput.trim() ? Math.max(0, parseInt(buyQuantityInput, 10) || 0) : 0
@@ -95,7 +96,11 @@ export default function SolErdaFragmentSection({
     <div className="panel-light p-5 border-violet-500/20 space-y-5">
       <SolErdaSectionTitle
         title="솔 에르다 조각"
-        description="메소로 구매해 전체 보유량에 더하고, 필요할 때 사용합니다. 기록은 선택한 캐릭터에 남습니다."
+        description={
+          recordCharacter && !showCharacterSelect
+            ? `${recordCharacter.name} · 메소로 구매해 전체 보유량에 더하고, 필요할 때 사용합니다.`
+            : '메소로 구매해 전체 보유량에 더하고, 필요할 때 사용합니다. 기록은 선택한 캐릭터에 남습니다.'
+        }
       />
 
       <HeldSolErdaStat label="전체 보유 솔 에르다 조각" count={held} />

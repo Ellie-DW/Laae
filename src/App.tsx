@@ -7,6 +7,7 @@ import NavIcon from './components/layout/NavIcon'
 import DashboardPage from './pages/DashboardPage'
 import BossPage from './pages/BossPage'
 import HuntPage from './pages/HuntPage'
+import AlertPage from './pages/AlertPage'
 import LedgerPage from './pages/LedgerPage'
 import GatherPage from './pages/GatherPage'
 import GoalsPage from './pages/GoalsPage'
@@ -34,6 +35,8 @@ import { useAuth } from './contexts/AuthContext'
 import { getWeeklyPeriod } from './utils'
 import GridScanBackground from './components/backgrounds/GridScanBackground'
 import { useTheme } from './contexts/ThemeContext'
+import { HuntAlertProvider } from './contexts/HuntAlertContext'
+import HuntAlertFloat from './components/alert/HuntAlertFloat'
 
 function LoadingScreen({ message = '로딩 중...' }: { message?: string }) {
   return (
@@ -145,7 +148,13 @@ function MainApp() {
     }
   }, [yieldAccess.loading, yieldAccess.hasAccess, currentPage, setPage])
 
-  if (dataLoading || ledger.loading || riceAccess.loading || premiumAccess.loading || yieldAccess.loading) {
+  if (
+    dataLoading ||
+    ledger.loading ||
+    riceAccess.loading ||
+    premiumAccess.loading ||
+    yieldAccess.loading
+  ) {
     return <LoadingScreen message="데이터 불러오는 중..." />
   }
 
@@ -292,10 +301,14 @@ function MainApp() {
             onRemove={ledger.removeHunt}
           />
         )
+      case 'alert':
+        return <AlertPage onGoHunt={() => setPage('hunt')} />
       case 'expense':
         return (
           <LedgerPage
             characters={characters}
+            selectedCharacterId={selectedCharacter?.id ?? null}
+            onSelectCharacter={selectCharacter}
             incomes={ledger.incomes}
             expenses={ledger.expenses}
             hunts={ledger.hunts}
@@ -400,7 +413,8 @@ function MainApp() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <HuntAlertProvider characterName={selectedCharacter?.name ?? null}>
+      <div className="min-h-screen flex">
       <Sidebar
         characters={characters}
         selectedCharacter={selectedCharacter}
@@ -466,7 +480,14 @@ function MainApp() {
         hasPremiumAccess={premiumAccess.hasAccess}
         hasYieldAccess={yieldAccess.hasAccess}
       />
-    </div>
+
+        <HuntAlertFloat
+          visible={currentPage !== 'alert'}
+          onOpen={() => setPage('alert')}
+          onGoHunt={() => setPage('hunt')}
+        />
+      </div>
+    </HuntAlertProvider>
   )
 }
 

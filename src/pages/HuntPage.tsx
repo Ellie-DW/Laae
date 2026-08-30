@@ -1,8 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Character, HuntRecord } from '../types'
+import { formatMesoEokInput, type HuntOcrCompareHint } from '../lib/huntOcr'
+import { clearHuntOcrDraft } from '../lib/huntOcrDraft'
 import { formatMesoKorean, getToday, parseMesoInput } from '../utils'
+import { useAuth } from '../contexts/AuthContext'
 import NoCharacterPrompt, { CharacterBanner } from '../components/ledger/NoCharacterPrompt'
 import HuntHeldSummary from '../components/hunt/HuntHeldSummary'
+import HuntScreenshotField from '../components/hunt/HuntScreenshotField'
 import SolErdaSaleSection from '../components/hunt/SolErdaSaleSection'
 import SolErdaIcon from '../components/hunt/SolErdaIcon'
 import MesoIcon from '../components/hunt/MesoIcon'
@@ -16,11 +20,21 @@ interface HuntPageProps {
 }
 
 export default function HuntPage({ selectedCharacter, hunts, onAdd, onSellSolErda, onRemove }: HuntPageProps) {
+  const { user } = useAuth()
   const [mesoInput, setMesoInput] = useState('')
   const [solErdaInput, setSolErdaInput] = useState('')
   const [recordDate, setRecordDate] = useState(getToday())
+  const [ocrKey, setOcrKey] = useState(0)
+  const mesoEditedRef = useRef(false)
 
-  if (!selectedCharacter) return <NoCharacterPrompt />
+  useEffect(() => {
+    setMesoInput('')
+    setSolErdaInput('')
+    setRecordDate(getToday())
+    mesoEditedRef.current = false
+  }, [selectedCharacter?.id])
+
+  if (!selectedCharacter || !user) return <NoCharacterPrompt />
 
   const charHunts = hunts.filter((h) => h.characterId === selectedCharacter.id)
 
@@ -39,6 +53,24 @@ export default function HuntPage({ selectedCharacter, hunts, onAdd, onSellSolErd
     setMesoInput('')
     setSolErdaInput('')
     setRecordDate(getToday())
+    mesoEditedRef.current = false
+    clearHuntOcrDraft(user.id, selectedCharacter.id)
+    setOcrKey((key) => key + 1)
+  }
+
+  const handleOcrResult = (hint: HuntOcrCompareHint | null) => {
+    if (!hint) {
+      setMesoInput('')
+      setSolErdaInput('')
+      mesoEditedRef.current = false
+      return
+    }
+    if (!mesoEditedRef.current) {
+      setMesoInput(hint.mesoUnreliable ? '' : formatMesoEokInput(hint.acquiredMeso))
+    }
+    if (hint.acquiredFragments > 0) {
+      setSolErdaInput(String(hint.acquiredFragments))
+    }
   }
 
   return (
@@ -50,44 +82,62 @@ export default function HuntPage({ selectedCharacter, hunts, onAdd, onSellSolErd
 
       <HuntHeldSummary hunts={hunts} characterId={selectedCharacter.id} />
 
-      <form onSubmit={handleSubmit} className="panel-light p-4 space-y-3">
+      <form onSubmit={handleSubmit} className="panel-light p-5 space-y-5">
         <div>
-          <label className="text-xs text-slate-500 mb-1 flex items-center gap-1.5">
-            <MesoIcon size="xs" />
-            획득 메소 (억 단위)
-          </label>
-          <input
-            value={mesoInput}
-            onChange={(e) => setMesoInput(e.target.value)}
-            placeholder="예: 1, 0.5, 1.5억"
-            className="input-field text-sm"
-          />
+          <h2 className="font-semibold text-slate-100">사냥 기록</h2>
+          <p className="text-xs text-slate-500 mt-0.5">스샷으로 채우거나, 아래에서 직접 입력해도 됩니다</p>
         </div>
-        <div>
-          <label className="text-xs text-slate-500 mb-1 flex items-center gap-1.5">
-            <SolErdaIcon size="xs" />
-            솔 에르다 조각
-          </label>
-          <input
-            value={solErdaInput}
-            onChange={(e) => setSolErdaInput(e.target.value)}
-            type="number"
-            min={0}
-            placeholder="0"
-            className="input-field text-sm"
-          />
+        <HuntScreenshotField
+          key={`${selectedCharacter.id}-${ocrKey}`}
+          userId={user.id}
+          characterId={selectedCharacter.id}
+          onResult={handleOcrResult}
+        />
+        <div className="border-t border-dark-border/60 pt-4 space-y-3">
+          <p className="text-xs font-medium text-slate-400">이번에 기록할 획득</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-slate-500 mb-1 flex items-center gap-1.5">
+                <MesoIcon size="xs" />
+                획득 메소 (억 단위)
+              </label>
+              <input
+                value={mesoInput}
+                onChange={(e) => {
+                  mesoEditedRef.current = true
+                  setMesoInput(e.target.value)
+                }}
+                placeholder="예: 1, 0.5, 1.5억"
+                className="input-field text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-500 mb-1 flex items-center gap-1.5">
+                <SolErdaIcon size="xs" />
+                솔 에르다 조각
+              </label>
+              <input
+                value={solErdaInput}
+                onChange={(e) => setSolErdaInput(e.target.value)}
+                type="number"
+                min={0}
+                placeholder="0"
+                className="input-field text-sm"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-slate-500 mb-1 block">날짜</label>
+            <input
+              value={recordDate}
+              onChange={(e) => setRecordDate(e.target.value)}
+              type="date"
+              required
+              className="input-field text-sm"
+            />
+          </div>
+          <button type="submit" className="btn-primary text-sm w-full py-2.5">사냥 기록 추가</button>
         </div>
-        <div>
-          <label className="text-xs text-slate-500 mb-1 block">날짜</label>
-          <input
-            value={recordDate}
-            onChange={(e) => setRecordDate(e.target.value)}
-            type="date"
-            required
-            className="input-field text-sm"
-          />
-        </div>
-        <button type="submit" className="btn-primary text-sm w-full py-2">사냥 기록 추가</button>
       </form>
 
       <SolErdaSaleSection
