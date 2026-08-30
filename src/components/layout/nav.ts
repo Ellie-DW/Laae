@@ -4,6 +4,7 @@ export const NAV_ITEMS: { id: Page; label: string }[] = [
   { id: 'dashboard', label: '대시보드' },
   { id: 'diary', label: '다이어리' },
   { id: 'hunt', label: '사냥' },
+  { id: 'alert', label: '알리미' },
   { id: 'expense', label: '장부' },
   { id: 'boss', label: '보스' },
   { id: 'drop', label: '드랍' },
@@ -19,7 +20,11 @@ export function getNavItems(access: {
   hasPremiumAccess?: boolean
   hasYieldAccess?: boolean
 } = {}) {
-  const { hasRiceAccess = false, hasPremiumAccess = false, hasYieldAccess = false } = access
+  const {
+    hasRiceAccess = false,
+    hasPremiumAccess = false,
+    hasYieldAccess = false,
+  } = access
   return NAV_ITEMS.filter((item) => {
     if (item.id === 'rice') return hasRiceAccess
     if (item.id === 'premium') return hasPremiumAccess

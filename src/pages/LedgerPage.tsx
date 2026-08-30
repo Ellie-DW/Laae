@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Character, Expense, ExpenseCategory, HuntRecord, Income, IncomeCategory } from '../types'
 import { EXPENSE_CATEGORY_LABEL, INCOME_CATEGORY_LABEL } from '../lib/ledgerApi'
 import {
@@ -23,6 +23,8 @@ const LEDGER_TABS: { id: LedgerTab; label: string }[] = [
 
 interface LedgerPageProps {
   characters: Character[]
+  selectedCharacterId?: string | null
+  onSelectCharacter?: (id: string) => void
   incomes: Income[]
   expenses: Expense[]
   hunts: HuntRecord[]
@@ -40,6 +42,8 @@ interface LedgerPageProps {
 
 export default function LedgerPage({
   characters,
+  selectedCharacterId,
+  onSelectCharacter,
   incomes,
   expenses,
   hunts,
@@ -55,9 +59,24 @@ export default function LedgerPage({
   onRemoveHunt,
 }: LedgerPageProps) {
   const [activeTab, setActiveTab] = useState<LedgerTab>('expense')
-  const [filterCharacterId, setFilterCharacterId] = useState<string | null>(null)
+  const [filterCharacterId, setFilterCharacterId] = useState<string | null>(
+    () => selectedCharacterId ?? null
+  )
   const [expenseCategory, setExpenseCategory] = useState<ExpenseCategory>('other')
-  const [formCharacterId, setFormCharacterId] = useState<string>('')
+  const [formCharacterId, setFormCharacterId] = useState(
+    () => selectedCharacterId ?? ''
+  )
+
+  useEffect(() => {
+    if (!selectedCharacterId) return
+    setFilterCharacterId(selectedCharacterId)
+    setFormCharacterId(selectedCharacterId)
+  }, [selectedCharacterId])
+
+  const selectFilterCharacter = (id: string | null) => {
+    setFilterCharacterId(id)
+    if (id) onSelectCharacter?.(id)
+  }
 
   const currentMonth = getCurrentMonth()
   const weekPeriod = getWeeklyPeriod()
@@ -136,7 +155,7 @@ export default function LedgerPage({
     [expenses, filterCharacterId, currentMonth]
   )
 
-  const addCharacterId = formCharacterId || filterCharacterId || characters[0]?.id || ''
+  const addCharacterId = filterCharacterId || formCharacterId || characters[0]?.id || ''
 
   const heldSolErda = useMemo(() => getHeldSolErdaFragments(hunts), [hunts])
 
@@ -174,14 +193,14 @@ export default function LedgerPage({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <ScopeButton active={filterCharacterId === null} onClick={() => setFilterCharacterId(null)}>
+        <ScopeButton active={filterCharacterId === null} onClick={() => selectFilterCharacter(null)}>
           전체 캐릭터
         </ScopeButton>
         {characters.map((char) => (
           <ScopeButton
             key={char.id}
             active={filterCharacterId === char.id}
-            onClick={() => setFilterCharacterId(char.id)}
+            onClick={() => selectFilterCharacter(char.id)}
           >
             {char.name}
           </ScopeButton>
@@ -363,7 +382,9 @@ export default function LedgerPage({
               })
             }}
           >
-            {!filterCharacterId && (
+            {activeCharacter ? (
+              <p className="text-xs text-slate-500">{activeCharacter.name}에 지출을 기록합니다</p>
+            ) : (
               <div>
                 <label className="text-xs text-slate-500 mb-1 block">캐릭터</label>
                 <select

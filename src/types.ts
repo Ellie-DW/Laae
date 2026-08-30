@@ -1,4 +1,4 @@
-export type Page = 'dashboard' | 'diary' | 'hunt' | 'expense' | 'boss' | 'drop' | 'gather' | 'goals' | 'rice' | 'premium' | 'yield'
+export type Page = 'dashboard' | 'diary' | 'hunt' | 'alert' | 'expense' | 'boss' | 'drop' | 'gather' | 'goals' | 'rice' | 'premium' | 'yield'
 
 export type BossTab = 'grandis' | 'belowSword' | 'normal'
 

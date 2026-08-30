@@ -22,7 +22,7 @@ export const YIELD_ICON_SRC = navYield
 export const HUNT_MESO_ICON_SRC = huntMeso
 export const HUNT_SOL_ERDA_ICON_SRC = huntSolErda
 
-export const NAV_ICON_SRC: Record<Page, string> = {
+export const NAV_ICON_SRC: Record<Exclude<Page, 'alert'>, string> = {
   dashboard: navDashboard,
   diary: navDiary,
   hunt: navHunt,

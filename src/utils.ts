@@ -22,24 +22,35 @@ export function addDaysYMD(ymd: string, days: number): string {
   return `${yy}-${mm}-${dd}`
 }
 
-/** 메소를 억·만·나머지 형식으로 표시 (예: 28억4150만1024) */
+const JO = 1_000_000_000_000
+const EOK = 100_000_000
+const MAN = 10_000
+
+function formatKoreanUnit(n: number) {
+  return n.toLocaleString('ko-KR')
+}
+
+/** 메소를 조·억·만 형식으로 표시 (예: 2조 9,054억 5,495만 5,700) */
 export function formatMesoKorean(amount: number): string {
   if (amount === 0) return '0'
   const sign = amount < 0 ? '-' : ''
   let abs = Math.abs(Math.round(amount))
 
-  const eok = Math.floor(abs / 100_000_000)
-  abs %= 100_000_000
-  const man = Math.floor(abs / 10_000)
-  const rest = abs % 10_000
+  const jo = Math.floor(abs / JO)
+  abs %= JO
+  const eok = Math.floor(abs / EOK)
+  abs %= EOK
+  const man = Math.floor(abs / MAN)
+  const rest = abs % MAN
 
   const parts: string[] = []
-  if (eok > 0) parts.push(`${eok}억`)
-  if (man > 0) parts.push(`${man}만`)
-  if (rest > 0) parts.push(`${rest}`)
+  if (jo > 0) parts.push(`${formatKoreanUnit(jo)}조`)
+  if (eok > 0) parts.push(`${formatKoreanUnit(eok)}억`)
+  if (man > 0) parts.push(`${formatKoreanUnit(man)}만`)
+  if (rest > 0) parts.push(formatKoreanUnit(rest))
 
   if (parts.length === 0) return '0'
-  return `${sign}${parts.join('')}`
+  return `${sign}${parts.join(' ')}`
 }
 
 export function formatMeso(amount: number): string {
@@ -56,15 +67,50 @@ export function parseWonInput(value: string): number {
   return Number.isFinite(num) ? num : 0
 }
 
+/** 조·억·만이 섞인 표기를 메소 정수로 읽습니다. (예: 2조 9,054억 5,495만 5,700) */
+export function parseMesoKorean(value: string): number {
+  const compact = value.trim().replace(/,/g, '').replace(/\s/g, '').replace(/메소/gi, '')
+  if (!compact) return 0
+
+  const sign = compact.startsWith('-') ? -1 : 1
+  let rest = compact.replace(/^-/, '')
+  let total = 0
+
+  const take = (unit: string, multiplier: number) => {
+    const match = rest.match(new RegExp(`^(\\d+(?:\\.\\d+)?)${unit}`))
+    if (!match) return
+    total += parseFloat(match[1]) * multiplier
+    rest = rest.slice(match[0].length)
+  }
+
+  take('조', JO)
+  take('억', EOK)
+  take('만', MAN)
+  if (rest) {
+    const num = Number(rest)
+    if (Number.isFinite(num)) total += num
+  }
+
+  return sign * Math.round(total)
+}
+
 export function parseMesoInput(value: string): number {
   const trimmed = value.trim().toLowerCase().replace(/,/g, '')
   if (!trimmed) return 0
 
+  if (/[조억만]/.test(trimmed)) {
+    const mixed = parseMesoKorean(value)
+    if (mixed !== 0 || /^0+$/.test(trimmed.replace(/[조억만.\s-]/g, ''))) return mixed
+  }
+
+  const joMatch = trimmed.match(/^([\d.]+)\s*조$/)
+  if (joMatch) return Math.round(parseFloat(joMatch[1]) * JO)
+
   const eokMatch = trimmed.match(/^([\d.]+)\s*억$/)
-  if (eokMatch) return Math.round(parseFloat(eokMatch[1]) * 100_000_000)
+  if (eokMatch) return Math.round(parseFloat(eokMatch[1]) * EOK)
 
   const manMatch = trimmed.match(/^([\d.]+)\s*만$/)
-  if (manMatch) return Math.round(parseFloat(manMatch[1]) * 10_000)
+  if (manMatch) return Math.round(parseFloat(manMatch[1]) * MAN)
 
   const match = trimmed.match(/^([\d.]+)\s*([bkm])?$/)
   if (!match) {

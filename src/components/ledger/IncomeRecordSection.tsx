@@ -29,6 +29,7 @@ export default function IncomeRecordSection({
   onCharacterChange,
   onSubmit,
 }: IncomeRecordSectionProps) {
+  const recordCharacter = characters.find((c) => c.id === characterId)
   const [mode, setMode] = useState<IncomeInputMode>('fee')
   const [category, setCategory] = useState<IncomeCategory>('trade')
   const [recordDate, setRecordDate] = useState(getToday())
@@ -37,6 +38,11 @@ export default function IncomeRecordSection({
   const [grossMesoInput, setGrossMesoInput] = useState('')
   const [feeRate, setFeeRate] = useState<DropSaleFeeRate>(5)
   const [submitting, setSubmitting] = useState(false)
+
+  const modeHint =
+    mode === 'fee'
+      ? '판매 수수료를 반영한 실수령 금액을 기록합니다.'
+      : '실수령 금액을 직접 입력합니다.'
 
   const directAmount = useMemo(() => parseMesoInput(amountInput), [amountInput])
   const grossMeso = useMemo(() => parseMesoInput(grossMesoInput), [grossMesoInput])
@@ -101,9 +107,9 @@ export default function IncomeRecordSection({
       <div>
         <h2 className="font-semibold text-slate-100">수입 기록</h2>
         <p className="text-xs text-slate-500 mt-0.5">
-          {mode === 'fee'
-            ? '판매 수수료를 반영한 실수령 금액을 기록합니다.'
-            : '실수령 금액을 직접 입력합니다.'}
+          {recordCharacter && !showCharacterSelect
+            ? `${recordCharacter.name} · ${modeHint}`
+            : modeHint}
         </p>
       </div>
 
