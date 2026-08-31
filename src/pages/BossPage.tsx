@@ -49,7 +49,7 @@ export default function BossPage({
       <div>
         <h1 className="text-2xl font-bold text-slate-100">보스 수익</h1>
         <p className="text-sm text-slate-400 mt-1">
-          난이도·파티는 여기서 설정하고, 잡음 체크는 대시보드에서 하세요.
+          난이도·파티는 여기서 설정하고, 잡음 체크는 홈에서 하세요.
         </p>
       </div>
 
@@ -75,7 +75,7 @@ export default function BossPage({
           <span>주간 보스 {plannedStats.weeklyPlannedBossCount}/{MAX_WEEKLY_BOSSES}개</span>
           <span>선택 {plannedStats.plannedBossCount}개</span>
         </div>
-        <p className="text-[10px] text-slate-600 mt-2">난이도를 선택하면 예상 수익에 바로 반영돼요. 잡음 체크는 대시보드에서 하세요.</p>
+        <p className="text-[10px] text-slate-600 mt-2">난이도를 선택하면 예상 수익에 바로 반영돼요. 잡음 체크는 홈에서 하세요.</p>
       </div>
 
       <div className="panel-light p-5 border-maple-500/20">

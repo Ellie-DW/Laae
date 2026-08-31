@@ -18,9 +18,11 @@ import {
   clampTtsMessageInput,
   showHuntAlertNotification,
   speakHuntAlert,
+  normalizeHuntAlertVoiceId,
   type HuntAlertStore,
   type HuntAlertTimer,
 } from '../lib/huntAlert'
+import { prefetchHuntAlertTts, prepareHuntAlertTts } from '../lib/huntTts'
 
 const DEFAULT_TITLE = `${SITE_NAME} - ${SITE_TAGLINE}`
 
@@ -78,7 +80,7 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
   const fireComplete = useCallback((timer: HuntAlertTimer, extras: { soundEnabled: boolean; notifyEnabled: boolean; ttsEnabled: boolean; ttsVoiceURI: string; volume: number }) => {
     if (timer.notified) return timer
     const spoken = resolveHuntAlertTtsText(timer)
-    if (extras.ttsEnabled) speakHuntAlert(spoken, extras.ttsVoiceURI, extras.volume)
+    if (extras.ttsEnabled) void speakHuntAlert(spoken, extras.ttsVoiceURI, extras.volume)
     else if (extras.soundEnabled) playHuntAlertSound(extras.volume)
     if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
       navigator.vibrate(400)
@@ -154,7 +156,10 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
 
     tick()
     const id = window.setInterval(tick, 250)
-    const onVisibility = () => tick()
+    const onVisibility = () => {
+      prepareHuntAlertTts()
+      tick()
+    }
     document.addEventListener('visibilitychange', onVisibility)
     return () => {
       window.clearInterval(id)
@@ -226,6 +231,12 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
     )
   }, [])
 
+  const prefetchTimer = useCallback((timer: HuntAlertTimer, ttsEnabled: boolean, voiceURI: string) => {
+    if (!ttsEnabled) return
+    prepareHuntAlertTts()
+    void prefetchHuntAlertTts(resolveHuntAlertTtsText(timer), voiceURI)
+  }, [])
+
   const startTimer = useCallback((timer: HuntAlertTimer) => {
     completingIdsRef.current.delete(timer.id)
     const durationMs = clampDurationMs(timer.durationMs)
@@ -242,9 +253,12 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
   const start = useCallback(
     async (id: string) => {
       await requestNotify()
+      const current = persistRef.current
+      const timer = current.timers.find((item) => item.id === id)
+      if (timer) prefetchTimer(timer, current.ttsEnabled, current.ttsVoiceURI)
       setState((prev) => updateTimer(prev, id, startTimer))
     },
-    [requestNotify, startTimer]
+    [prefetchTimer, requestNotify, startTimer]
   )
 
   const pause = useCallback((id: string) => {
@@ -258,18 +272,21 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
   }, [])
 
   const resume = useCallback((id: string) => {
+    const current = persistRef.current
+    const timer = current.timers.find((item) => item.id === id)
+    if (timer) prefetchTimer(timer, current.ttsEnabled, current.ttsVoiceURI)
     setState((prev) =>
-      updateTimer(prev, id, (timer) => {
-        if (timer.status !== 'paused' || timer.remainingMs <= 0) return timer
+      updateTimer(prev, id, (item) => {
+        if (item.status !== 'paused' || item.remainingMs <= 0) return item
         completingIdsRef.current.delete(id)
         return {
-          ...timer,
-          endsAt: Date.now() + timer.remainingMs,
+          ...item,
+          endsAt: Date.now() + item.remainingMs,
           status: 'running',
         }
       })
     )
-  }, [])
+  }, [prefetchTimer])
 
   const reset = useCallback((id: string) => {
     completingIdsRef.current.delete(id)
@@ -286,6 +303,8 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
 
   const startAll = useCallback(async () => {
     await requestNotify()
+    const current = persistRef.current
+    current.timers.forEach((timer) => prefetchTimer(timer, current.ttsEnabled, current.ttsVoiceURI))
     setState((prev) => ({
       ...prev,
       timers: prev.timers.map((timer) => {
@@ -301,7 +320,7 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
         return startTimer(timer)
       }),
     }))
-  }, [requestNotify, startTimer])
+  }, [prefetchTimer, requestNotify, startTimer])
 
   const pauseAll = useCallback(() => {
     setState((prev) => ({
@@ -335,7 +354,7 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
   }, [])
 
   const setTtsVoiceURI = useCallback((ttsVoiceURI: string) => {
-    setState((prev) => ({ ...prev, ttsVoiceURI }))
+    setState((prev) => ({ ...prev, ttsVoiceURI: normalizeHuntAlertVoiceId(ttsVoiceURI) }))
   }, [])
 
   const setVolume = useCallback((volume: number) => {

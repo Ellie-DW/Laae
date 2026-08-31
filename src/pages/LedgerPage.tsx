@@ -13,6 +13,7 @@ import MesoRecordForm from '../components/ledger/MesoRecordForm'
 import IncomeRecordSection from '../components/ledger/IncomeRecordSection'
 import SolErdaFragmentSection from '../components/hunt/SolErdaFragmentSection'
 import SolErdaIcon from '../components/hunt/SolErdaIcon'
+import CharacterScopeSelect from '../components/layout/CharacterScopeSelect'
 
 type LedgerTab = 'income' | 'expense'
 
@@ -192,20 +193,11 @@ export default function LedgerPage({
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <ScopeButton active={filterCharacterId === null} onClick={() => selectFilterCharacter(null)}>
-          전체 캐릭터
-        </ScopeButton>
-        {characters.map((char) => (
-          <ScopeButton
-            key={char.id}
-            active={filterCharacterId === char.id}
-            onClick={() => selectFilterCharacter(char.id)}
-          >
-            {char.name}
-          </ScopeButton>
-        ))}
-      </div>
+      <CharacterScopeSelect
+        characters={characters}
+        value={filterCharacterId}
+        onChange={selectFilterCharacter}
+      />
 
       <div className="flex gap-2 overflow-x-auto pb-1">
         {LEDGER_TABS.map((tab) => (
@@ -681,26 +673,3 @@ function SummaryChip({
   )
 }
 
-function ScopeButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-4 py-2 rounded-lg text-sm border transition-colors ${
-        active
-          ? 'bg-cyber-500/20 border-cyber-500/40 text-cyber-300'
-          : 'border-dark-border text-slate-400 hover:text-slate-200'
-      }`}
-    >
-      {children}
-    </button>
-  )
-}

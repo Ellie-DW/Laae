@@ -33,6 +33,7 @@ import {
   DUPLICATE_CHARACTER_NAME_MESSAGE,
   normalizeCharacterName,
 } from '../lib/characters'
+import { pathToPage, syncPageUrl } from '../lib/pageRoute'
 
 export type BossSnapshotSync =
   | { type: 'upsert'; snapshot: BossSnapshot }
@@ -81,7 +82,10 @@ export function useAppData() {
         }
 
         if (!cancelled) {
-          setData({ ...appData, currentPage: 'dashboard' })
+          const fromUrl = pathToPage(window.location.pathname)
+          const currentPage = fromUrl ?? 'dashboard'
+          setData({ ...appData, currentPage })
+          if (!fromUrl) syncPageUrl('dashboard', 'replace')
         }
       } catch (err) {
         if (!cancelled) {
@@ -277,12 +281,23 @@ export function useAppData() {
   )
 
   const setPage = useCallback(
-    (page: Page) => {
-      setData((prev) => ({ ...prev, currentPage: page }))
+    (page: Page, history: 'push' | 'replace' | 'none' = 'push') => {
+      setData((prev) => (prev.currentPage === page ? prev : { ...prev, currentPage: page }))
       persistPreferences(data.selectedCharacterId, page)
+      if (history !== 'none') syncPageUrl(page, history)
     },
     [persistPreferences, data.selectedCharacterId]
   )
+
+  useEffect(() => {
+    const onPopState = () => {
+      const page = pathToPage(window.location.pathname) ?? 'dashboard'
+      setData((prev) => (prev.currentPage === page ? prev : { ...prev, currentPage: page }))
+      persistPreferences(data.selectedCharacterId, page)
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [persistPreferences, data.selectedCharacterId])
 
   const updateBossSelection = useCallback(
     (bossId: string, difficulty: string, updates: Partial<BossSelection>) => {

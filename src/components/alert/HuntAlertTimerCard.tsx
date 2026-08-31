@@ -3,7 +3,6 @@ import type { HuntAlertTimer } from '../../lib/huntAlert'
 import {
   HUNT_ALERT_PRESETS,
   MAX_HUNT_ALERT_TTS_LENGTH,
-  canUseSpeechSynthesis,
   durationMsToParts,
   formatCountdown,
   formatDurationLabel,
@@ -12,6 +11,7 @@ import {
   resolveHuntAlertTtsText,
   speakHuntAlert,
 } from '../../lib/huntAlert'
+import { canUseHuntAlertTts, prepareHuntAlertTts } from '../../lib/huntTts'
 
 interface HuntAlertTimerCardProps {
   timer: HuntAlertTimer
@@ -49,6 +49,7 @@ export default function HuntAlertTimerCard({
   const [customHours, setCustomHours] = useState(() => String(durationMsToParts(timer.durationMs).hours))
   const [customMinutes, setCustomMinutes] = useState(() => String(durationMsToParts(timer.durationMs).minutes))
   const [customSeconds, setCustomSeconds] = useState(() => String(durationMsToParts(timer.durationMs).seconds))
+  const [previewing, setPreviewing] = useState(false)
 
   const applyCustomParts = (hours: string, minutes: string, seconds: string) => {
     const parsedHours = hours.trim() === '' ? 0 : Number(hours)
@@ -189,11 +190,17 @@ export default function HuntAlertTimerCard({
           />
           <button
             type="button"
-            disabled={!ttsEnabled || !canUseSpeechSynthesis()}
-            onClick={() => speakHuntAlert(resolveHuntAlertTtsText(timer), ttsVoiceURI, volume)}
+            disabled={!ttsEnabled || !canUseHuntAlertTts() || previewing}
+            onClick={() => {
+              prepareHuntAlertTts()
+              setPreviewing(true)
+              void speakHuntAlert(resolveHuntAlertTtsText(timer), ttsVoiceURI, volume).finally(() => {
+                setPreviewing(false)
+              })
+            }}
             className="btn-secondary text-sm shrink-0 disabled:opacity-40"
           >
-            들어보기
+            {previewing ? '준비 중' : '들어보기'}
           </button>
         </div>
         <p className="text-[11px] text-slate-600 mt-1">

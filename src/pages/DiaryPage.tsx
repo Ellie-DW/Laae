@@ -13,6 +13,7 @@ import {
   type DiaryEntryType,
 } from '../lib/diaryEntries'
 import DiaryTypeIcon from '../components/diary/DiaryTypeIcon'
+import CharacterScopeSelect from '../components/layout/CharacterScopeSelect'
 import { summarizeSolErdaMonth } from '../lib/huntStats'
 import { computeExpenseByCategory, type GoalProgress } from '../lib/ledgerAnalytics'
 import { formatGoalPace, formatGoalDeadline, goalOverlapsMonth, goalPercentTone, isGoalActive, isGoalNotStarted } from '../lib/goalHelpers'
@@ -250,20 +251,11 @@ export default function DiaryPage({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <ScopeButton active={filterCharacterId === null} onClick={() => setFilterCharacterId(null)}>
-          전체 캐릭터
-        </ScopeButton>
-        {characters.map((char) => (
-          <ScopeButton
-            key={char.id}
-            active={filterCharacterId === char.id}
-            onClick={() => setFilterCharacterId(char.id)}
-          >
-            {char.name}
-          </ScopeButton>
-        ))}
-      </div>
+      <CharacterScopeSelect
+        characters={characters}
+        value={filterCharacterId}
+        onChange={setFilterCharacterId}
+      />
 
       <div className="flex flex-wrap gap-2">
         {typeFilters.map((item) => (
@@ -774,25 +766,3 @@ function ViewTab({
   )
 }
 
-function ScopeButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2 rounded-lg text-sm border transition-colors ${
-        active
-          ? 'bg-cyber-500/20 border-cyber-500/40 text-cyber-300'
-          : 'border-dark-border text-slate-400 hover:text-slate-200'
-      }`}
-    >
-      {children}
-    </button>
-  )
-}
