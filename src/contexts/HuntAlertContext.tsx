@@ -80,7 +80,7 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
   const fireComplete = useCallback((timer: HuntAlertTimer, extras: { soundEnabled: boolean; notifyEnabled: boolean; ttsEnabled: boolean; ttsVoiceURI: string; volume: number }) => {
     if (timer.notified) return timer
     const spoken = resolveHuntAlertTtsText(timer)
-    if (extras.ttsEnabled) void speakHuntAlert(spoken, extras.ttsVoiceURI, extras.volume)
+    if (extras.ttsEnabled) void speakHuntAlert(spoken, extras.ttsVoiceURI, extras.volume, false)
     else if (extras.soundEnabled) playHuntAlertSound(extras.volume)
     if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
       navigator.vibrate(400)
@@ -97,10 +97,22 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
     .map((timer) => `${timer.id}:${timer.status}:${timer.endsAt}:${timer.durationMs}:${timer.repeatEnabled}:${timer.notified}:${timer.ttsMessage}`)
     .join('|')
 
+  const ttsPrefetchKey = state.timers
+    .map((timer) => `${timer.id}:${timer.durationMs}:${timer.repeatEnabled}:${timer.ttsMessage}`)
+    .join('|')
+
   useEffect(() => {
     if (!enabled) return
     persistHuntAlertState(persistRef.current)
   }, [enabled, persistKey, state.soundEnabled, state.notifyEnabled, state.ttsEnabled, state.ttsVoiceURI, state.volume])
+
+  useEffect(() => {
+    if (!enabled || !state.ttsEnabled) return
+    prepareHuntAlertTts()
+    for (const timer of persistRef.current.timers) {
+      void prefetchHuntAlertTts(resolveHuntAlertTtsText(timer), state.ttsVoiceURI)
+    }
+  }, [enabled, state.ttsEnabled, state.ttsVoiceURI, ttsPrefetchKey])
 
   useEffect(() => {
     if (!enabled) return
