@@ -18,11 +18,9 @@ import {
   clampTtsMessageInput,
   showHuntAlertNotification,
   speakHuntAlert,
-  normalizeHuntAlertVoiceId,
   type HuntAlertStore,
   type HuntAlertTimer,
 } from '../lib/huntAlert'
-import { prefetchHuntAlertTts, prepareHuntAlertTts } from '../lib/huntTts'
 
 const DEFAULT_TITLE = `${SITE_NAME} - ${SITE_TAGLINE}`
 
@@ -80,7 +78,7 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
   const fireComplete = useCallback((timer: HuntAlertTimer, extras: { soundEnabled: boolean; notifyEnabled: boolean; ttsEnabled: boolean; ttsVoiceURI: string; volume: number }) => {
     if (timer.notified) return timer
     const spoken = resolveHuntAlertTtsText(timer)
-    if (extras.ttsEnabled) void speakHuntAlert(spoken, extras.ttsVoiceURI, extras.volume, false)
+    if (extras.ttsEnabled) speakHuntAlert(spoken, extras.ttsVoiceURI, extras.volume)
     else if (extras.soundEnabled) playHuntAlertSound(extras.volume)
     if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
       navigator.vibrate(400)
@@ -97,22 +95,10 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
     .map((timer) => `${timer.id}:${timer.status}:${timer.endsAt}:${timer.durationMs}:${timer.repeatEnabled}:${timer.notified}:${timer.ttsMessage}`)
     .join('|')
 
-  const ttsPrefetchKey = state.timers
-    .map((timer) => `${timer.id}:${timer.durationMs}:${timer.repeatEnabled}:${timer.ttsMessage}`)
-    .join('|')
-
   useEffect(() => {
     if (!enabled) return
     persistHuntAlertState(persistRef.current)
   }, [enabled, persistKey, state.soundEnabled, state.notifyEnabled, state.ttsEnabled, state.ttsVoiceURI, state.volume])
-
-  useEffect(() => {
-    if (!enabled || !state.ttsEnabled) return
-    prepareHuntAlertTts()
-    for (const timer of persistRef.current.timers) {
-      void prefetchHuntAlertTts(resolveHuntAlertTtsText(timer), state.ttsVoiceURI)
-    }
-  }, [enabled, state.ttsEnabled, state.ttsVoiceURI, ttsPrefetchKey])
 
   useEffect(() => {
     if (!enabled) return
@@ -168,10 +154,7 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
 
     tick()
     const id = window.setInterval(tick, 250)
-    const onVisibility = () => {
-      prepareHuntAlertTts()
-      tick()
-    }
+    const onVisibility = () => tick()
     document.addEventListener('visibilitychange', onVisibility)
     return () => {
       window.clearInterval(id)
@@ -243,12 +226,6 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
     )
   }, [])
 
-  const prefetchTimer = useCallback((timer: HuntAlertTimer, ttsEnabled: boolean, voiceURI: string) => {
-    if (!ttsEnabled) return
-    prepareHuntAlertTts()
-    void prefetchHuntAlertTts(resolveHuntAlertTtsText(timer), voiceURI)
-  }, [])
-
   const startTimer = useCallback((timer: HuntAlertTimer) => {
     completingIdsRef.current.delete(timer.id)
     const durationMs = clampDurationMs(timer.durationMs)
@@ -265,12 +242,9 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
   const start = useCallback(
     async (id: string) => {
       await requestNotify()
-      const current = persistRef.current
-      const timer = current.timers.find((item) => item.id === id)
-      if (timer) prefetchTimer(timer, current.ttsEnabled, current.ttsVoiceURI)
       setState((prev) => updateTimer(prev, id, startTimer))
     },
-    [prefetchTimer, requestNotify, startTimer]
+    [requestNotify, startTimer]
   )
 
   const pause = useCallback((id: string) => {
@@ -284,21 +258,18 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
   }, [])
 
   const resume = useCallback((id: string) => {
-    const current = persistRef.current
-    const timer = current.timers.find((item) => item.id === id)
-    if (timer) prefetchTimer(timer, current.ttsEnabled, current.ttsVoiceURI)
     setState((prev) =>
-      updateTimer(prev, id, (item) => {
-        if (item.status !== 'paused' || item.remainingMs <= 0) return item
+      updateTimer(prev, id, (timer) => {
+        if (timer.status !== 'paused' || timer.remainingMs <= 0) return timer
         completingIdsRef.current.delete(id)
         return {
-          ...item,
-          endsAt: Date.now() + item.remainingMs,
+          ...timer,
+          endsAt: Date.now() + timer.remainingMs,
           status: 'running',
         }
       })
     )
-  }, [prefetchTimer])
+  }, [])
 
   const reset = useCallback((id: string) => {
     completingIdsRef.current.delete(id)
@@ -315,8 +286,6 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
 
   const startAll = useCallback(async () => {
     await requestNotify()
-    const current = persistRef.current
-    current.timers.forEach((timer) => prefetchTimer(timer, current.ttsEnabled, current.ttsVoiceURI))
     setState((prev) => ({
       ...prev,
       timers: prev.timers.map((timer) => {
@@ -332,7 +301,7 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
         return startTimer(timer)
       }),
     }))
-  }, [prefetchTimer, requestNotify, startTimer])
+  }, [requestNotify, startTimer])
 
   const pauseAll = useCallback(() => {
     setState((prev) => ({
@@ -366,7 +335,7 @@ export function HuntAlertProvider({ children, characterName, enabled = true }: H
   }, [])
 
   const setTtsVoiceURI = useCallback((ttsVoiceURI: string) => {
-    setState((prev) => ({ ...prev, ttsVoiceURI: normalizeHuntAlertVoiceId(ttsVoiceURI) }))
+    setState((prev) => ({ ...prev, ttsVoiceURI }))
   }, [])
 
   const setVolume = useCallback((volume: number) => {
