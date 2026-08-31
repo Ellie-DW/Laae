@@ -1,4 +1,4 @@
-import { playHuntTtsClip, resolveHuntTtsVoice, stopHuntTtsPlayback } from './huntTts'
+import { enqueueHuntTtsPlay, resolveHuntTtsVoice } from './huntTts'
 
 export const HUNT_ALERT_STORAGE_KEY = 'laae-hunt-alert'
 export const HUNT_ALERT_STORE_VERSION = 2
@@ -389,13 +389,12 @@ export function pickHuntAlertVoice(preferredURI?: string | null) {
   return [...pool].sort((a, b) => scoreVoice(b) - scoreVoice(a))[0] ?? null
 }
 
-export function speakHuntAlert(text: string, voiceURI?: string | null, volume = 0.8) {
+export function speakHuntAlert(text: string, voiceURI?: string | null, volume = 0.8, interrupt = true) {
   const spoken = text.trim()
   if (!spoken) return Promise.resolve()
-  if (canUseSpeechSynthesis()) window.speechSynthesis.cancel()
-  stopHuntTtsPlayback()
+  if (interrupt && canUseSpeechSynthesis()) window.speechSynthesis.cancel()
 
-  return playHuntTtsClip(spoken, voiceURI, volume).catch(() => {
+  return enqueueHuntTtsPlay(spoken, voiceURI, volume, interrupt).catch(() => {
     speakBrowserHuntAlert(spoken, volume)
   })
 }
