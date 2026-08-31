@@ -1,5 +1,3 @@
-import { enqueueHuntTtsPlay, resolveHuntTtsVoice } from './huntTts'
-
 export const HUNT_ALERT_STORAGE_KEY = 'laae-hunt-alert'
 export const HUNT_ALERT_STORE_VERSION = 2
 export const DEFAULT_HUNT_ALERT_MS = 2 * 60 * 60 * 1000
@@ -80,7 +78,7 @@ export const DEFAULT_HUNT_ALERT_STORE: HuntAlertStore = {
   soundEnabled: true,
   notifyEnabled: true,
   ttsEnabled: true,
-  ttsVoiceURI: 'Kore',
+  ttsVoiceURI: '',
   volume: 0.8,
   timers: [createHuntAlertTimer(DEFAULT_HUNT_ALERT_MS, { repeatEnabled: false })],
 }
@@ -98,10 +96,6 @@ export function clampTtsMessageInput(value: string) {
 export function sanitizeTtsMessage(value: unknown) {
   if (typeof value !== 'string') return ''
   return value.replace(/\s+/g, ' ').trim().slice(0, MAX_HUNT_ALERT_TTS_LENGTH)
-}
-
-export function normalizeHuntAlertVoiceId(value: unknown) {
-  return resolveHuntTtsVoice(typeof value === 'string' ? value : '')
 }
 
 export function clampDurationMs(ms: number) {
@@ -214,7 +208,7 @@ function migrateLegacyStore(parsed: Record<string, unknown>): HuntAlertStore {
     soundEnabled: parsed.soundEnabled !== false,
     notifyEnabled: parsed.notifyEnabled !== false,
     ttsEnabled: parsed.ttsEnabled !== false,
-    ttsVoiceURI: normalizeHuntAlertVoiceId(parsed.ttsVoiceURI),
+    ttsVoiceURI: typeof parsed.ttsVoiceURI === 'string' ? parsed.ttsVoiceURI : '',
     volume: clampVolume(parsed.volume),
     timers: [
       normalizeTimer({
@@ -246,7 +240,7 @@ export function loadHuntAlertState(): HuntAlertStore {
         soundEnabled: parsed.soundEnabled !== false,
         notifyEnabled: parsed.notifyEnabled !== false,
         ttsEnabled: parsed.ttsEnabled !== false,
-        ttsVoiceURI: normalizeHuntAlertVoiceId(parsed.ttsVoiceURI),
+        ttsVoiceURI: typeof parsed.ttsVoiceURI === 'string' ? parsed.ttsVoiceURI : '',
         volume: clampVolume(parsed.volume),
         timers: timers.length > 0 ? timers : [createHuntAlertTimer(DEFAULT_HUNT_ALERT_MS, { repeatEnabled: false })],
       }
@@ -389,21 +383,10 @@ export function pickHuntAlertVoice(preferredURI?: string | null) {
   return [...pool].sort((a, b) => scoreVoice(b) - scoreVoice(a))[0] ?? null
 }
 
-export function speakHuntAlert(text: string, voiceURI?: string | null, volume = 0.8, interrupt = true) {
+export function speakHuntAlert(text: string, voiceURI?: string | null, volume = 0.8) {
+  if (!canUseSpeechSynthesis()) return
   const spoken = text.trim()
-  if (!spoken) return Promise.resolve()
-  if (interrupt && canUseSpeechSynthesis()) window.speechSynthesis.cancel()
-
-  return enqueueHuntTtsPlay(spoken, voiceURI, volume, interrupt).catch(() => {
-    speakBrowserHuntAlert(spoken, volume)
-  })
-}
-
-function speakBrowserHuntAlert(spoken: string, volume = 0.8) {
-  if (!canUseSpeechSynthesis()) {
-    playHuntAlertSound(volume)
-    return
-  }
+  if (!spoken) return
   const synth = window.speechSynthesis
   synth.cancel()
 
@@ -416,7 +399,7 @@ function speakBrowserHuntAlert(spoken: string, volume = 0.8) {
     utterance.rate = 0.96
     utterance.pitch = 1.04
     utterance.volume = clampVolume(volume)
-    const voice = pickHuntAlertVoice()
+    const voice = pickHuntAlertVoice(voiceURI)
     if (voice) {
       utterance.voice = voice
       utterance.lang = voice.lang || 'ko-KR'
