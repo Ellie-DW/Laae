@@ -1,7 +1,6 @@
 import type { Page } from '../../types'
 
 export const NAV_ITEMS: { id: Page; label: string }[] = [
-  { id: 'dashboard', label: '대시보드' },
   { id: 'diary', label: '다이어리' },
   { id: 'hunt', label: '사냥' },
   { id: 'alert', label: '알리미' },

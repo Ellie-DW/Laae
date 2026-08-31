@@ -22,6 +22,7 @@ interface SidebarProps {
   onSyncNexonProfile: (characterId: string) => Promise<void>
   onClearNexonLink: (characterId: string) => Promise<void>
   onResetLedger: () => Promise<void>
+  onGoHome: () => void
 }
 
 export default function Sidebar({
@@ -34,6 +35,7 @@ export default function Sidebar({
   onSyncNexonProfile,
   onClearNexonLink,
   onResetLedger,
+  onGoHome,
 }: SidebarProps) {
   const { user, signOut } = useAuth()
   const [showAdd, setShowAdd] = useState(false)
@@ -68,13 +70,18 @@ export default function Sidebar({
   return (
     <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-dark-border/60 bg-dark-surface/60 backdrop-blur-md h-screen sticky top-0">
       <div className="p-5 border-b border-dark-border/40">
-        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onGoHome}
+          className="flex items-center gap-2 rounded-lg text-left hover:opacity-80 transition-opacity"
+          aria-label="홈으로"
+        >
           <img src={SITE_LOGO_SRC} alt="" className="w-8 h-8 object-contain" draggable={false} />
           <div>
             <h1 className="font-display font-bold text-slate-100 tracking-wide">Laae</h1>
             <p className="text-xs text-slate-500">메이플 가계부</p>
           </div>
-        </div>
+        </button>
       </div>
 
       <div className="p-4 flex-1 overflow-y-auto">

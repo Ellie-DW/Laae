@@ -26,7 +26,7 @@ export default function SelectedBossSummary({ plannedBosses }: SelectedBossSumma
         <h2 className="font-semibold text-slate-100">예상 보스</h2>
         <span className="text-xs text-slate-500">{plannedBosses.length}개</span>
       </div>
-      <p className="text-xs text-slate-500 mb-4">난이도를 선택한 보스 기준이에요. 잡음 체크는 대시보드에서 하세요.</p>
+      <p className="text-xs text-slate-500 mb-4">난이도를 선택한 보스 기준이에요. 잡음 체크는 홈에서 하세요.</p>
 
       {plannedBosses.length === 0 ? (
         <div className="text-center py-8 text-slate-500 text-sm">

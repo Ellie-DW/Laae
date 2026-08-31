@@ -22,6 +22,7 @@ interface MobileHeaderProps {
   onSyncNexonProfile: (characterId: string) => Promise<void>
   onClearNexonLink: (characterId: string) => Promise<void>
   onResetLedger: () => Promise<void>
+  onGoHome: () => void
 }
 
 export default function MobileHeader({
@@ -34,6 +35,7 @@ export default function MobileHeader({
   onSyncNexonProfile,
   onClearNexonLink,
   onResetLedger,
+  onGoHome,
 }: MobileHeaderProps) {
   const { user, signOut } = useAuth()
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -82,10 +84,15 @@ export default function MobileHeader({
     <>
       <header className="lg:hidden sticky top-0 z-40 bg-dark-surface/80 backdrop-blur-lg border-b border-dark-border/60 px-4 py-3">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={onGoHome}
+            className="flex items-center gap-2 min-w-0 rounded-lg text-left hover:opacity-80 transition-opacity"
+            aria-label="홈으로"
+          >
             <img src={SITE_LOGO_SRC} alt="" className="w-7 h-7 object-contain shrink-0" draggable={false} />
             <span className="font-display font-bold text-slate-100 tracking-wide truncate">Laae</span>
-          </div>
+          </button>
 
           <button
             onClick={() => setPickerOpen(true)}

@@ -5,6 +5,7 @@ import DropChecklistSection, { type DropAddItem } from './DropChecklistSection'
 import DropHistorySection from './DropHistorySection'
 import DropInventorySection, { type DropSaleItem } from './DropInventorySection'
 import DropRateSection from './DropRateSection'
+import CharacterScopeSelect from '../layout/CharacterScopeSelect'
 
 interface DropRecordPanelProps {
   characters: Character[]
@@ -151,20 +152,11 @@ export default function DropRecordPanel({
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        <ScopeButton active={filterCharacterId === null} onClick={() => selectFilterCharacter(null)}>
-          전체 캐릭터
-        </ScopeButton>
-        {characters.map((char) => (
-          <ScopeButton
-            key={char.id}
-            active={filterCharacterId === char.id}
-            onClick={() => selectFilterCharacter(char.id)}
-          >
-            {char.name}
-          </ScopeButton>
-        ))}
-      </div>
+      <CharacterScopeSelect
+        characters={characters}
+        value={filterCharacterId}
+        onChange={selectFilterCharacter}
+      />
 
       {viewMode === 'rates' ? (
         <DropRateSection
@@ -235,26 +227,3 @@ function ViewTab({
   )
 }
 
-function ScopeButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-4 py-2 rounded-lg text-sm border transition-colors ${
-        active
-          ? 'bg-cyber-500/20 border-cyber-500/40 text-cyber-300'
-          : 'border-dark-border text-slate-400 hover:text-slate-200'
-      }`}
-    >
-      {children}
-    </button>
-  )
-}

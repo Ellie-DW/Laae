@@ -29,7 +29,7 @@ import { useYieldAccess } from './hooks/useYieldAccess'
 import { useYieldRecords } from './hooks/useYieldRecords'
 import { usePremiumGroups } from './hooks/usePremiumGroups'
 import { getDiaryEntryTargetPage, type DiaryEntry } from './lib/diaryEntries'
-import { computeExpenseByCategory, computeAccountCumulativeNetProfit } from './lib/ledgerAnalytics'
+import { computeAccountCumulativeNetProfit } from './lib/ledgerAnalytics'
 import { calcRiceHeldMeso } from './lib/riceTrade'
 import { useAuth } from './contexts/AuthContext'
 import { getWeeklyPeriod } from './utils'
@@ -56,7 +56,6 @@ function MainApp() {
     currentPage,
     bossData,
     bossDataMap,
-    bossStats,
     accountStats,
     dataLoading,
     syncError,
@@ -132,19 +131,19 @@ function MainApp() {
 
   useEffect(() => {
     if (!riceAccess.loading && currentPage === 'rice' && !riceAccess.hasAccess) {
-      setPage('dashboard')
+      setPage('dashboard', 'replace')
     }
   }, [riceAccess.loading, riceAccess.hasAccess, currentPage, setPage])
 
   useEffect(() => {
     if (!premiumAccess.loading && currentPage === 'premium' && !premiumAccess.hasAccess) {
-      setPage('dashboard')
+      setPage('dashboard', 'replace')
     }
   }, [premiumAccess.loading, premiumAccess.hasAccess, currentPage, setPage])
 
   useEffect(() => {
     if (!yieldAccess.loading && currentPage === 'yield' && !yieldAccess.hasAccess) {
-      setPage('dashboard')
+      setPage('dashboard', 'replace')
     }
   }, [yieldAccess.loading, yieldAccess.hasAccess, currentPage, setPage])
 
@@ -167,9 +166,6 @@ function MainApp() {
     yieldAccess.error ||
     yieldRecords.error
   const weekPeriod = getWeeklyPeriod()
-  const selectedLedgerSummary = selectedCharacter
-    ? ledger.getCharacterSummary(selectedCharacter.id)
-    : null
 
   const handleToggleWeeklyBossCleared = (characterId: string) => {
     void toggleWeeklyBossCleared(characterId).then((result) => {
@@ -202,38 +198,18 @@ function MainApp() {
             characters={characters}
             selectedCharacter={selectedCharacter}
             accountStats={accountStats}
-            selectedBossTotalMeso={bossStats.totalMeso}
             bossDataMap={bossDataMap}
             ledgerSummary={ledger.accountSummary}
             weekSummary={ledger.accountWeekSummary}
             weekLabel={weekPeriod.label}
-            selectedLedgerSummary={selectedLedgerSummary}
-            dailyNet={ledger.dailyNet}
-            expenseByCategory={
-              selectedCharacter
-                ? computeExpenseByCategory(ledger.expenses, {
-                    characterId: selectedCharacter.id,
-                    month: ledger.currentMonth,
-                  })
-                : ledger.expenseByCategory
-            }
-            goals={ledger.goals}
             currentMonth={ledger.currentMonth}
-            getGoalProgress={ledger.getGoalProgress}
             onSelectCharacter={selectCharacter}
             onToggleWeeklyBossCleared={handleToggleWeeklyBossCleared}
             onToggleMonthlyBossCleared={handleToggleMonthlyBossCleared}
             onGoBoss={() => setPage('boss')}
-            onOpenDiary={() => setPage('diary')}
+            onGoHunt={() => setPage('hunt')}
             onGoDrop={() => setPage('drop')}
-            onGoGoals={() => setPage('goals')}
-            diaryHunts={ledger.hunts}
-            diaryGathers={ledger.gathers}
-            diaryExpenses={ledger.expenses}
-            diaryIncomes={ledger.incomes}
-            diaryDrops={ledger.drops}
-            diarySnapshots={ledger.snapshots}
-            diaryRiceRecords={riceAccess.hasAccess ? ledger.riceRecords : undefined}
+            onGoLedger={() => setPage('expense')}
           />
         )
       case 'diary':
@@ -425,6 +401,7 @@ function MainApp() {
         onSyncNexonProfile={syncNexonProfile}
         onClearNexonLink={clearNexonLink}
         onResetLedger={handleResetLedger}
+        onGoHome={() => setPage('dashboard')}
       />
 
       <div className="flex-1 flex flex-col min-h-screen pb-16 lg:pb-0">
@@ -438,6 +415,7 @@ function MainApp() {
           onSyncNexonProfile={syncNexonProfile}
           onClearNexonLink={clearNexonLink}
           onResetLedger={handleResetLedger}
+          onGoHome={() => setPage('dashboard')}
         />
 
         <div className="hidden lg:flex border-b border-dark-border/60 bg-dark-surface/50 backdrop-blur-md px-6 py-2 gap-1">
@@ -459,7 +437,11 @@ function MainApp() {
 
         <main
           className={`flex-1 p-4 lg:p-6 mx-auto w-full ${
-            currentPage === 'premium' || currentPage === 'yield' ? 'max-w-7xl' : 'max-w-5xl'
+            currentPage === 'premium' || currentPage === 'yield'
+              ? 'max-w-7xl'
+              : currentPage === 'dashboard'
+                ? 'max-w-6xl'
+                : 'max-w-5xl'
           }`}
         >
           {combinedError && (

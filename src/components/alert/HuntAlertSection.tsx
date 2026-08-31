@@ -1,11 +1,6 @@
 import { useHuntAlert } from '../../contexts/HuntAlertContext'
-import { useSpeechVoices } from '../../hooks/useSpeechVoices'
-import {
-  MAX_HUNT_ALERT_TIMERS,
-  canUseBrowserNotification,
-  canUseSpeechSynthesis,
-  formatHuntAlertVoiceLabel,
-} from '../../lib/huntAlert'
+import { MAX_HUNT_ALERT_TIMERS, canUseBrowserNotification } from '../../lib/huntAlert'
+import { HUNT_TTS_VOICES, canUseHuntAlertTts } from '../../lib/huntTts'
 import HuntAlertTimerCard from './HuntAlertTimerCard'
 
 interface HuntAlertSectionProps {
@@ -14,7 +9,6 @@ interface HuntAlertSectionProps {
 
 export default function HuntAlertSection({ onGoHunt }: HuntAlertSectionProps) {
   const alert = useHuntAlert()
-  const voices = useSpeechVoices()
   const hasDone = alert.timers.some((timer) => timer.status === 'done')
   const hasRunning = alert.timers.some((timer) => timer.status === 'running')
   const canStartAll = alert.timers.some((timer) => timer.status !== 'running')
@@ -90,12 +84,12 @@ export default function HuntAlertSection({ onGoHunt }: HuntAlertSectionProps) {
           <input
             type="checkbox"
             checked={alert.ttsEnabled}
-            disabled={!canUseSpeechSynthesis()}
+            disabled={!canUseHuntAlertTts()}
             onChange={(e) => alert.setTtsEnabled(e.target.checked)}
           />
           음성으로 읽기
         </label>
-        {alert.ttsEnabled && canUseSpeechSynthesis() && (
+        {alert.ttsEnabled && canUseHuntAlertTts() && (
           <div className="space-y-2 pl-6">
             <label className="block">
               <span className="text-xs text-slate-500 mb-1 block">목소리</span>
@@ -104,20 +98,19 @@ export default function HuntAlertSection({ onGoHunt }: HuntAlertSectionProps) {
                 onChange={(e) => alert.setTtsVoiceURI(e.target.value)}
                 className="input-field text-sm"
               >
-                <option value="">자동 · 사람처럼 들리는 한국어</option>
-                {voices.map((voice) => (
-                  <option key={voice.uri} value={voice.uri}>
-                    {formatHuntAlertVoiceLabel(voice)}
+                {HUNT_TTS_VOICES.map((voice) => (
+                  <option key={voice.id} value={voice.id}>
+                    {voice.label}
                   </option>
                 ))}
               </select>
             </label>
             <p className="text-xs text-slate-500">
-              컴퓨터에 있는 한국어 목소리 중 더 자연스러운 걸 씁니다. 들어보기로 확인해 보세요.
+              {HUNT_TTS_VOICES.find((voice) => voice.id === alert.ttsVoiceURI)?.hint}. 들어보기로 미리 만들어 두면 알림이 바로 나와요.
             </p>
           </div>
         )}
-        {!canUseSpeechSynthesis() && (
+        {!canUseHuntAlertTts() && (
           <p className="text-xs text-slate-500">이 브라우저는 음성 읽기를 지원하지 않아요.</p>
         )}
         {alert.notifyEnabled && canUseBrowserNotification() && Notification.permission === 'denied' && (

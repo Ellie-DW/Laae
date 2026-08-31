@@ -62,7 +62,7 @@ export default function DropRateSection({
         </span>
       </div>
       <p className="text-xs text-slate-500 mb-4">
-        처치 횟수는 대시보드 잡음 체크 기준이에요. 드랍은 기록한 보스·난이도별로 나눠 봐요.
+        처치 횟수는 홈 잡음 체크 기준이에요. 드랍은 기록한 보스·난이도별로 나눠 봐요.
       </p>
 
       {stats.combined.length > 0 && (

@@ -113,7 +113,7 @@ export default function BossCard({
           <p className="text-xs text-slate-500 mt-2">
             {weeklyLimitReached
               ? `주간 보스는 최대 ${maxWeeklyBosses}개까지 선택할 수 있어요`
-              : '잡음 체크는 대시보드에서 하세요'}
+              : '잡음 체크는 홈에서 하세요'}
           </p>
         </div>
       </div>
