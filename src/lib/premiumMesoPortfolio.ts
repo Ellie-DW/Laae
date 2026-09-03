@@ -3,14 +3,14 @@ import type { PremiumCharacterSection } from './premiumGroups'
 import { addDaysYMD, getToday } from '../utils'
 
 export const PREMIUM_GROUP_CHART_COLORS = [
-  '#8b5cf6',
-  '#22d3ee',
-  '#f59e0b',
-  '#10b981',
-  '#f43f5e',
-  '#3b82f6',
-  '#eab308',
-  '#64748b',
+  '#be185d',
+  '#7e22ce',
+  '#b45309',
+  '#0f766e',
+  '#6d28d9',
+  '#be123c',
+  '#a16207',
+  '#475569',
 ] as const
 
 export type PremiumChartPeriod = '1d' | '1w' | '1m' | '3m' | '6m' | '1y' | 'all'
