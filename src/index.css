@@ -649,6 +649,18 @@
     fill: rgb(var(--yield-usd));
   }
 
+  .meso-chart-line {
+    stroke: rgb(var(--yield-accent));
+  }
+
+  .meso-chart-fill {
+    fill: rgb(var(--yield-accent) / 0.14);
+  }
+
+  .meso-chart-dot {
+    fill: rgb(var(--yield-accent));
+  }
+
   .yield-table-group--upbit {
     background-color: rgb(var(--yield-upbit) / 0.1);
   }
