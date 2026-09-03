@@ -72,6 +72,8 @@ function MainApp() {
     selectBossRunnerPreset,
     toggleWeeklyBossCleared,
     toggleMonthlyBossCleared,
+    setWeeklyRouteMinutes,
+    recordWeeklyRouteSample,
     updateCharacterPremiumGroup,
     clearAllCharacterPremiumGroups,
     resetAllBossLedgerState,
@@ -167,8 +169,8 @@ function MainApp() {
     yieldRecords.error
   const weekPeriod = getWeeklyPeriod()
 
-  const handleToggleWeeklyBossCleared = (characterId: string) => {
-    void toggleWeeklyBossCleared(characterId).then((result) => {
+  const handleToggleWeeklyBossCleared = (characterId: string, routeSampleMinutes?: number) => {
+    void toggleWeeklyBossCleared(characterId, routeSampleMinutes).then((result) => {
       if (!result) return
       if (result.type === 'upsert') ledger.upsertSnapshot(result.snapshot)
       else ledger.removeSnapshot(result.characterId, result.cycle, result.periodStart)
@@ -206,6 +208,8 @@ function MainApp() {
             onSelectCharacter={selectCharacter}
             onToggleWeeklyBossCleared={handleToggleWeeklyBossCleared}
             onToggleMonthlyBossCleared={handleToggleMonthlyBossCleared}
+            onSetWeeklyRouteMinutes={setWeeklyRouteMinutes}
+            onRecordWeeklyRouteSample={recordWeeklyRouteSample}
             onGoBoss={() => setPage('boss')}
             onGoHunt={() => setPage('hunt')}
             onGoDrop={() => setPage('drop')}
@@ -236,9 +240,6 @@ function MainApp() {
             onSaveNote={ledger.saveDiaryNote}
             onRemoveNote={ledger.removeDiaryNote}
             onNavigateToSource={handleDiaryNavigate}
-            goals={ledger.goals}
-            getGoalProgress={ledger.getGoalProgress}
-            onGoGoals={() => setPage('goals')}
           />
         )
       case 'boss':

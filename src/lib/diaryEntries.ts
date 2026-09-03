@@ -126,7 +126,7 @@ function liveBossAmount(
   return { weekly, monthly, total: weekly + monthly }
 }
 
-function formatDiaryDayLabel(dateStr: string) {
+export function formatDiaryDayLabel(dateStr: string) {
   const d = new Date(dateStr + 'T00:00:00')
   const weekday = d.toLocaleDateString('ko-KR', { weekday: 'long' })
   const label = d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })
@@ -407,13 +407,20 @@ export function getRecentDiaryEntries(days: DiaryDay[], maxEntries = 8): DiaryEn
   return result
 }
 
-export function filterDiaryDaysByType(days: DiaryDay[], type: DiaryEntryType | 'all' | 'solErda'): DiaryDay[] {
+export type DiaryTypeFilter = 'all' | DiaryEntryType | 'solErda' | 'ledger'
+
+export function entryMatchesDiaryFilter(entry: DiaryEntry, type: DiaryTypeFilter) {
+  if (type === 'all') return true
+  if (type === 'solErda') return isSolErdaDiaryEntry(entry)
+  if (type === 'ledger') return entry.type === 'income' || entry.type === 'expense'
+  return entry.type === type
+}
+
+export function filterDiaryDaysByType(days: DiaryDay[], type: DiaryTypeFilter): DiaryDay[] {
   if (type === 'all') return days
   return days
     .map((day) => {
-      const entries = day.entries.filter((e) =>
-        type === 'solErda' ? isSolErdaDiaryEntry(e) : e.type === type
-      )
+      const entries = day.entries.filter((e) => entryMatchesDiaryFilter(e, type))
       if (entries.length === 0) return null
       const income = entries.filter((e) => e.amount > 0 && e.type !== 'rice').reduce((s, e) => s + e.amount, 0)
       const expense = entries.filter((e) => e.amount < 0 && e.type !== 'rice').reduce((s, e) => s + Math.abs(e.amount), 0)
@@ -432,9 +439,8 @@ export interface DiaryMonthSummary {
   entryCount: number
 }
 
-export function summarizeDiaryMonth(days: DiaryDay[], year: number, month: number): DiaryMonthSummary {
-  const prefix = `${year}-${String(month).padStart(2, '0')}`
-  const monthDays = days.filter((d) => d.date.startsWith(prefix))
+export function summarizeDiaryDays(days: DiaryDay[], prefix?: string): DiaryMonthSummary {
+  const monthDays = prefix ? days.filter((d) => d.date.startsWith(prefix)) : days
 
   const summary: DiaryMonthSummary = {
     income: 0,
@@ -463,6 +469,10 @@ export function summarizeDiaryMonth(days: DiaryDay[], year: number, month: numbe
   }
 
   return summary
+}
+
+export function summarizeDiaryMonth(days: DiaryDay[], year: number, month: number): DiaryMonthSummary {
+  return summarizeDiaryDays(days, `${year}-${String(month).padStart(2, '0')}`)
 }
 
 export { isSolErdaPurchaseExpense }

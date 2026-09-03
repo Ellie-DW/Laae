@@ -30,6 +30,14 @@ interface DropChecklistSectionProps {
   onAdd: (items: DropAddItem[]) => Promise<void>
 }
 
+function preferredDifficultiesFrom(bossData: CharacterBossData | undefined) {
+  const map: Partial<Record<string, BossDifficulty>> = {}
+  for (const sel of bossData?.selections ?? []) {
+    if (sel.checked) map[sel.bossId] = sel.difficulty
+  }
+  return map
+}
+
 function defaultSource(characterId: string, bossDataMap: Record<string, CharacterBossData>) {
   const selected = bossDataMap[characterId]?.selections.find(
     (sel) => sel.checked && getBossDropTable(sel.bossId)
@@ -62,6 +70,11 @@ export default function DropChecklistSection({
     setSelected(new Set())
     setBoxPicks({})
   }, [characterId])
+
+  const preferredDifficulties = useMemo(
+    () => preferredDifficultiesFrom(bossDataMap[characterId]),
+    [bossDataMap, characterId]
+  )
 
   const sourceItems = useMemo(
     () => (bossId && difficulty ? getTrackedItemsForSource(bossId, difficulty) : []),
@@ -145,8 +158,8 @@ export default function DropChecklistSection({
         <h2 className="font-semibold text-slate-100">획득 추가</h2>
         <p className="text-xs text-slate-500 mt-0.5">
           {recordCharacter && !showCharacterSelect
-            ? `${recordCharacter.name} · 보스·난이도를 고른 뒤 나온 아이템을 기록하세요`
-            : '보스·난이도를 고른 뒤 나온 아이템을 기록하세요'}
+            ? `${recordCharacter.name} · 보스를 고르면 설정해 둔 난이도가 들어갑니다`
+            : '보스를 고르면 설정해 둔 난이도가 들어갑니다'}
         </p>
       </div>
 
@@ -168,7 +181,12 @@ export default function DropChecklistSection({
       )}
 
       <div className="mb-5">
-        <DropSourcePicker bossId={bossId} difficulty={difficulty} onChange={handleSourceChange} />
+        <DropSourcePicker
+          bossId={bossId}
+          difficulty={difficulty}
+          preferredDifficulties={preferredDifficulties}
+          onChange={handleSourceChange}
+        />
       </div>
 
       {!bossId || !difficulty ? (

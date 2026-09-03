@@ -84,6 +84,10 @@ export interface CharacterBossData {
   weeklyClearedPeriodStart?: string | null
   /** 이번 달 잡음 체크 여부 — 매월 1일 초기화 */
   monthlyClearedPeriodStart?: string | null
+  /** 주간 보스 루트 예상 소요(분). 직접 입력 또는 스톱워치 평균 */
+  weeklyRouteMinutes?: number | null
+  /** 최근 스톱워치 측정값(분), 최대 8개 */
+  weeklyRouteSamples?: number[]
 }
 
 export type ExpenseCategory = 'purchase' | 'enhancement' | 'consumable' | 'other'

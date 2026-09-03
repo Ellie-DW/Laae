@@ -74,7 +74,7 @@ export default function HuntAlertSection({ onGoHunt }: HuntAlertSectionProps) {
             step={1}
             value={Math.round(alert.volume * 100)}
             onChange={(e) => alert.setVolume(Number(e.target.value) / 100)}
-            className="w-full accent-cyan-400"
+            className="w-full accent-theme"
           />
         </label>
         <label className="flex items-center gap-2 text-sm text-slate-300">

@@ -30,12 +30,12 @@ export default function LoginPage() {
 
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <StarBorder as="div" color="#22d3ee" speed="7s" thickness={1} className="w-full">
+          <StarBorder as="div" color="rgb(var(--yield-accent))" speed="7s" thickness={1} className="w-full">
             <div className="panel-glow p-8 text-center rounded-[18px] bg-dark-panel/95">
             <img
               src={SITE_LOGO_SRC}
               alt=""
-              className="w-16 h-16 mx-auto mb-4 object-contain drop-shadow-[0_0_20px_rgba(34,211,238,0.3)]"
+              className="w-16 h-16 mx-auto mb-4 object-contain icon-accent-glow"
               draggable={false}
             />
             <h1 className="font-display text-2xl font-bold text-slate-100 tracking-wide">
