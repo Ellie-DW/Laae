@@ -8,6 +8,7 @@ import {
   canSelectWeeklyBoss,
   applyBossRunnerPreset,
 } from '../lib/bossStats'
+import { applyManualRouteMinutes, applyRouteSample } from '../lib/bossRouteTime'
 import { BOSSES, getBossResetCycle } from '../data/bosses'
 import { STORAGE_KEY, getToday, getWeeklyPeriod, getMonthlyPeriod, getErrorMessage } from '../utils'
 import { useAuth } from '../contexts/AuthContext'
@@ -388,13 +389,17 @@ export function useAppData() {
   )
 
   const toggleWeeklyBossCleared = useCallback(
-    async (characterId: string): Promise<BossSnapshotSync | null> => {
+    async (characterId: string, routeSampleMinutes?: number): Promise<BossSnapshotSync | null> => {
       const current = data.bossData[characterId] ?? createDefaultBossData()
       const week = getWeeklyPeriod()
       const clearing = !isWeeklyBossCleared(current)
+      const withSample =
+        clearing && routeSampleMinutes != null && routeSampleMinutes > 0
+          ? applyRouteSample(current, routeSampleMinutes)
+          : current
       const updated = clearing
-        ? { ...current, weeklyClearedPeriodStart: week.start, bossesClearedAt: getToday() }
-        : { ...current, weeklyClearedPeriodStart: null, bossesClearedAt: null }
+        ? { ...withSample, weeklyClearedPeriodStart: week.start, bossesClearedAt: getToday() }
+        : { ...withSample, weeklyClearedPeriodStart: null, bossesClearedAt: null }
 
       setData((prev) => ({
         ...prev,
@@ -428,14 +433,40 @@ export function useAppData() {
     [data.bossData, persistBossData, user]
   )
 
+  const setWeeklyRouteMinutes = useCallback(
+    (characterId: string, minutes: number | null) => {
+      const current = data.bossData[characterId] ?? createDefaultBossData()
+      const updated = applyManualRouteMinutes(current, minutes)
+      setData((prev) => ({
+        ...prev,
+        bossData: { ...prev.bossData, [characterId]: updated },
+      }))
+      persistBossData(characterId, updated)
+    },
+    [data.bossData, persistBossData]
+  )
+
+  const recordWeeklyRouteSample = useCallback(
+    (characterId: string, minutes: number) => {
+      const current = data.bossData[characterId] ?? createDefaultBossData()
+      const updated = applyRouteSample(current, minutes)
+      setData((prev) => ({
+        ...prev,
+        bossData: { ...prev.bossData, [characterId]: updated },
+      }))
+      persistBossData(characterId, updated)
+    },
+    [data.bossData, persistBossData]
+  )
+
   const toggleMonthlyBossCleared = useCallback(
     async (characterId: string): Promise<BossSnapshotSync | null> => {
       const current = data.bossData[characterId] ?? createDefaultBossData()
       const month = getMonthlyPeriod()
       const clearing = !isMonthlyBossCleared(current)
       const updated = clearing
-        ? { ...current, monthlyClearedPeriodStart: month.start, bossesClearedAt: getToday() }
-        : { ...current, monthlyClearedPeriodStart: null, bossesClearedAt: null }
+        ? { ...current, monthlyClearedPeriodStart: month.start }
+        : { ...current, monthlyClearedPeriodStart: null }
 
       setData((prev) => ({
         ...prev,
@@ -517,6 +548,8 @@ export function useAppData() {
     selectBossRunnerPreset,
     toggleWeeklyBossCleared,
     toggleMonthlyBossCleared,
+    setWeeklyRouteMinutes,
+    recordWeeklyRouteSample,
     syncNexonProfile,
     clearNexonLink,
     updateCharacterPremiumGroup,

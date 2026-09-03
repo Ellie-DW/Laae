@@ -97,6 +97,14 @@ export function isBossPeriodCleared(bossData: CharacterBossData): boolean {
   return (!hasWeekly || isWeeklyBossCleared(bossData)) && (!hasMonthly || isMonthlyBossCleared(bossData))
 }
 
+/** 홈 보스 체크: 주간만 잡아도 완료. 주간이 없으면 월간 기준으로 본다. */
+export function isHomeBossCheckComplete(bossData: CharacterBossData): boolean {
+  const { hasWeekly, hasMonthly } = getPlannedBossCycles(bossData)
+  if (hasWeekly) return isWeeklyBossCleared(bossData)
+  if (hasMonthly) return isMonthlyBossCleared(bossData)
+  return false
+}
+
 function getClearedBosses(bossData: CharacterBossData) {
   const plannedBosses = bossData.selections.filter((s) => s.checked)
   const weekCleared = isWeeklyBossCleared(bossData)
@@ -303,7 +311,8 @@ export interface MonthlyExpectedBossStats {
   monthlyExpectedTotal: number
 }
 
-/** 경계 주는 잡은 달에 귀속, 미클리어는 아직 잡을 수 있는 달에 포함 */
+/** 경계 주는 잡은 달에 귀속.
+ *  못 잡은 채 끝난 경계 주는 주가 끝나는 달(이번 달)에 남긴다. */
 export function getWeeklyPeriodAttributionMonth(
   weekStart: string,
   weekEnd: string,
@@ -313,16 +322,13 @@ export function getWeeklyPeriodAttributionMonth(
   const clearedThisWeek = bossData.weeklyClearedPeriodStart === weekStart
   const clearDate = bossData.bossesClearedAt?.slice(0, 10) ?? null
 
-  if (clearedThisWeek && clearDate) {
-    return clearDate.slice(0, 7)
-  }
   if (clearedThisWeek) {
-    return weekStart.slice(0, 7)
+    return (clearDate ?? weekStart).slice(0, 7)
   }
 
-  if (asOf > weekEnd) return null
-  if (asOf >= weekStart) return asOf.slice(0, 7)
-  return weekStart.slice(0, 7)
+  if (asOf >= weekStart && asOf <= weekEnd) return asOf.slice(0, 7)
+  if (asOf < weekStart) return weekStart.slice(0, 7)
+  return weekEnd.slice(0, 7)
 }
 
 export function countWeeklyPeriodsForMonth(

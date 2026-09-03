@@ -1,4 +1,5 @@
 import type { DiaryDay } from './diaryEntries'
+import { getToday } from '../utils'
 
 export interface CalendarCell {
   date: string
@@ -11,6 +12,7 @@ export interface CalendarCell {
   expense: number
   net: number
   entryCount: number
+  hasNote: boolean
 }
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'] as const
@@ -24,7 +26,7 @@ function formatDate(y: number, m: number, d: number) {
 }
 
 function emptyStats() {
-  return { income: 0, expense: 0, net: 0, entryCount: 0 }
+  return { income: 0, expense: 0, net: 0, entryCount: 0, hasNote: false }
 }
 
 export function buildMonthCalendar(
@@ -42,14 +44,11 @@ export function buildMonthCalendar(
       expense: day.expense,
       net: day.net,
       entryCount: day.entries.length,
+      hasNote: day.entries.some((entry) => entry.type === 'note'),
     }
   }
 
-  const today = formatDate(
-    new Date().getFullYear(),
-    new Date().getMonth() + 1,
-    new Date().getDate()
-  )
+  const today = getToday()
 
   const firstDay = new Date(year, month - 1, 1)
   const startWeekday = firstDay.getDay()
@@ -127,8 +126,7 @@ export function buildMonthCalendar(
 }
 
 export function getCurrentYearMonth() {
-  const now = new Date()
-  return { year: now.getFullYear(), month: now.getMonth() + 1 }
+  return periodMonthToYearMonth(getToday().slice(0, 7))
 }
 
 export function shiftMonth(year: number, month: number, delta: number) {

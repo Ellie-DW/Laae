@@ -18,7 +18,7 @@ function AlertBellIcon({ size, active }: { size: 'sm' | 'md'; active: boolean })
       viewBox="0 0 24 24"
       className={`${SIZE_CLASS[size]} transition-all ${
         active
-          ? 'text-cyber-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.55)] scale-105'
+          ? 'text-cyber-400 nav-icon-active-glow scale-105'
           : 'text-slate-400 opacity-85'
       }`}
       fill="none"
@@ -45,7 +45,7 @@ export default function NavIcon({ page, size = 'md', active = false }: NavIconPr
       alt=""
       draggable={false}
       className={`${SIZE_CLASS[size]} object-contain transition-all image-pixelated ${
-        active ? 'drop-shadow-[0_0_6px_rgba(34,211,238,0.55)] scale-105' : 'opacity-85'
+        active ? 'nav-icon-active-glow scale-105' : 'opacity-85'
       }`}
     />
   )

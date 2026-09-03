@@ -52,7 +52,15 @@ export function createDefaultBossData(): CharacterBossData {
       checked: false,
     }))
   )
-  return { selections, dropItems: createDefaultDropItems(), bossesClearedAt: null, weeklyClearedPeriodStart: null, monthlyClearedPeriodStart: null }
+  return {
+    selections,
+    dropItems: createDefaultDropItems(),
+    bossesClearedAt: null,
+    weeklyClearedPeriodStart: null,
+    monthlyClearedPeriodStart: null,
+    weeklyRouteMinutes: null,
+    weeklyRouteSamples: [],
+  }
 }
 
 export function clearBossLedgerState(bossData: CharacterBossData): CharacterBossData {
@@ -103,12 +111,22 @@ function normalizeBossData(bossData: CharacterBossData): CharacterBossData {
     monthlyClearedPeriodStart = month.start
   }
 
+  const weeklyRouteMinutes =
+    typeof bossData.weeklyRouteMinutes === 'number' && bossData.weeklyRouteMinutes > 0
+      ? bossData.weeklyRouteMinutes
+      : null
+  const weeklyRouteSamples = Array.isArray(bossData.weeklyRouteSamples)
+    ? bossData.weeklyRouteSamples.filter((value) => typeof value === 'number' && value > 0).slice(-8)
+    : []
+
   return {
     dropItems: mergeDropItems(bossData.dropItems),
     selections,
     bossesClearedAt: bossData.bossesClearedAt ?? null,
     weeklyClearedPeriodStart,
     monthlyClearedPeriodStart,
+    weeklyRouteMinutes,
+    weeklyRouteSamples,
   }
 }
 

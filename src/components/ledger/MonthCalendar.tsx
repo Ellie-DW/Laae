@@ -1,6 +1,6 @@
 import type { CalendarCell } from '../../lib/monthCalendar'
 import type { SolErdaMonthStats } from '../../lib/huntStats'
-import { SolErdaMonthSummary } from '../diary/SolErdaMonthSummary'
+import { SolErdaMonthSummary, hasSolErdaActivity } from '../diary/SolErdaMonthSummary'
 import { getWeekdayLabels } from '../../lib/monthCalendar'
 import { formatMeso, formatMesoKorean } from '../../utils'
 
@@ -30,6 +30,7 @@ export default function MonthCalendar({
   onToday,
 }: MonthCalendarProps) {
   const weekdays = getWeekdayLabels()
+  const showSolErda = !!solErdaSummary && hasSolErdaActivity(solErdaSummary)
 
   return (
     <div className="panel-light overflow-hidden">
@@ -74,44 +75,42 @@ export default function MonthCalendar({
               <button
                 key={cell.date}
                 onClick={() => onSelectDate(cell.date)}
-                className={`min-h-[4.5rem] sm:min-h-[5.5rem] p-1.5 text-left transition-colors ${
+                className={`min-h-[3.75rem] sm:min-h-[4.5rem] p-1.5 text-left transition-colors ${
                   selectedDate === cell.date
                     ? 'bg-cyber-500/15 ring-1 ring-inset ring-cyber-500/40'
                     : 'hover:bg-dark-surface/40'
                 } ${!cell.inMonth ? 'bg-dark-surface/20' : ''}`}
               >
-                <span
-                  className={`text-sm font-medium leading-none ${
-                    !cell.inMonth
-                      ? 'text-slate-600'
-                      : cell.isSunday
-                        ? 'text-red-400'
-                        : cell.isSaturday
-                          ? 'text-cyber-400'
-                          : 'text-slate-200'
-                  } ${cell.isToday && cell.inMonth ? 'underline decoration-cyber-400' : ''}`}
-                >
-                  {cell.day}
-                </span>
+                <div className="flex items-start justify-between gap-1">
+                  <span
+                    className={`text-sm font-medium leading-none ${
+                      !cell.inMonth
+                        ? 'text-slate-600'
+                        : cell.isSunday
+                          ? 'text-red-400'
+                          : cell.isSaturday
+                            ? 'text-cyber-400'
+                            : 'text-slate-200'
+                    } ${cell.isToday && cell.inMonth ? 'underline decoration-cyber-400' : ''}`}
+                  >
+                    {cell.day}
+                  </span>
+                  {cell.inMonth && cell.hasNote && (
+                    <span
+                      className="mt-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"
+                      title="메모"
+                    />
+                  )}
+                </div>
 
-                {cell.entryCount > 0 && cell.inMonth && (
-                  <div className="mt-1 space-y-0.5">
-                    {cell.income > 0 && (
-                      <p className="text-[9px] sm:text-[10px] text-cyber-400 truncate leading-tight">
-                        +{formatMeso(cell.income)}
-                      </p>
-                    )}
-                    {cell.expense > 0 && (
-                      <p className="text-[9px] sm:text-[10px] text-red-400 truncate leading-tight">
-                        -{formatMeso(cell.expense)}
-                      </p>
-                    )}
-                    <p className={`text-[9px] sm:text-[10px] font-semibold truncate leading-tight ${
+                {cell.inMonth && cell.net !== 0 && (
+                  <p
+                    className={`mt-1 text-[10px] sm:text-[11px] font-semibold truncate leading-tight ${
                       cell.net >= 0 ? 'text-emerald-400' : 'text-red-400'
-                    }`}>
-                      {formatMeso(cell.net)}
-                    </p>
-                  </div>
+                    }`}
+                  >
+                    {formatMeso(cell.net)}
+                  </p>
                 )}
               </button>
             ))}
@@ -130,9 +129,8 @@ export default function MonthCalendar({
             </span>
           </div>
         </div>
-        {solErdaSummary && (
+        {showSolErda && solErdaSummary && (
           <div className="pt-3 border-t border-dark-border/60">
-            <p className="text-xs text-slate-500 mb-2">솔 에르다 조각 · 이번 달</p>
             <SolErdaMonthSummary summary={solErdaSummary} compact />
           </div>
         )}

@@ -196,7 +196,7 @@ export default function GoalsPage({
           </p>
         )}
 
-        <StarBorder color="#22d3ee" speed="6s" thickness={1} className="w-full">
+        <StarBorder color="rgb(var(--yield-accent))" speed="6s" thickness={1} className="w-full">
           <button
             type="submit"
             disabled={saving || endDate < today}

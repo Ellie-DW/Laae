@@ -2,11 +2,15 @@ import { useMemo, useState } from 'react'
 import type { Character, CharacterBossData } from '../types'
 import {
   calculateAccountMonthlyExpectedBossStats,
-  getBossClearStatus,
+  isBossPeriodCleared,
+  isHomeBossCheckComplete,
+  isWeeklyBossCleared,
   type AccountStats,
 } from '../lib/bossStats'
 import type { LedgerSummary } from '../lib/ledgerAnalytics'
 import { createDefaultBossData } from '../lib/appDataApi'
+import { sampleMinutesFromElapsed } from '../lib/bossRouteTime'
+import { useBossRouteTimer } from '../hooks/useBossRouteTimer'
 import { getToday } from '../utils'
 import HomeHero from '../components/dashboard/HomeHero'
 import HomeBossSection from '../components/dashboard/HomeBossSection'
@@ -24,8 +28,10 @@ interface DashboardPageProps {
   weekLabel: string
   currentMonth: string
   onSelectCharacter: (id: string) => void
-  onToggleWeeklyBossCleared: (characterId: string) => void
+  onToggleWeeklyBossCleared: (characterId: string, routeSampleMinutes?: number) => void
   onToggleMonthlyBossCleared: (characterId: string) => void
+  onSetWeeklyRouteMinutes: (characterId: string, minutes: number | null) => void
+  onRecordWeeklyRouteSample: (characterId: string, minutes: number) => void
   onGoBoss: () => void
   onGoHunt: () => void
   onGoDrop: () => void
@@ -44,6 +50,8 @@ export default function DashboardPage({
   onSelectCharacter,
   onToggleWeeklyBossCleared,
   onToggleMonthlyBossCleared,
+  onSetWeeklyRouteMinutes,
+  onRecordWeeklyRouteSample,
   onGoBoss,
   onGoHunt,
   onGoDrop,
@@ -51,6 +59,7 @@ export default function DashboardPage({
 }: DashboardPageProps) {
   const [period, setPeriod] = useState<Period>('month')
   const [showAllBosses, setShowAllBosses] = useState(false)
+  const routeTimer = useBossRouteTimer()
 
   const charStatsById = useMemo(
     () => Object.fromEntries(accountStats.perCharacter.map((c) => [c.id, c])),
@@ -77,7 +86,7 @@ export default function DashboardPage({
     let pending = 0
     for (const character of characters) {
       const bossData = bossDataMap[character.id] ?? createDefaultBossData()
-      if (getBossClearStatus(bossData).tone === 'done') done += 1
+      if (isHomeBossCheckComplete(bossData)) done += 1
       else pending += 1
     }
     return { done, pending, total: characters.length }
@@ -87,9 +96,27 @@ export default function DashboardPage({
     if (showAllBosses) return characters
     return characters.filter((character) => {
       const bossData = bossDataMap[character.id] ?? createDefaultBossData()
-      return getBossClearStatus(bossData).tone !== 'done'
+      return !isBossPeriodCleared(bossData)
     })
   }, [characters, bossDataMap, showAllBosses])
+
+  const handleStopRouteTimer = () => {
+    const running = routeTimer.timer
+    const sample = sampleMinutesFromElapsed(routeTimer.elapsedMs)
+    routeTimer.stop()
+    if (running && sample != null) onRecordWeeklyRouteSample(running.characterId, sample)
+  }
+
+  const handleToggleWeekly = (characterId: string) => {
+    const bossData = bossDataMap[characterId] ?? createDefaultBossData()
+    const clearing = !isWeeklyBossCleared(bossData)
+    let sample: number | undefined
+    if (clearing && routeTimer.timer?.characterId === characterId) {
+      sample = sampleMinutesFromElapsed(routeTimer.elapsedMs) ?? undefined
+      routeTimer.stop()
+    }
+    onToggleWeeklyBossCleared(characterId, sample)
+  }
 
   return (
     <div className="space-y-5">
@@ -118,11 +145,16 @@ export default function DashboardPage({
           pending={bossCompletion.pending}
           total={bossCompletion.total}
           showAll={showAllBosses}
+          runningCharacterId={routeTimer.timer?.characterId ?? null}
+          elapsedMs={routeTimer.elapsedMs}
           onShowAll={setShowAllBosses}
           onGoBoss={onGoBoss}
           onSelectCharacter={onSelectCharacter}
-          onToggleWeeklyBossCleared={onToggleWeeklyBossCleared}
+          onToggleWeeklyBossCleared={handleToggleWeekly}
           onToggleMonthlyBossCleared={onToggleMonthlyBossCleared}
+          onSetWeeklyRouteMinutes={onSetWeeklyRouteMinutes}
+          onStartRouteTimer={routeTimer.start}
+          onStopRouteTimer={handleStopRouteTimer}
         />
         <div className="lg:sticky lg:top-20">
           <HomeUpdatesSection />

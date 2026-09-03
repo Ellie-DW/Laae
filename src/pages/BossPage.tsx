@@ -37,7 +37,7 @@ export default function BossPage({
   if (!selectedCharacter) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <span className="text-5xl mb-4 drop-shadow-[0_0_20px_rgba(34,211,238,0.3)]">🍁</span>
+        <span className="text-5xl mb-4 icon-accent-glow">🍁</span>
         <h2 className="text-lg font-semibold text-slate-300">아직 선택된 캐릭터가 없어요</h2>
         <p className="text-sm text-slate-500 mt-2">캐릭터를 추가해주세요</p>
       </div>
@@ -86,7 +86,7 @@ export default function BossPage({
         <div className="flex flex-wrap gap-4 mt-2 text-xs text-slate-500">
           {monthlyExpected.weeklyPerWeek > 0 && (
             <span>
-              주간 환산 {formatMesoKorean(monthlyExpected.weeklyInMonthTotal)}
+              주간 보스 {formatMesoKorean(monthlyExpected.weeklyInMonthTotal)}
               {monthlyExpected.weeksInMonth > 0 && ` (${formatMesoKorean(monthlyExpected.weeklyPerWeek)} × ${monthlyExpected.weeksInMonth}주)`}
             </span>
           )}
