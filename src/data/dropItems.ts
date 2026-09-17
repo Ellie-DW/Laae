@@ -56,14 +56,10 @@ export const PREDEFINED_DROP_ITEMS: PredefinedDropItem[] = [
   { id: 'soul-ether-3', name: '3단계 소울 에테르', group: '소울 에테르' },
   { id: 'soul-ether-4', name: '4단계 소울 에테르', group: '소울 에테르' },
   { id: 'moonlight-potion', name: '영롱한 달빛 포션', group: '포션' },
-  { id: 'premium-accessory-coupon', name: '프리미엄 악세서리 주문서 선택권', group: '주문서' },
-  { id: 'premium-pet-coupon', name: '프리미엄 펫장비 주문서 선택권', group: '주문서' },
-  { id: 'magical-scroll-coupon', name: '매지컬 무기 주문서 교환권', group: '주문서' },
 ]
 
 const DROP_NAME_ALIASES: Record<string, string> = {
   '저주받은 마도서 상자': '저주받은 마도서 선택 상자',
-  '매지컬 주문서 선택권': '매지컬 무기 주문서 교환권',
   '컴플리트 언더컨트롤': '컨플리트 언더컨트롤',
   '굶주리는 빛빈 원혼': '굶주리는 핏빛 원혼',
   '고대의 에테르넬 상자': '고대의 에테르넬 방어구 상자',

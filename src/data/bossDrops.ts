@@ -14,12 +14,6 @@ export interface BossDropTable {
   byDifficulty: Partial<Record<BossDifficulty, BossDropItem[]>>
 }
 
-const SCROLL_COUPON_DROPS: BossDropItem[] = [
-  { name: '프리미엄 악세서리 주문서 선택권' },
-  { name: '프리미엄 펫장비 주문서 선택권' },
-  { name: '매지컬 무기 주문서 교환권' },
-]
-
 const SOUL_ETHER_1: BossDropItem = { name: '1단계 소울 에테르' }
 const SOUL_ETHER_2: BossDropItem = { name: '2단계 소울 에테르' }
 const SOUL_ETHER_3: BossDropItem = { name: '3단계 소울 에테르' }
@@ -64,7 +58,6 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
       NORMAL: [{ name: '녹옥의 보스 반지 상자' }],
       CHAOS: [
         { name: '흑옥의 보스 반지 상자' },
-        ...SCROLL_COUPON_DROPS,
       ],
     },
   },
@@ -113,7 +106,6 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
       CHAOS: [
         { name: '흑옥의 보스 반지 상자' },
         { name: '거대한 공포' },
-        ...SCROLL_COUPON_DROPS,
       ],
     },
   },
@@ -127,7 +119,6 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
       HARD: [
         { name: '흑옥의 보스 반지 상자' },
         { name: '고통의 근원' },
-        ...SCROLL_COUPON_DROPS,
       ],
     },
   },
@@ -139,14 +130,12 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
       HARD: [
         { name: '흑옥의 보스 반지 상자' },
         { name: '커맨더 포스 이어링' },
-        ...SCROLL_COUPON_DROPS,
       ],
     },
   },
   {
     bossId: 'black-mage',
     common: [
-      ...SCROLL_COUPON_DROPS,
       { name: '백옥의 보스 반지 상자' },
       { name: '창세의 뱃지' },
     ],
@@ -156,7 +145,7 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   },
   {
     bossId: 'seren',
-    common: [{ name: '데이브레이크 펜던트' }, ...SCROLL_COUPON_DROPS],
+    common: [{ name: '데이브레이크 펜던트' }],
     byDifficulty: {
       NORMAL: [{ name: '흑옥의 보스 반지 상자' }],
       HARD: [
@@ -176,7 +165,7 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   },
   {
     bossId: 'kalos',
-    common: [...SCROLL_COUPON_DROPS],
+    common: [],
     byDifficulty: {
       EASY: [{ name: '백옥의 보스 반지 상자' }],
       NORMAL: [
@@ -203,7 +192,7 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   },
   {
     bossId: 'karing',
-    common: [...SCROLL_COUPON_DROPS],
+    common: [],
     byDifficulty: {
       EASY: [
         { name: '백옥의 보스 반지 상자' },
@@ -241,7 +230,6 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   {
     bossId: 'limbo',
     common: [
-      ...SCROLL_COUPON_DROPS,
       { name: '생명의 보스 반지 상자' },
       { name: '신념의 연마석' },
       { name: '혼돈의 칠흑 장신구 상자' },
@@ -260,7 +248,6 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   {
     bossId: 'baldrix',
     common: [
-      ...SCROLL_COUPON_DROPS,
       { name: '생명의 보스 반지 상자' },
       { name: '신념의 연마석' },
       { name: '혼돈의 칠흑 장신구 상자' },
@@ -278,7 +265,7 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   },
   {
     bossId: 'first-adversary',
-    common: [...SCROLL_COUPON_DROPS],
+    common: [],
     byDifficulty: {
       EASY: [{ name: '백옥의 보스 반지 상자' }],
       NORMAL: [
@@ -311,7 +298,7 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   },
   {
     bossId: 'brilliant-void',
-    common: [...SCROLL_COUPON_DROPS, { name: '혼돈의 칠흑 장신구 상자' }, SOUL_ETHER_2],
+    common: [{ name: '혼돈의 칠흑 장신구 상자' }, SOUL_ETHER_2],
     byDifficulty: {
       NORMAL: [
         { name: '백옥의 보스 반지 상자' },
@@ -331,7 +318,6 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   {
     bossId: 'jupiter',
     common: [
-      ...SCROLL_COUPON_DROPS,
       { name: '생명의 보스 반지 상자' },
       { name: '신념의 연마석' },
       { name: '혼돈의 칠흑 장신구 상자' },
@@ -352,7 +338,7 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   },
   {
     bossId: 'bellona',
-    common: [...SCROLL_COUPON_DROPS],
+    common: [],
     byDifficulty: {
       EASY: [{ name: '백옥의 보스 반지 상자' }],
       NORMAL: [

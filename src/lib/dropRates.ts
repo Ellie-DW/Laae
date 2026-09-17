@@ -414,12 +414,12 @@ export function getDropRateStats(
     }]
   })
 
-  const COMBINED_GROUPS = new Set(['반지 상자', '주문서', '칠흑'])
+  const COMBINED_GROUPS = new Set(['반지 상자', '칠흑'])
   const combined: CombinedDropRateRow[] = PREDEFINED_DROP_ITEMS.flatMap((item) => {
     const include =
       item.group === '반지 상자'
         ? item.name !== RING_MISS_NAME
-        : item.group === '주문서' || isOpenableBoxName(item.name)
+        : isOpenableBoxName(item.name)
     if (!include || !COMBINED_GROUPS.has(item.group)) return []
     const sources = sourcesByItem.get(item.name) ?? []
     const dropsCount = dropCountByName.get(item.name) ?? 0
