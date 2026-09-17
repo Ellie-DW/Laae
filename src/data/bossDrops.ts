@@ -14,11 +14,10 @@ export interface BossDropTable {
   byDifficulty: Partial<Record<BossDifficulty, BossDropItem[]>>
 }
 
-const SCROLL_COUPON_DROPS: BossDropItem[] = [
-  { name: '프리미엄 악세서리 주문서 선택권' },
-  { name: '프리미엄 펫장비 주문서 선택권' },
-  { name: '매지컬 무기 주문서 교환권' },
-]
+const SOUL_ETHER_1: BossDropItem = { name: '1단계 소울 에테르' }
+const SOUL_ETHER_2: BossDropItem = { name: '2단계 소울 에테르' }
+const SOUL_ETHER_3: BossDropItem = { name: '3단계 소울 에테르' }
+const SOUL_ETHER_4: BossDropItem = { name: '4단계 소울 에테르' }
 
 /** 2026-08-13 기준 보스 주요 보상 (벨로나 포함). 난이도 제한 아이템은 공통이 아니라 해당 난이도에만 넣음. */
 export const BOSS_DROP_TABLES: BossDropTable[] = [
@@ -59,7 +58,6 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
       NORMAL: [{ name: '녹옥의 보스 반지 상자' }],
       CHAOS: [
         { name: '흑옥의 보스 반지 상자' },
-        ...SCROLL_COUPON_DROPS,
       ],
     },
   },
@@ -108,7 +106,6 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
       CHAOS: [
         { name: '흑옥의 보스 반지 상자' },
         { name: '거대한 공포' },
-        ...SCROLL_COUPON_DROPS,
       ],
     },
   },
@@ -122,7 +119,6 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
       HARD: [
         { name: '흑옥의 보스 반지 상자' },
         { name: '고통의 근원' },
-        ...SCROLL_COUPON_DROPS,
       ],
     },
   },
@@ -134,14 +130,12 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
       HARD: [
         { name: '흑옥의 보스 반지 상자' },
         { name: '커맨더 포스 이어링' },
-        ...SCROLL_COUPON_DROPS,
       ],
     },
   },
   {
     bossId: 'black-mage',
     common: [
-      ...SCROLL_COUPON_DROPS,
       { name: '백옥의 보스 반지 상자' },
       { name: '창세의 뱃지' },
     ],
@@ -151,7 +145,7 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   },
   {
     bossId: 'seren',
-    common: [{ name: '데이브레이크 펜던트' }, ...SCROLL_COUPON_DROPS],
+    common: [{ name: '데이브레이크 펜던트' }],
     byDifficulty: {
       NORMAL: [{ name: '흑옥의 보스 반지 상자' }],
       HARD: [
@@ -171,7 +165,7 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   },
   {
     bossId: 'kalos',
-    common: [...SCROLL_COUPON_DROPS],
+    common: [],
     byDifficulty: {
       EASY: [{ name: '백옥의 보스 반지 상자' }],
       NORMAL: [
@@ -198,7 +192,7 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   },
   {
     bossId: 'karing',
-    common: [...SCROLL_COUPON_DROPS],
+    common: [],
     byDifficulty: {
       EASY: [
         { name: '백옥의 보스 반지 상자' },
@@ -209,6 +203,7 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
         { name: '뒤엉킨 흉수의 고리 조각', qty: 5 },
         { name: '혼돈의 칠흑 장신구 상자' },
         { name: '생명의 연마석' },
+        SOUL_ETHER_1,
       ],
       HARD: [
         { name: '신념의 연마석' },
@@ -217,6 +212,7 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
         { name: '흉수의 에테르넬 방어구 상자' },
         { name: '혼돈의 칠흑 장신구 상자' },
         { name: '에리온의 조각', qty: 60 },
+        SOUL_ETHER_1,
       ],
       EXTREME: [
         { name: '신념의 연마석' },
@@ -227,16 +223,17 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
         { name: '혼돈의 칠흑 장신구 상자' },
         { name: '에리온의 조각', qty: 400 },
         { name: '영롱한 달빛 포션' },
+        SOUL_ETHER_1,
       ],
     },
   },
   {
     bossId: 'limbo',
     common: [
-      ...SCROLL_COUPON_DROPS,
       { name: '생명의 보스 반지 상자' },
       { name: '신념의 연마석' },
       { name: '혼돈의 칠흑 장신구 상자' },
+      SOUL_ETHER_3,
     ],
     byDifficulty: {
       NORMAL: [{ name: '왜곡된 욕망의 결정', qty: 1 }],
@@ -251,10 +248,10 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   {
     bossId: 'baldrix',
     common: [
-      ...SCROLL_COUPON_DROPS,
       { name: '생명의 보스 반지 상자' },
       { name: '신념의 연마석' },
       { name: '혼돈의 칠흑 장신구 상자' },
+      SOUL_ETHER_3,
     ],
     byDifficulty: {
       NORMAL: [{ name: '영원한 충성의 흔적', qty: 1 }],
@@ -268,13 +265,14 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   },
   {
     bossId: 'first-adversary',
-    common: [...SCROLL_COUPON_DROPS],
+    common: [],
     byDifficulty: {
       EASY: [{ name: '백옥의 보스 반지 상자' }],
       NORMAL: [
         { name: '생명의 연마석' },
         { name: '백옥의 보스 반지 상자' },
         { name: '이어진 고대의 결의 조각', qty: 4 },
+        SOUL_ETHER_1,
       ],
       HARD: [
         { name: '생명의 연마석' },
@@ -283,6 +281,7 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
         { name: '불멸의 유산' },
         { name: '고대의 에테르넬 방어구 상자' },
         { name: '에리온의 조각', qty: 30 },
+        SOUL_ETHER_1,
       ],
       EXTREME: [
         { name: '생명의 연마석' },
@@ -293,12 +292,13 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
         { name: '익셉셔널 해머 (훈장)' },
         { name: '에리온의 조각', qty: 240 },
         { name: '영롱한 달빛 포션' },
+        SOUL_ETHER_1,
       ],
     },
   },
   {
     bossId: 'brilliant-void',
-    common: [...SCROLL_COUPON_DROPS, { name: '혼돈의 칠흑 장신구 상자' }],
+    common: [{ name: '혼돈의 칠흑 장신구 상자' }, SOUL_ETHER_2],
     byDifficulty: {
       NORMAL: [
         { name: '백옥의 보스 반지 상자' },
@@ -318,10 +318,10 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   {
     bossId: 'jupiter',
     common: [
-      ...SCROLL_COUPON_DROPS,
       { name: '생명의 보스 반지 상자' },
       { name: '신념의 연마석' },
       { name: '혼돈의 칠흑 장신구 상자' },
+      SOUL_ETHER_4,
     ],
     byDifficulty: {
       NORMAL: [
@@ -338,7 +338,7 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   },
   {
     bossId: 'bellona',
-    common: [...SCROLL_COUPON_DROPS],
+    common: [],
     byDifficulty: {
       EASY: [{ name: '백옥의 보스 반지 상자' }],
       NORMAL: [
@@ -346,6 +346,7 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
         { name: '저주받은 원혼의 잔재', qty: 1 },
         { name: '혼돈의 칠흑 장신구 상자' },
         { name: '생명의 연마석' },
+        SOUL_ETHER_2,
       ],
       HARD: [
         { name: '생명의 보스 반지 상자' },
@@ -355,6 +356,7 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
         { name: '혼돈의 칠흑 장신구 상자' },
         { name: '에리온의 조각', qty: 100 },
         { name: '신념의 연마석' },
+        SOUL_ETHER_2,
       ],
     },
   },

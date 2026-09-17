@@ -67,12 +67,11 @@ export default function DropRateSection({
 
       {stats.combined.length > 0 && (
         <div className="mb-5 rounded-lg border border-dark-border bg-dark-surface/40 p-3">
-          <p className="text-sm font-medium text-slate-200 mb-0.5">반지 상자 · 칠흑 상자 · 주문서 합산</p>
+          <p className="text-sm font-medium text-slate-200 mb-0.5">반지 상자 · 칠흑 상자 합산</p>
           <p className="text-[10px] text-slate-500 mb-3">나오는 모든 보스·난이도 처치를 합쳐서 봐요</p>
           {[
             { group: '반지 상자', label: '반지 상자' },
             { group: '칠흑', label: '칠흑 상자' },
-            { group: '주문서', label: '주문서' },
           ].map(({ group, label }) => {
             const items = stats.combined.filter((item) => item.group === group)
             if (items.length === 0) return null
