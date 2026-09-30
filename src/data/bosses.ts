@@ -111,8 +111,8 @@ export const BOSSES: BossDefinition[] = [
   { id: 'black-mage', name: '검은 마법사', shortName: '검마', tab: 'belowSword', group: '검밑솔', maxParty: 6,
     resetCycle: 'monthly',
     difficulties: [
-      { difficulty: 'HARD', meso: 665 * M },
-      { difficulty: 'EXTREME', meso: 8740 * M },
+      { difficulty: 'HARD', meso: 465 * M },
+      { difficulty: 'EXTREME', meso: 5680 * M },
     ] },
 
   // 일반 보스
